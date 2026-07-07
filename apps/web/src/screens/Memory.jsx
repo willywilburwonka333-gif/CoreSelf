@@ -4,6 +4,7 @@ import { logActivity } from '../services/activityLog';
 import { acceptSuggestion } from '../services/memorySuggestions';
 import { buildRelationshipLinks, detectRelationshipTags } from '../services/relationshipEngine';
 import { defaultProjects, defaultGoals, defaultLifeGraphNodes } from '../data/defaults';
+import { buildMemoryTimeline, classifyLivingMemory, enrichLivingMemory, recallLivingMemory } from '../services/livingMemoryEngine';
 
 const types = ['All', 'Dylan Memory', 'Project', 'Skill', 'Decision', 'Lesson', 'Preference', 'Goal', 'Warning'];
 const levels = ['All', 'Permanent', 'Long-term', 'Active', 'Short-term', 'Archive'];
@@ -13,6 +14,7 @@ export default function Memory() {
   const [items, setItems] = useState(load('memories', []));
   const [suggestions, setSuggestions] = useState(load('memorySuggestions', []));
   const [query, setQuery] = useState('');
+  const [recallQuery, setRecallQuery] = useState('');
   const [filterType, setFilterType] = useState('All');
   const [filterLevel, setFilterLevel] = useState('All');
   const [form, setForm] = useState({
@@ -26,6 +28,11 @@ export default function Memory() {
   });
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState(null);
+
+  const messages = load('messages', []);
+  const activityLog = load('activityLog', []);
+  const timeline = useMemo(() => buildMemoryTimeline({ memories: items, messages, activityLog, suggestions }, 8), [items, suggestions]);
+  const recallResults = useMemo(() => recallQuery.trim() ? recallLivingMemory(recallQuery, items, 5) : [], [recallQuery, items]);
 
   const links = useMemo(() => buildRelationshipLinks({
     memories: items,
@@ -51,14 +58,17 @@ export default function Memory() {
   function add() {
     if (!form.content.trim() && !form.title.trim()) return;
     const body = [form.title, form.content, form.lesson, form.futureAction].join(' ');
-    const memory = {
+    const classification = classifyLivingMemory(form);
+    const memory = enrichLivingMemory({
       id: crypto.randomUUID(),
       ...form,
+      level: classification.level,
+      importance: classification.importance,
       title: form.title.trim() || form.content.trim().slice(0, 50),
       relationshipTags: detectRelationshipTags(body),
       truthStatus: 'Confirmed by Dylan',
       createdAt: new Date().toISOString(),
-    };
+    });
     const next = [memory, ...items];
     setItems(next);
     save('memories', next);
@@ -121,7 +131,7 @@ export default function Memory() {
   function accept(id) {
     const suggestion = suggestions.find((item) => item.id === id);
     if (!suggestion) return;
-    const memory = acceptSuggestion(suggestion);
+    const memory = enrichLivingMemory(acceptSuggestion(suggestion));
     const nextMemories = [memory, ...items];
     const nextSuggestions = suggestions.map((item) => item.id === id ? { ...item, status: 'Accepted', acceptedAt: new Date().toISOString() } : item);
     setItems(nextMemories);
@@ -143,7 +153,30 @@ export default function Memory() {
   return (
     <section className="screen">
       <h2>Memory Vault</h2>
-      <p className="muted">Structured memories now connect to projects, goals, and Life Graph context.</p>
+      <p className="muted">Structured memories now connect to projects, goals, Life Graph context, recall, and the Living Memory timeline.</p>
+
+      <div className="briefing">
+        <h3>Living Recall</h3>
+        <input value={recallQuery} onChange={(e) => setRecallQuery(e.target.value)} placeholder="Ask memory: when did we talk about the roadmap, funding, family, launch..." />
+        {recallResults.length ? recallResults.map((memory) => (
+          <div className="miniActionCard" key={memory.id}>
+            <strong>{memory.title}</strong>
+            <p>{memory.content}</p>
+            <small>{memory.type} • {memory.level} • {memory.importance}</small>
+          </div>
+        )) : recallQuery ? <p className="muted">No strong recall match yet.</p> : <p className="muted">Search uses memory meaning, importance, permanence, recency, and relationship tags.</p>}
+      </div>
+
+      <div className="briefing">
+        <h3>Timeline</h3>
+        {timeline.map((event) => (
+          <div className="miniActionCard" key={event.id}>
+            <strong>{event.kind}: {event.title}</strong>
+            <p>{event.detail}</p>
+            <small>{event.importance} • {new Date(event.at).toLocaleString()}</small>
+          </div>
+        ))}
+      </div>
 
       {!!pending.length && (
         <div className="briefing">
@@ -206,11 +239,12 @@ export default function Memory() {
             <article key={m.id}>
               <div className="cardTop">
                 <h3>{m.title}</h3>
-                <small>{m.type} • {m.level} • {m.importance}</small>
+                <small>{m.type} • {m.level} • {m.importance}{m.memoryClass ? ` • ${m.memoryClass}` : ''}</small>
               </div>
               <p>{m.content}</p>
               {m.lesson && <p><strong>Lesson:</strong> {m.lesson}</p>}
               {m.futureAction && <p><strong>Future Action:</strong> {m.futureAction}</p>}
+              {m.memoryReason && <p><strong>Memory Class Reason:</strong> {m.memoryReason}</p>}
               {!!m.relationshipTags?.length && <p><strong>Tags:</strong> {m.relationshipTags.join(', ')}</p>}
               {!!memoryLinks.length && <p><strong>Linked to:</strong> {memoryLinks.map((link) => `${link.toLabel} (${link.strength})`).join(', ')}</p>}
               {editingId === m.id && editForm ? (

@@ -1,4 +1,5 @@
 import { detectRelationshipTags } from './relationshipEngine';
+import { classifyLivingMemory } from './livingMemoryEngine';
 
 const importantSignals = ['remember', 'save', 'from now on', 'going forward', 'next time', 'always', 'never', 'important', 'don\'t forget', 'project', 'goal', 'plan', 'deadline', 'family', 'money', 'health'];
 
@@ -32,12 +33,13 @@ export function suggestMemoryFromMessage(input, existingSuggestions = []) {
   const duplicate = existingSuggestions.some((item) => item.content?.toLowerCase() === clean.toLowerCase() && item.status === 'Pending');
   if (duplicate) return null;
 
+  const classification = classifyLivingMemory(clean);
   return {
     id: crypto.randomUUID(),
     status: 'Pending',
     type: inferType(clean),
-    level: inferImportance(clean) === 'Critical' ? 'Permanent' : 'Active',
-    importance: inferImportance(clean),
+    level: classification.level,
+    importance: classification.importance || inferImportance(clean),
     title,
     content: clean,
     lesson: '',
@@ -45,15 +47,18 @@ export function suggestMemoryFromMessage(input, existingSuggestions = []) {
     relationshipTags: detectRelationshipTags(clean),
     createdAt: new Date().toISOString(),
     source: 'Talk suggestion',
+    memoryClass: classification.level,
+    memoryReason: classification.reason,
   };
 }
 
 export function acceptSuggestion(suggestion) {
+  const classification = classifyLivingMemory(suggestion);
   return {
     id: crypto.randomUUID(),
     type: suggestion.type || 'Dylan Memory',
-    level: suggestion.level || 'Active',
-    importance: suggestion.importance || 'High',
+    level: suggestion.level || classification.level || 'Active',
+    importance: suggestion.importance || classification.importance || 'High',
     title: suggestion.title,
     content: suggestion.content,
     lesson: suggestion.lesson || '',
@@ -62,5 +67,8 @@ export function acceptSuggestion(suggestion) {
     truthStatus: 'Confirmed by Dylan',
     createdAt: new Date().toISOString(),
     source: suggestion.source || 'Suggestion',
+    livingMemory: true,
+    memoryClass: suggestion.memoryClass || classification.level,
+    memoryReason: suggestion.memoryReason || classification.reason,
   };
 }
