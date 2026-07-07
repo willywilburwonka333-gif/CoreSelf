@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { load, save } from '../services/localStore';
 import { defaultProjects } from '../data/defaults';
 import { scorePotential } from '../services/decisionEngine';
+import { logActivity } from '../services/activityLog';
 import ScoreBadge from '../components/ScoreBadge';
 
 const scoreFields = ['familyFreedom', 'wealth', 'health', 'intelligence', 'asset', 'effortReduction', 'riskProtection'];
@@ -35,6 +36,7 @@ export default function Projects() {
       riskProtection: 3
     };
     persist([project, ...projects]);
+    logActivity({ engine: 'Project Engine', action: 'Added project', detail: clean });
     setName('');
   }
 

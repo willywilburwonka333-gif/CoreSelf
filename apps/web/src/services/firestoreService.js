@@ -1,8 +1,14 @@
 /**
  * Firestore preparation layer.
- * Genesis 0.0.5 does not connect to Firebase yet.
+ * Genesis 0.0.6 does not connect to Firebase yet.
  * These functions define the shape we will replace with real Firestore calls.
  */
+
+export const firestoreStatus = {
+  connected: false,
+  authReady: false,
+  message: 'Firestore is prepared but not connected. Add Firebase config in a future build.',
+};
 
 export async function saveMemoryToCloud(memory) {
   console.info('[Firestore Prep] saveMemoryToCloud', memory);

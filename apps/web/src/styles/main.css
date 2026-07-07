@@ -40,7 +40,7 @@ body::before {
   max-width: 1160px;
   min-height: 100vh;
   margin: 0 auto;
-  padding: 16px 16px 112px;
+  padding: 16px 16px 122px;
   position: relative;
   z-index: 1;
 }
@@ -365,6 +365,7 @@ textarea {
   border: 1px solid rgba(255,93,125,0.22);
   border-radius: 14px;
   padding: 10px 12px;
+  margin-top: 8px;
 }
 
 .filterPanel, .formGrid {
@@ -510,9 +511,9 @@ textarea {
   left: 50%;
   bottom: 14px;
   transform: translateX(-50%);
-  width: min(900px, calc(100% - 24px));
+  width: min(980px, calc(100% - 24px));
   display: grid;
-  grid-template-columns: repeat(9, 1fr);
+  grid-template-columns: repeat(11, 1fr);
   gap: 6px;
   padding: 8px;
   border: 1px solid var(--line);
@@ -543,6 +544,10 @@ textarea {
     grid-template-columns: 1fr;
   }
   .online { display: none; }
-  .nav { grid-template-columns: repeat(3, 1fr); }
+  .nav {
+    grid-template-columns: repeat(4, 1fr);
+    max-height: 148px;
+    overflow-y: auto;
+  }
   .projectHeader { display: grid; }
 }

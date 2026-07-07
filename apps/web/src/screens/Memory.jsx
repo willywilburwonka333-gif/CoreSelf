@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { load, save } from '../services/localStore';
+import { logActivity } from '../services/activityLog';
 
 const types = ['All', 'Dylan Memory', 'Project', 'Skill', 'Decision', 'Lesson', 'Preference', 'Goal', 'Warning'];
 const levels = ['All', 'Permanent', 'Long-term', 'Active', 'Short-term', 'Archive'];
@@ -46,6 +47,7 @@ export default function Memory() {
     const next = [memory, ...items];
     setItems(next);
     save('memories', next);
+    logActivity({ engine: 'Memory Engine', action: 'Saved memory', detail: memory.title });
     setForm({ type: 'Dylan Memory', level: 'Active', importance: 'High', title: '', content: '', lesson: '', futureAction: '' });
   }
 
@@ -53,6 +55,7 @@ export default function Memory() {
     const next = items.filter((m) => m.id !== id);
     setItems(next);
     save('memories', next);
+    logActivity({ engine: 'Memory Engine', action: 'Removed memory', detail: id, level: 'Warning' });
   }
 
   return (

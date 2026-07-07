@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { load, save } from '../services/localStore';
 import { defaultGoals } from '../data/defaults';
+import { logActivity } from '../services/activityLog';
 
 export default function Goals() {
   const [goals, setGoals] = useState(load('goals', defaultGoals));
@@ -23,6 +24,7 @@ export default function Goals() {
       target: 'To define.'
     };
     persist([goal, ...goals]);
+    logActivity({ engine: 'Goal Engine', action: 'Added goal', detail: clean });
     setTitle('');
   }
 

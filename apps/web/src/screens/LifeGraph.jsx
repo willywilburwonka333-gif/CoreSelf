@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { defaultLifeGraphNodes } from '../data/defaults';
 import { load, save } from '../services/localStore';
+import { logActivity } from '../services/activityLog';
 
 export default function LifeGraph() {
   const [nodes, setNodes] = useState(load('lifeGraphNodes', defaultLifeGraphNodes));
@@ -13,7 +14,9 @@ export default function LifeGraph() {
 
   function addNode() {
     if (!form.title.trim()) return;
-    persist([{ id: crypto.randomUUID(), ...form }, ...nodes]);
+    const node = { id: crypto.randomUUID(), ...form };
+    persist([node, ...nodes]);
+    logActivity({ engine: 'Life Graph Engine', action: 'Added node', detail: node.title });
     setForm({ group: 'New', title: '', detail: '' });
   }
 
@@ -23,6 +26,7 @@ export default function LifeGraph() {
 
   function removeNode(id) {
     persist(nodes.filter((n) => n.id !== id));
+    logActivity({ engine: 'Life Graph Engine', action: 'Removed node', detail: id, level: 'Warning' });
   }
 
   return (

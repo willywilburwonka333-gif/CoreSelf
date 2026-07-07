@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { load, save } from '../services/localStore';
 import { routeCoreRequest } from '../services/aiRouter';
+import { logActivity } from '../services/activityLog';
 import PresenceBanner from '../components/PresenceBanner';
 
 export default function Talk({ mode }) {
@@ -24,6 +25,11 @@ export default function Talk({ mode }) {
     ];
     setMessages(next);
     save('messages', next);
+    logActivity({
+      engine: 'AI Router',
+      action: 'Processed message',
+      detail: `Mode ${mode}. Context used: ${routed.contextUsed.relevantMemories} relevant memories.`,
+    });
     setInput('');
   }
 

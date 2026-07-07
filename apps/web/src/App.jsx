@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Brain, Home as HomeIcon, MessageCircle, Database, Network, Sun, Shield, FolderKanban, Target, Cpu } from 'lucide-react';
+import { Activity as ActivityIcon, Brain, Home as HomeIcon, MessageCircle, Database, Network, Sun, Shield, FolderKanban, Target, Cpu, Settings as SettingsIcon } from 'lucide-react';
 import ModeBar from './components/ModeBar';
 import Home from './screens/Home';
 import Talk from './screens/Talk';
@@ -10,6 +10,8 @@ import Core from './screens/Core';
 import Projects from './screens/Projects';
 import Goals from './screens/Goals';
 import Engines from './screens/Engines';
+import Activity from './screens/Activity';
+import Settings from './screens/Settings';
 
 const tabs = [
   ['home', 'Home', HomeIcon],
@@ -19,7 +21,9 @@ const tabs = [
   ['projects', 'Projects', FolderKanban],
   ['goals', 'Goals', Target],
   ['engines', 'Engines', Cpu],
+  ['activity', 'Log', ActivityIcon],
   ['briefing', 'Briefing', Sun],
+  ['settings', 'Settings', SettingsIcon],
   ['core', 'Core', Shield],
 ];
 
@@ -35,7 +39,9 @@ export default function App() {
     tab === 'projects' ? <Projects /> :
     tab === 'goals' ? <Goals /> :
     tab === 'engines' ? <Engines /> :
+    tab === 'activity' ? <Activity /> :
     tab === 'briefing' ? <Briefing /> :
+    tab === 'settings' ? <Settings /> :
     <Core />;
 
   return (
@@ -45,7 +51,7 @@ export default function App() {
           <Brain />
           <div>
             <strong>CORE SELF</strong>
-            <span>Dylan Core Genesis 0.0.5</span>
+            <span>Dylan Core Genesis 0.0.6</span>
           </div>
         </div>
         <span className="online">Core Online</span>

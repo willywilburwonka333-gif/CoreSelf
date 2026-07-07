@@ -96,11 +96,22 @@ export const defaultLifeGraphNodes = [
 ];
 
 export const engineStatuses = [
-  { name: 'Identity Engine', status: 'Online', progress: 35, next: 'Keep constitution synced with app.' },
-  { name: 'Memory Engine', status: 'Genesis', progress: 18, next: 'Add Firestore and retrieval.' },
-  { name: 'Life Graph Engine', status: 'Genesis', progress: 15, next: 'Add relationships between nodes.' },
-  { name: 'Decision Engine', status: 'Local Prototype', progress: 10, next: 'Use scoring across briefing/actions.' },
-  { name: 'Guardian Engine', status: 'Designed', progress: 8, next: 'Add risk warnings and authority gates.' },
-  { name: 'AI Router', status: 'Prepared', progress: 5, next: 'Connect model API later.' },
-  { name: 'Firestore Layer', status: 'Prepared', progress: 5, next: 'Add Firebase config when ready.' }
+  { name: 'Identity Engine', status: 'Online', progress: 45, next: 'Keep constitution synced with app.' },
+  { name: 'Memory Engine', status: 'Genesis+', progress: 28, next: 'Add Firestore and retrieval scoring.' },
+  { name: 'Life Graph Engine', status: 'Editable Local', progress: 25, next: 'Add relationships between nodes.' },
+  { name: 'Decision Engine', status: 'Local Prototype', progress: 18, next: 'Use scoring across all actions.' },
+  { name: 'Guardian Engine', status: 'Designed', progress: 12, next: 'Add risk warnings and authority gates.' },
+  { name: 'AI Router', status: 'Prepared', progress: 10, next: 'Connect model API later.' },
+  { name: 'Firestore Layer', status: 'Prepared', progress: 10, next: 'Add Firebase config when ready.' },
+  { name: 'Activity Log', status: 'Local', progress: 15, next: 'Log engine actions automatically.' },
+  { name: 'Backup System', status: 'Local', progress: 20, next: 'Add cloud backup later.' }
 ];
+
+export const defaultSettings = {
+  authorityLevel: 'Level 2 — Prepare',
+  aiProvider: 'Local Genesis Placeholder',
+  memoryMode: 'Local only',
+  cloudSync: false,
+  dailyBriefingStyle: 'Direct and useful',
+  challengeStyle: 'Direct when needed',
+};
