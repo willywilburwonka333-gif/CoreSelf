@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { load, save } from '../services/localStore';
+import { CURRENT_CONVERSATION_KEY, buildMessage, ensureConversation, loadLatestConversationMessages, saveConversationMessage } from '../services/conversationService';
 import { routeCoreRequest } from '../services/aiRouter';
 import { logActivity } from '../services/activityLog';
 import { suggestMemoryFromMessage } from '../services/memorySuggestions';
@@ -8,17 +9,48 @@ import PresenceBanner from '../components/PresenceBanner';
 function statusLabel(meta) {
   if (!meta) return 'Core ready';
   if (meta.source === 'real-ai-brain') return `Real AI • ${meta.provider}${meta.model ? ` • ${meta.model}` : ''}`;
+  if (meta.source === 'cloud-memory') return 'Cloud conversation memory';
   return 'Fallback mode • local Core reply';
 }
 
 export default function Talk({ mode }) {
   const [messages, setMessages] = useState(load('messages', [
-    { from: 'core', text: 'I am Dylan Core Genesis. Teach me, and I will grow into your Core.' },
+    { from: 'core', text: 'I am Dylan Core Genesis 0.3.0. Talk to me, and I will remember the conversation through the Cloud Brain.' },
   ]));
   const [suggestions, setSuggestions] = useState(load('memorySuggestions', []));
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [lastMeta, setLastMeta] = useState(load('lastAiMeta', null));
+  const [conversationId, setConversationId] = useState(load(CURRENT_CONVERSATION_KEY, null));
+  const [cloudState, setCloudState] = useState('Preparing conversation memory...');
+  const chatEndRef = useRef(null);
+
+  useEffect(() => {
+    let alive = true;
+    async function startConversation() {
+      const existing = load(CURRENT_CONVERSATION_KEY, null);
+      const result = await ensureConversation(existing, 'Dylan Core Talk');
+      if (!alive) return;
+      if (result.ok) {
+        setConversationId(result.conversationId);
+        save(CURRENT_CONVERSATION_KEY, result.conversationId);
+        const loaded = await loadLatestConversationMessages(result.conversationId, messages);
+        if (alive && loaded.ok && loaded.messages?.length) {
+          setMessages(loaded.messages);
+          save('messages', loaded.messages);
+        }
+        setCloudState('Cloud conversation memory active');
+      } else {
+        setCloudState(result.reason || 'Cloud conversation memory offline');
+      }
+    }
+    startConversation().catch((error) => setCloudState(error.message || 'Cloud conversation memory failed safely'));
+    return () => { alive = false; };
+  }, []);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }, [messages, isSending]);
 
   const pendingSuggestions = useMemo(
     () => suggestions.filter((item) => item.status === 'Pending').length,
@@ -29,12 +61,13 @@ export default function Talk({ mode }) {
     const clean = input.trim();
     if (!clean || isSending) return;
 
-    const userMessage = { from: 'dylan', text: clean, at: new Date().toISOString() };
+    const userMessage = buildMessage({ from: 'dylan', text: clean });
     const optimistic = [...messages, userMessage];
     setMessages(optimistic);
     save('messages', optimistic);
     setInput('');
     setIsSending(true);
+    if (conversationId) saveConversationMessage(conversationId, userMessage).catch(() => null);
 
     try {
       const memories = load('memories', []);
@@ -61,12 +94,13 @@ export default function Talk({ mode }) {
 
       const next = [
         ...optimistic,
-        { from: 'core', text: coreText, at: new Date().toISOString(), meta },
+        buildMessage({ from: 'core', text: coreText, meta }),
       ];
 
       setMessages(next);
       save('messages', next);
       setLastMeta(meta);
+      if (conversationId) saveConversationMessage(conversationId, next[next.length - 1]).catch(() => null);
       save('lastAiMeta', meta);
 
       if (suggestion) {
@@ -101,6 +135,7 @@ export default function Talk({ mode }) {
       <PresenceBanner mode={mode} />
       <div className={`aiStatusPanel ${lastMeta?.source === 'real-ai-brain' ? 'connected' : 'fallback'}`}>
         <span>{statusLabel(lastMeta)}</span>
+        <small>{cloudState}</small>
         <small>
           {lastMeta?.source === 'real-ai-brain'
             ? `Context used: ${lastMeta.contextUsed?.relevantMemories || 0} memories, ${lastMeta.contextUsed?.projects || 0} projects, ${lastMeta.contextUsed?.goals || 0} goals.`
@@ -114,7 +149,8 @@ export default function Talk({ mode }) {
             {m.meta && <small>{statusLabel(m.meta)}</small>}
           </div>
         ))}
-        {isSending && <div className="bubble core thinking">Core is thinking with memory context...</div>}
+        {isSending && <div className="bubble core thinking">Core is thinking with long-term memory context...</div>}
+        <div ref={chatEndRef} />
       </div>
       <div className="inputRow">
         <textarea

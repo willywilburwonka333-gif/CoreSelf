@@ -10,12 +10,12 @@ export default async function handler(request, response) {
     ok: hasOpenAIKey,
     provider: hasOpenAIKey ? 'openai' : 'local-fallback',
     model: hasOpenAIKey ? model : 'none',
-    version: '0.2.0',
+    version: '0.3.0',
     message: hasOpenAIKey
       ? 'OPENAI_API_KEY is present in this deployment.'
       : 'OPENAI_API_KEY is missing from this deployment.',
     nextAction: hasOpenAIKey
-      ? 'Send a Talk message to test the Production AI Backend.'
+      ? 'Send a Talk message to test the Real AI Conversations + Long-Term Memory.'
       : 'Add OPENAI_API_KEY in Vercel Environment Variables and redeploy.',
   });
 }

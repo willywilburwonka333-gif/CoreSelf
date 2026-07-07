@@ -959,3 +959,26 @@ button:disabled, input:disabled {
     border-radius: 18px;
   }
 }
+
+/* Genesis 0.3.0 — Real AI Conversations + Long-Term Memory */
+.chat {
+  scroll-behavior: smooth;
+}
+
+.talkScreen .aiStatusPanel small:first-of-type {
+  color: var(--green);
+  font-weight: 800;
+}
+
+@media (max-width: 850px) {
+  .talkScreen .chat {
+    min-height: 48vh;
+    max-height: 58vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .talkScreen .inputRow {
+    bottom: 154px;
+  }
+}
