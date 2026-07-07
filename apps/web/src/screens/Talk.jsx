@@ -8,7 +8,8 @@ import PresenceBanner from '../components/PresenceBanner';
 
 function statusLabel(meta) {
   if (!meta) return 'Dylan Core ready';
-  if (meta.source === 'dylan-core-internet-engine') return 'Internet Scan online';
+  if (meta.source === 'dylan-core-internet-engine') return meta.deepThink ? 'Deep Internet Scan online' : 'Internet Scan online';
+  if (meta.deepThink) return 'Deep Think online';
   if (meta.source === 'dylan-core-engine') return 'Dylan Core Engine online';
   if (meta.source === 'real-ai-brain') return 'Dylan Core Engine online';
   if (meta.source === 'cloud-memory') return 'Cloud memory active';
@@ -98,6 +99,8 @@ export default function Talk({ mode }) {
         internetUsed: routed.internetUsed,
         sources: routed.sources || [],
         deepThink,
+        routeProfile: routed.routeProfile,
+        deepRecommended: routed.deepRecommended,
         at: new Date().toISOString(),
       };
 
@@ -125,7 +128,7 @@ export default function Talk({ mode }) {
 
       logActivity({
         engine: 'Dylan Core Pipeline',
-        action: routed.source === 'dylan-core-engine' ? 'Processed with identity guard' : 'Used fallback safely',
+        action: routed.internetUsed ? 'Used Internet Scan' : (deepThink ? 'Processed with Deep Think' : 'Processed with identity guard'),
         detail: `Mode ${mode}. Context: ${routed.contextUsed.relevantMemories} memories, ${routed.contextUsed.projects} projects, ${routed.contextUsed.goals} goals.`,
       });
     } catch (error) {
@@ -154,7 +157,7 @@ export default function Talk({ mode }) {
           type="button"
           onClick={() => setDeepThink((value) => !value)}
         >
-          {deepThink ? 'Deep On' : 'Deep'}
+          {deepThink ? 'Deep Think On' : 'Deep Think'}
         </button>
       </div>
       <PresenceBanner mode={mode} />
@@ -164,24 +167,27 @@ export default function Talk({ mode }) {
         <small>{contextLine(lastMeta)}</small>
         {lastMeta?.internetUsed && <small>Internet Scan used{lastMeta?.sources?.length ? ` • ${lastMeta.sources.length} source(s)` : ''}</small>}
         {lastMeta?.internetNeeded && !lastMeta?.internetUsed && <small>Internet Scan requested but answered safely without live results.</small>}
+        {lastMeta?.deepRecommended && !lastMeta?.deepThink && <small>Router note: Deep Think may improve this kind of request.</small>}
+        {lastMeta?.routeProfile && <small>Route: {lastMeta.routeProfile}</small>}
       </div>
       <div className="quickChips" aria-label="Quick actions">
         <button type="button" onClick={() => send('What is the next best step for Core Self right now?')}>Next Step</button>
         <button type="button" onClick={() => send('What context are you using right now?')}>Context</button>
         <button type="button" onClick={() => send('Summarise the current Core Self build status.')}>Status</button>
+        <button type="button" onClick={() => { setDeepThink(true); send('Deep Think: what is the strongest next architecture move for Core Self?'); }}>Deep Plan</button>
         <button type="button" onClick={() => send('Search the internet for the latest useful AI tools for building Core Self cheaply.')}>Web Scan</button>
       </div>
       <div className="chat">
         {messages.map((m, i) => (
           <div key={i} className={'bubble ' + m.from}>
             <span>{m.text}</span>
-            {m.meta && <small>{statusLabel(m.meta)} • {contextLine(m.meta)}</small>}
+            {m.meta && <small>{statusLabel(m.meta)} • {contextLine(m.meta)}{m.meta.deepThink ? ' • Deep Think' : ''}</small>}
             {m.meta?.sources?.length > 0 && (
               <small>Sources: {m.meta.sources.slice(0, 3).map((source) => source.title || source.url).join(' • ')}</small>
             )}
           </div>
         ))}
-        {isSending && <div className="bubble core thinking">Dylan Core is thinking with identity and context loaded...</div>}
+        {isSending && <div className="bubble core thinking">Dylan Core is thinking with identity, context, and router loaded...</div>}
         <div ref={chatEndRef} />
       </div>
       <div className="inputRow">

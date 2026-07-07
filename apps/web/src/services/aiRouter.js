@@ -108,6 +108,27 @@ function activeOnly(items = []) {
   return items.filter((item) => item && item.status !== 'Archived' && item.status !== 'Rejected');
 }
 
+
+function wantsLiveInternet(input = '') {
+  return /\b(today|latest|current|news|search|internet|google|look up|price|prices|release|version|now|2026|recent|live|web)\b/i.test(input || '');
+}
+
+function wantsCodingHelp(input = '') {
+  return /\b(code|coding|build|fix|debug|bug|zip|replacement|file|deploy|vercel|firebase|github|commit|push|npm|react|vite|api|javascript|jsx|css|html|typescript|node)\b/i.test(input || '');
+}
+
+function wantsDeepReasoning(input = '') {
+  return /\b(deep|strategy|architecture|roadmap|business plan|funding|refactor|complex|compare|decide|analyse|analyze|reason|system design|model router|action engine|hard problem)\b/i.test(input || '');
+}
+
+function routeProfileFor(input, deepThink) {
+  if (wantsLiveInternet(input)) return 'internet-scan';
+  if (deepThink) return 'deep-think';
+  if (wantsCodingHelp(input)) return 'coding-standard';
+  if (wantsDeepReasoning(input)) return 'standard-deep-recommended';
+  return 'standard';
+}
+
 function mergeSeeds(seedItems, userItems, key = 'id') {
   const existing = activeOnly(userItems);
   const existingKeys = new Set(existing.map((item) => item?.[key] || item?.title || item?.name));
@@ -120,6 +141,10 @@ function buildContext({ input, mode, memories, projects, goals, plans, messages,
     input,
     mode,
     deepThink: Boolean(deepThink),
+    routeProfile: routeProfileFor(input, deepThink),
+    deepRecommended: wantsDeepReasoning(input) || wantsCodingHelp(input),
+    codingRequest: wantsCodingHelp(input),
+    internetNeeded: wantsLiveInternet(input),
     relevantMemories: relevantMemories.map((memory) => ({
       title: memory.title,
       content: memory.content,
@@ -213,6 +238,8 @@ export async function routeCoreRequest({ input, mode, memories = [], projects = 
       confidence: result.confidence || 0.88,
       reply: result.reply,
       source: result.source || 'dylan-core-engine',
+      routeProfile: result.diagnostics?.routeProfile || routeProfileFor(input, deepThink),
+      deepRecommended: Boolean(result.diagnostics?.deepRecommended || wantsDeepReasoning(input) || wantsCodingHelp(input)),
       latencyMs: result.latencyMs || null,
       error: result.internetError || null,
       internetNeeded: Boolean(result.internetNeeded),
@@ -250,12 +277,14 @@ What to check:
 3. OpenAI API billing/credits are active.
 4. The selected model is available.`,
       source: 'local-fallback',
+      routeProfile: routeProfileFor(input, deepThink),
+      deepRecommended: wantsDeepReasoning(input) || wantsCodingHelp(input),
       latencyMs: null,
       error: error.message,
-      internetNeeded: /\b(today|latest|current|news|search|internet|google|look up|price|prices|release|version|now|2026|recent|live|web)\b/i.test(input || ''),
+      internetNeeded: wantsLiveInternet(input),
       internetUsed: false,
       sources: [],
-      codingRequest: /\b(code|coding|build|fix|debug|bug|zip|replacement|deploy|vercel|firebase|github|commit|push|npm|react|vite|api|javascript|jsx|css|html)\b/i.test(input || ''),
+      codingRequest: wantsCodingHelp(input),
       contextUsed: {
         memories: mergedMemories.length,
         relevantMemories: relevantMemories.length,

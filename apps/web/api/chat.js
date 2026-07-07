@@ -1,6 +1,6 @@
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
 const OPENAI_RESPONSES_URL = 'https://api.openai.com/v1/responses';
-const GENESIS_VERSION = '0.5.3';
+const GENESIS_VERSION = '0.6.0';
 
 const DYLAN_SEED_MEMORY = [
   'Dylan Corr is building Core Self / Dylan Core as a persistent digital second self and personal AI operating system.',
@@ -40,6 +40,34 @@ function wantsLiveInternet(input = '') {
 
 function wantsCodingHelp(input = '') {
   return /\b(code|coding|build|fix|debug|bug|zip|replacement|file|deploy|vercel|firebase|github|commit|push|npm|react|vite|api|javascript|jsx|css|html|typescript|node)\b/i.test(input);
+}
+
+
+function wantsDeepReasoning(input = '') {
+  return /\b(deep|strategy|architecture|roadmap|business plan|funding|refactor|complex|compare|decide|analyse|analyze|reason|system design|model router|action engine|hard problem)\b/i.test(input);
+}
+
+function chooseModel(body = {}) {
+  const standardModel = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+  const deepModel = process.env.OPENAI_DEEP_MODEL || process.env.OPENAI_REASONING_MODEL || standardModel;
+  const webModel = chooseModel({ ...body, input: body.input }).webModel;
+  const internet = wantsLiveInternet(body.input);
+  const coding = wantsCodingHelp(body.input);
+  const deepRequested = Boolean(body.deepThink);
+  const deepRecommended = wantsDeepReasoning(body.input) || coding;
+  const selected = internet ? webModel : (deepRequested ? deepModel : standardModel);
+
+  return {
+    selected,
+    standardModel,
+    deepModel,
+    webModel,
+    profile: internet ? 'internet-scan' : (deepRequested ? 'deep-think' : 'standard'),
+    deepRequested,
+    deepRecommended,
+    coding,
+    internet,
+  };
 }
 
 function buildSystemPrompt() {
@@ -102,7 +130,8 @@ function buildUserPrompt(body) {
   const flags = [
     wantsLiveInternet(body.input) ? 'Needs live/current information: YES. Internet Engine may be required.' : 'Needs live/current information: NO.',
     wantsCodingHelp(body.input) ? 'Coding/build/deploy support request: YES. Be practical and implementation-focused.' : 'Coding/build/deploy support request: NO.',
-    body.deepThink ? 'Deep Think requested: YES. Use more deliberate reasoning and a stronger plan.' : 'Deep Think requested: NO.',
+    body.deepThink ? 'Deep Think requested: YES. Use more deliberate reasoning, inspect trade-offs, and give a stronger plan.' : 'Deep Think requested: NO.',
+    wantsDeepReasoning(body.input) ? 'Deep Think recommended by router: YES. If not in Deep mode, keep answer concise but mention Deep Think if useful.' : 'Deep Think recommended by router: NO.',
   ].join('\n');
 
   return `CORE CONTEXT PACK — ALWAYS USE THIS BEFORE ANSWERING
@@ -261,7 +290,7 @@ async function callOpenAiChat({ model, body }) {
 }
 
 async function callOpenAiWeb({ body }) {
-  const webModel = process.env.OPENAI_WEB_MODEL || process.env.OPENAI_SEARCH_MODEL || 'gpt-4.1-mini';
+  const webModel = chooseModel({ ...body, input: body.input }).webModel;
   const webPrompt = `${buildSystemPrompt()}\n\nInternet Scan rules:\n- Use live/current web evidence for the answer.\n- Keep the answer direct and useful for Dylan.\n- Include a short Sources section when sources are available.\n- Do not turn this into generic onboarding.`;
 
   const openaiResponse = await fetch(OPENAI_RESPONSES_URL, {
@@ -325,10 +354,9 @@ export default async function handler(request, response) {
 
   try {
     const body = request.body || {};
-    const needsInternet = wantsLiveInternet(body.input);
-    const model = body.deepThink
-      ? (process.env.OPENAI_DEEP_MODEL || process.env.OPENAI_MODEL || 'gpt-4o-mini')
-      : (process.env.OPENAI_MODEL || 'gpt-4o-mini');
+    const route = chooseModel(body);
+    const needsInternet = route.internet;
+    const model = route.selected;
 
     let aiResult;
     let selectedModel = model;
@@ -340,7 +368,8 @@ export default async function handler(request, response) {
         selectedModel = aiResult.model || selectedModel;
       } catch (webError) {
         internetError = webError.message || 'Internet Scan failed safely.';
-        aiResult = await callOpenAiChat({ model, body });
+        aiResult = await callOpenAiChat({ model: route.deepRequested ? route.deepModel : route.standardModel, body });
+        selectedModel = route.deepRequested ? route.deepModel : route.standardModel;
       }
     } else {
       aiResult = await callOpenAiChat({ model, body });
@@ -355,9 +384,9 @@ export default async function handler(request, response) {
 
     return response.status(200).json({
       provider: 'dylan-core',
-      model: aiResult.internetUsed ? 'internet-scan-configured' : (body.deepThink ? 'deep-think-configured' : 'standard-configured'),
+      model: aiResult.internetUsed ? 'internet-scan-configured' : (route.deepRequested ? 'deep-think-configured' : 'standard-configured'),
       source: aiResult.internetUsed ? 'dylan-core-internet-engine' : 'dylan-core-engine',
-      confidence: aiResult.internetUsed ? 0.92 : 0.9,
+      confidence: aiResult.internetUsed ? 0.92 : (route.deepRequested ? 0.93 : 0.9),
       latencyMs: Date.now() - startedAt,
       reply: reply || 'Dylan Core returned no message.',
       usage: aiResult.usage || null,
@@ -366,7 +395,7 @@ export default async function handler(request, response) {
       internetError,
       sources: aiResult.sources || [],
       codingRequest: wantsCodingHelp(body.input),
-      diagnostics: { hasOpenAIKey: true, version: GENESIS_VERSION, selectedModel },
+      diagnostics: { hasOpenAIKey: true, version: GENESIS_VERSION, selectedModel, routeProfile: route.profile, deepRecommended: route.deepRecommended, codingRequest: route.coding },
     });
   } catch (error) {
     const status = error.status || 500;
