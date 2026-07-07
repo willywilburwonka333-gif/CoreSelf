@@ -1371,3 +1371,63 @@ button:disabled, input:disabled {
     min-height: 39px;
   }
 }
+
+/* Genesis 0.7.1 — Memory editing, source cards, action polish */
+.sourceCards {
+  display: grid;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.sourceCard {
+  display: grid;
+  gap: 3px;
+  border: 1px solid rgba(77, 212, 255, 0.22);
+  border-radius: 13px;
+  padding: 8px 9px;
+  background: rgba(77, 212, 255, 0.07);
+  color: var(--text);
+  text-decoration: none;
+  overflow: hidden;
+}
+
+.sourceCard strong {
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.sourceCard span {
+  color: var(--muted);
+  font-size: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.memoryEditPanel {
+  border: 1px solid rgba(53, 228, 139, 0.24);
+  border-radius: 16px;
+  padding: 10px;
+  margin-top: 12px;
+  background: rgba(53, 228, 139, 0.06);
+}
+
+.memoryEditPanel textarea {
+  min-height: 90px;
+}
+
+.quickChips button.active {
+  border-color: rgba(53, 228, 139, 0.45);
+  background: rgba(53, 228, 139, 0.13);
+  color: var(--green);
+}
+
+@media (max-width: 720px) {
+  .sourceCard {
+    padding: 7px 8px;
+  }
+
+  .memoryEditPanel .formGrid {
+    grid-template-columns: 1fr;
+  }
+}

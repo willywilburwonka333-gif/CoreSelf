@@ -1,6 +1,6 @@
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
 const OPENAI_RESPONSES_URL = 'https://api.openai.com/v1/responses';
-const GENESIS_VERSION = '0.7.0';
+const GENESIS_VERSION = '0.7.1';
 
 const DYLAN_SEED_MEMORY = [
   'Dylan Corr is building Core Self / Dylan Core as a persistent digital second self and personal AI operating system.',
@@ -300,7 +300,7 @@ async function callOpenAiChat({ model, body }) {
 
 async function callOpenAiWeb({ body }) {
   const webModel = process.env.OPENAI_WEB_MODEL || process.env.OPENAI_MODEL || 'gpt-4o-mini';
-  const webPrompt = `${buildSystemPrompt()}\n\nInternet Scan rules:\n- Use live/current web evidence for the answer.\n- Keep the answer direct and useful for Dylan.\n- Include a short Sources section when sources are available.\n- Do not turn this into generic onboarding.`;
+  const webPrompt = `${buildSystemPrompt()}\n\nInternet Scan rules:\n- Use live/current web evidence for the answer.\n- Keep the answer direct and useful for Dylan.\n- Include a short Sources section when sources are available. Use the supplied source titles/URLs; do not invent citations.\n- Do not turn this into generic onboarding.`;
 
   const openaiResponse = await fetch(OPENAI_RESPONSES_URL, {
     method: 'POST',
@@ -335,7 +335,7 @@ async function callOpenAiWeb({ body }) {
     reply: extractResponseText(data),
     usage: data.usage || null,
     internetUsed: true,
-    sources: extractWebSources(data),
+    sources: extractWebSources(data).map((source, index) => ({ ...source, id: `source-${index + 1}` })),
     model: webModel,
   };
 }

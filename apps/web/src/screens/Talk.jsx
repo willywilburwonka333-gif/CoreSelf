@@ -217,7 +217,7 @@ export default function Talk({ mode }) {
         <button type="button" onClick={() => send('What context are you using right now?')}>Context</button>
         <button type="button" onClick={() => send('Summarise the current Core Self build status.')}>Status</button>
         <button type="button" onClick={() => { setDeepThink(true); send('Deep Think: what is the strongest next architecture move for Core Self?'); }}>Deep Plan</button>
-        <button type="button" onClick={() => send('Search the internet for the latest useful AI tools for building Core Self cheaply.')}>Web Scan</button>
+        <button type="button" onClick={() => send('Search the internet for the latest useful AI tools for building Core Self cheaply and cite sources.')}>Web Scan</button>
         <button type="button" onClick={() => send('Create an action plan for the next Core Self build.')}>Action Plan</button>
         <button type="button" onClick={() => { const seeded = seedCoreSelfData(); setSeedState(seeded); save('coreSeedState', seeded); }}>Reseed Core</button>
       </div>
@@ -227,7 +227,20 @@ export default function Talk({ mode }) {
             <span>{m.text}</span>
             {m.meta && <small>{statusLabel(m.meta)} • {contextLine(m.meta)}{m.meta.deepThink ? ' • Deep Think' : ''}</small>}
             {m.meta?.sources?.length > 0 && (
-              <small>Sources: {m.meta.sources.slice(0, 3).map((source) => source.title || source.url).join(' • ')}</small>
+              <div className="sourceCards">
+                {m.meta.sources.slice(0, 4).map((source, sourceIndex) => (
+                  <a
+                    key={source.url || source.title || sourceIndex}
+                    href={source.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="sourceCard"
+                  >
+                    <strong>{sourceIndex + 1}. {source.title || 'Source'}</strong>
+                    <span>{source.url}</span>
+                  </a>
+                ))}
+              </div>
             )}
             {m.meta?.preparedActions?.length > 0 && (
               <small>Actions prepared: {m.meta.preparedActions.map((action) => action.title).join(' • ')}</small>

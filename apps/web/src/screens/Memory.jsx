@@ -24,6 +24,8 @@ export default function Memory() {
     lesson: '',
     futureAction: ''
   });
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState(null);
 
   const links = useMemo(() => buildRelationshipLinks({
     memories: items,
@@ -69,6 +71,51 @@ export default function Memory() {
     setItems(next);
     save('memories', next);
     logActivity({ engine: 'Memory Engine', action: 'Removed memory', detail: id, level: 'Warning' });
+  }
+
+  function startEdit(memory) {
+    setEditingId(memory.id);
+    setEditForm({
+      type: memory.type || 'Dylan Memory',
+      level: memory.level || 'Active',
+      importance: memory.importance || 'High',
+      title: memory.title || '',
+      content: memory.content || '',
+      lesson: memory.lesson || '',
+      futureAction: memory.futureAction || '',
+    });
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditForm(null);
+  }
+
+  function setEditField(key, value) {
+    setEditForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function saveEdit(id) {
+    if (!editForm) return;
+    const body = [editForm.title, editForm.content, editForm.lesson, editForm.futureAction].join(' ');
+    const next = items.map((item) => item.id === id ? {
+      ...item,
+      ...editForm,
+      title: editForm.title.trim() || editForm.content.trim().slice(0, 50) || 'Untitled memory',
+      relationshipTags: detectRelationshipTags(body),
+      updatedAt: new Date().toISOString(),
+    } : item);
+    setItems(next);
+    save('memories', next);
+    logActivity({ engine: 'Memory Engine', action: 'Edited memory', detail: editForm.title || id });
+    cancelEdit();
+  }
+
+  function archive(id) {
+    const next = items.map((m) => m.id === id ? { ...m, level: 'Archive', status: 'Archived', archivedAt: new Date().toISOString() } : m);
+    setItems(next);
+    save('memories', next);
+    logActivity({ engine: 'Memory Engine', action: 'Archived memory', detail: id, level: 'Warning' });
   }
 
   function accept(id) {
@@ -166,7 +213,35 @@ export default function Memory() {
               {m.futureAction && <p><strong>Future Action:</strong> {m.futureAction}</p>}
               {!!m.relationshipTags?.length && <p><strong>Tags:</strong> {m.relationshipTags.join(', ')}</p>}
               {!!memoryLinks.length && <p><strong>Linked to:</strong> {memoryLinks.map((link) => `${link.toLabel} (${link.strength})`).join(', ')}</p>}
-              <button className="danger" onClick={() => remove(m.id)}>Archive / Remove</button>
+              {editingId === m.id && editForm ? (
+                <div className="memoryEditPanel">
+                  <div className="formGrid">
+                    <select value={editForm.type} onChange={(e) => setEditField('type', e.target.value)}>
+                      {types.filter((t) => t !== 'All').map((t) => <option key={t}>{t}</option>)}
+                    </select>
+                    <select value={editForm.level} onChange={(e) => setEditField('level', e.target.value)}>
+                      {levels.filter((l) => l !== 'All').map((l) => <option key={l}>{l}</option>)}
+                    </select>
+                    <select value={editForm.importance} onChange={(e) => setEditField('importance', e.target.value)}>
+                      {importanceOptions.map((i) => <option key={i}>{i}</option>)}
+                    </select>
+                  </div>
+                  <input value={editForm.title} onChange={(e) => setEditField('title', e.target.value)} placeholder="Memory title..." />
+                  <textarea value={editForm.content} onChange={(e) => setEditField('content', e.target.value)} placeholder="Memory content..." />
+                  <input value={editForm.lesson} onChange={(e) => setEditField('lesson', e.target.value)} placeholder="Lesson learned..." />
+                  <input value={editForm.futureAction} onChange={(e) => setEditField('futureAction', e.target.value)} placeholder="Future action..." />
+                  <div className="miniActionButtons">
+                    <button type="button" onClick={() => saveEdit(m.id)}>Save Edit</button>
+                    <button type="button" onClick={cancelEdit}>Cancel</button>
+                  </div>
+                </div>
+              ) : (
+                <div className="miniActionButtons">
+                  <button type="button" onClick={() => startEdit(m)}>Edit</button>
+                  <button type="button" onClick={() => archive(m.id)}>Archive</button>
+                  <button type="button" className="danger" onClick={() => remove(m.id)}>Remove</button>
+                </div>
+              )}
             </article>
           );
         }) : <p className="muted">No matching memories.</p>}
