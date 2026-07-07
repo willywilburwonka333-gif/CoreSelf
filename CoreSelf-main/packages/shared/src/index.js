@@ -1,0 +1,1 @@
+// shared\nexport const packageName = 'shared';\n

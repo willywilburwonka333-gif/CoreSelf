@@ -1,0 +1,1 @@
+// learning-engine\nexport const packageName = 'learning-engine';\n
