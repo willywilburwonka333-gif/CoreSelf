@@ -23,7 +23,7 @@ export function remove(key) {
 
 export function exportCoreData() {
   return {
-    version: 'Genesis 0.1.0',
+    version: 'Genesis 0.1.1',
     exportedAt: new Date().toISOString(),
     memories: load('memories', []),
     projects: load('projects', []),
@@ -33,6 +33,7 @@ export function exportCoreData() {
     activityLog: load('activityLog', []),
     settings: load('settings', {}),
     messages: load('messages', []),
+    auditLog: load('auditLog', []),
   };
 }
 
@@ -46,4 +47,5 @@ export function importCoreData(data) {
   if (Array.isArray(data.activityLog)) save('activityLog', data.activityLog);
   if (data.settings) save('settings', data.settings);
   if (Array.isArray(data.messages)) save('messages', data.messages);
+  if (Array.isArray(data.auditLog)) save('auditLog', data.auditLog);
 }

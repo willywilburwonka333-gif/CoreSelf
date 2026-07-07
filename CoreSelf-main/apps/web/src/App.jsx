@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Activity as ActivityIcon, Brain, Home as HomeIcon, MessageCircle, Database, Network, Sun, Shield, FolderKanban, Target, Cpu, Settings as SettingsIcon, ListChecks, LogOut } from 'lucide-react';
+import { Activity as ActivityIcon, Brain, Home as HomeIcon, MessageCircle, Database, Network, Sun, Shield, FolderKanban, Target, Cpu, Settings as SettingsIcon, ListChecks, LogOut, ShieldCheck } from 'lucide-react';
 import ModeBar from './components/ModeBar';
 import Home from './screens/Home';
 import Talk from './screens/Talk';
@@ -13,6 +13,7 @@ import Planning from './screens/Planning';
 import Engines from './screens/Engines';
 import Activity from './screens/Activity';
 import Settings from './screens/Settings';
+import Security from './screens/Security';
 import AuthPanel from './components/AuthPanel';
 import { observeCoreUser, signOutCore } from './services/authService';
 
@@ -28,6 +29,7 @@ const tabs = [
   ['activity', 'Log', ActivityIcon],
   ['briefing', 'Briefing', Sun],
   ['settings', 'Settings', SettingsIcon],
+  ['security', 'Security', ShieldCheck],
   ['core', 'Core', Shield],
 ];
 
@@ -60,6 +62,7 @@ export default function App() {
     tab === 'activity' ? <Activity /> :
     tab === 'briefing' ? <Briefing /> :
     tab === 'settings' ? <Settings /> :
+    tab === 'security' ? <Security /> :
     <Core />;
 
   return (
@@ -69,10 +72,10 @@ export default function App() {
           <Brain />
           <div>
             <strong>CORE SELF</strong>
-            <span>Dylan Core Genesis 0.1.0 • Cloud Brain</span>
+            <span>Dylan Core Genesis 0.1.1 • Security Core</span>
           </div>
         </div>
-        <div className="statusCluster"><span className="online">Cloud Brain Online</span><button className="iconButton" onClick={() => signOutCore()} title="Sign out"><LogOut size={16} /></button></div>
+        <div className="statusCluster"><span className="online">Security Core Online</span><button className="iconButton" onClick={() => signOutCore()} title="Sign out"><LogOut size={16} /></button></div>
       </header>
 
       <ModeBar mode={mode} setMode={setMode} />

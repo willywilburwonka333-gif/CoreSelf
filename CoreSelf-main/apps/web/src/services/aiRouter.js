@@ -70,7 +70,7 @@ export async function routeCoreRequest({ input, mode, memories = [], projects = 
       mode,
       provider: 'local-fallback',
       confidence: 0.44,
-      reply: `${coreReply(input, mode, relevantMemories)}\n\nCore AI note: remote AI is not connected yet or failed safely. Add OPENAI_API_KEY in Vercel Environment Variables, then redeploy Genesis 0.0.9.`,
+      reply: `${coreReply(input, mode, relevantMemories)}\n\nCore AI note: remote AI is not connected yet or failed safely. Add OPENAI_API_KEY in Vercel Environment Variables, then redeploy Genesis 0.1.1.`,
       source: 'local-fallback',
       error: error.message,
       contextUsed: {

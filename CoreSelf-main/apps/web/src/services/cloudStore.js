@@ -11,6 +11,7 @@ const CORE_KEYS = [
   'activityLog',
   'settings',
   'messages',
+  'auditLog',
 ];
 
 export function cloudPath(uid, key) {
@@ -24,7 +25,7 @@ export async function saveKeyToCloud(key, value) {
     key,
     value,
     updatedAt: serverTimestamp(),
-    version: 'Genesis 0.1.0',
+    version: 'Genesis 0.1.1',
   }, { merge: true });
   return { ok: true };
 }

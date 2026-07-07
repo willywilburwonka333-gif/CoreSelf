@@ -4,6 +4,7 @@ import { exportCoreData, importCoreData, load, save } from '../services/localSto
 import { logActivity } from '../services/activityLog';
 import { pullCloudCoreToLocal, pushLocalCoreToCloud } from '../services/cloudStore';
 import { currentCoreUser } from '../services/authService';
+import { productionFirestoreRules, requireApproval } from '../services/securityCore';
 
 export default function Settings() {
   const [settings, setSettings] = useState(load('settings', defaultSettings));
@@ -24,7 +25,7 @@ export default function Settings() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'core-self-backup-genesis-0.1.0.json';
+    a.download = 'core-self-backup-genesis-0.1.1.json';
     a.click();
     URL.revokeObjectURL(url);
     logActivity({ engine: 'Backup', action: 'Exported Core data', detail: 'Local JSON backup created.' });
@@ -41,6 +42,8 @@ export default function Settings() {
   }
 
   async function pushCloud() {
+    const approval = await requireApproval({ action: 'Push local Core data to Firebase', detail: 'This writes this device memory, projects, goals, messages, settings, and audit log into your signed-in cloud account.', policy: 'cloudWrite' });
+    if (!approval.ok) { setSyncStatus(approval.reason); return; }
     setSyncStatus('Pushing local Core data to Firebase...');
     const result = await pushLocalCoreToCloud(exportCoreData());
     setSyncStatus(result.ok ? `Cloud push complete. ${result.keys} Core stores synced.` : result.reason);
@@ -48,6 +51,8 @@ export default function Settings() {
   }
 
   async function pullCloud() {
+    const approval = await requireApproval({ action: 'Pull Firebase Core data to this device', detail: 'This can replace this device local Core stores with cloud versions.', policy: 'cloudWrite' });
+    if (!approval.ok) { setSyncStatus(approval.reason); return; }
     setSyncStatus('Pulling Firebase Core data into this device...');
     const result = await pullCloudCoreToLocal(load, save);
     setSyncStatus(result.ok ? 'Cloud pull complete. Reloading Core...' : result.reason);
@@ -58,7 +63,7 @@ export default function Settings() {
   return (
     <section className="screen">
       <h2>Settings</h2>
-      <p className="muted">Genesis 0.1.0 connects Firebase Auth and Firestore Cloud Brain storage. AI still uses the Vercel provider route with local fallback if OPENAI_API_KEY is missing.</p>
+      <p className="muted">Genesis 0.1.1 adds Security Core: user-scoped cloud paths, approval gates, blocked dangerous actions, audit logging, and production Firestore rules.</p>
 
       <div className="list">
         <article>
@@ -69,7 +74,18 @@ export default function Settings() {
             <button className="primary" onClick={pushCloud}>Push This Device to Cloud</button>
             <button className="primary" onClick={pullCloud}>Pull Cloud to This Device</button>
           </div>
-          <p className="muted">Use Push first after creating your account so Firebase receives the current local 0.0.9 data.</p>
+          <p className="muted">Cloud sync now runs through the Security Core approval gate and writes to your signed-in /users/uid scope.</p>
+        </article>
+
+
+        <article>
+          <h3>Security Core</h3>
+          <p><strong>Mode:</strong> User-scoped Firebase + approval gates</p>
+          <p className="muted">External actions, purchases, destructive operations, and tool access remain blocked until you explicitly approve those systems in later builds.</p>
+          <details>
+            <summary>Show production Firestore rules</summary>
+            <pre className="codeBlock">{productionFirestoreRules}</pre>
+          </details>
         </article>
 
         <article>
