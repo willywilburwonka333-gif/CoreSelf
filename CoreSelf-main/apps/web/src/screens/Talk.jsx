@@ -7,27 +7,36 @@ import { suggestMemoryFromMessage } from '../services/memorySuggestions';
 import PresenceBanner from '../components/PresenceBanner';
 
 function statusLabel(meta) {
-  if (!meta) return 'Core Engine ready';
-  if (meta.source === 'dylan-core-engine') return meta.reasoningMode === 'deep' ? 'Dylan Core • Deep Think' : 'Dylan Core • Standard';
-  if (meta.source === 'cloud-memory') return 'Cloud conversation memory';
-  return 'Core fallback active';
+  if (!meta) return 'Dylan Core ready';
+  if (meta.source === 'dylan-core-engine') return meta.route?.reasoning === 'deep' ? 'Dylan Core • Deep Think' : 'Dylan Core • Standard';
+  if (meta.source === 'cloud-memory') return 'Dylan Core • Cloud memory';
+  if (meta.source === 'local-fallback') return 'Dylan Core • Safe fallback';
+  return 'Dylan Core';
 }
 
-function routeLabel(meta) {
-  if (!meta?.route) return 'Standard';
-  if (meta.route.includes('research')) return 'Deep Research Ready';
-  if (meta.route.includes('internet')) return 'Live Scan Ready';
-  if (meta.route.includes('deep')) return 'Deep Think';
-  return 'Standard';
+function routeBadges(meta) {
+  const route = meta?.route || {};
+  return [
+    route.reasoning === 'deep' ? 'Deep Think' : 'Standard',
+    meta?.contextUsed?.relevantMemories ? `${meta.contextUsed.relevantMemories} memories` : 'Core memory',
+    route.internetAvailable ? 'Live Scan connected' : 'Live Scan queued',
+  ];
 }
 
-function copyText(text) {
-  navigator.clipboard?.writeText(text).catch(() => null);
+function MessageText({ text }) {
+  return String(text || '')
+    .split('\n')
+    .map((line, index) => {
+      const clean = line.trim();
+      if (!clean) return <br key={index} />;
+      if (/^[-•]\s+/.test(clean)) return <p key={index} className="coreBullet">{clean}</p>;
+      return <p key={index}>{clean}</p>;
+    });
 }
 
 export default function Talk({ mode }) {
   const [messages, setMessages] = useState(load('messages', [
-    { from: 'core', text: 'Dylan. Core Engine online. Memory, projects, goals, and Deep Think routing are ready. What is the objective?' },
+    buildMessage({ from: 'core', text: 'Dylan. Core is online. Identity, memory context, and routing foundation are loaded. Ask me what is next and I will answer from the Core Self plan, not generic chatbot mode.' }),
   ]));
   const [suggestions, setSuggestions] = useState(load('memorySuggestions', []));
   const [input, setInput] = useState('');
@@ -35,6 +44,7 @@ export default function Talk({ mode }) {
   const [lastMeta, setLastMeta] = useState(load('lastAiMeta', null));
   const [conversationId, setConversationId] = useState(load(CURRENT_CONVERSATION_KEY, null));
   const [cloudState, setCloudState] = useState('Preparing conversation memory...');
+  const [deepNext, setDeepNext] = useState(false);
   const chatEndRef = useRef(null);
 
   useEffect(() => {
@@ -51,12 +61,12 @@ export default function Talk({ mode }) {
           setMessages(loaded.messages);
           save('messages', loaded.messages);
         }
-        setCloudState('Cloud memory active');
+        setCloudState('Cloud conversation memory active');
       } else {
-        setCloudState(result.reason || 'Cloud memory offline');
+        setCloudState(result.reason || 'Cloud conversation memory offline');
       }
     }
-    startConversation().catch((error) => setCloudState(error.message || 'Cloud memory failed safely'));
+    startConversation().catch((error) => setCloudState(error.message || 'Cloud conversation memory failed safely'));
     return () => { alive = false; };
   }, []);
 
@@ -69,22 +79,8 @@ export default function Talk({ mode }) {
     [suggestions]
   );
 
-  const engineState = useMemo(() => {
-    const connected = lastMeta?.source === 'dylan-core-engine';
-    const context = lastMeta?.contextUsed || {};
-    return {
-      connected,
-      memoryCount: context.relevantMemories || 0,
-      projectCount: context.projects || 0,
-      goalCount: context.goals || 0,
-      reasoning: lastMeta?.reasoningMode === 'deep' ? 'Deep' : 'Standard',
-      liveScan: lastMeta?.liveScanAvailable ? 'Connected' : lastMeta?.internetIntent ? 'Ready' : 'Standby',
-      route: routeLabel(lastMeta),
-    };
-  }, [lastMeta]);
-
-  async function send(reasoningMode = 'standard', overrideInput = null) {
-    const clean = (overrideInput ?? input).trim();
+  async function send(forceDeep = false, preset = '') {
+    const clean = (preset || input).trim();
     if (!clean || isSending) return;
 
     const userMessage = buildMessage({ from: 'dylan', text: clean });
@@ -100,26 +96,23 @@ export default function Talk({ mode }) {
       const projects = load('projects', []);
       const goals = load('goals', []);
       const plans = load('plans', []);
-      const routed = await routeCoreRequest({ input: clean, mode, memories, projects, goals, plans, messages: optimistic, reasoningMode });
+      const routed = await routeCoreRequest({ input: clean, mode, memories, projects, goals, plans, messages: optimistic, deepThink: forceDeep || deepNext });
       const suggestion = suggestMemoryFromMessage(clean, suggestions);
 
       const meta = {
         provider: routed.provider,
         model: routed.model,
         source: routed.source,
-        route: routed.route,
-        reasoningMode: routed.reasoningMode,
-        internetIntent: routed.internetIntent,
-        liveScanAvailable: routed.liveScanAvailable,
         confidence: routed.confidence,
         latencyMs: routed.latencyMs,
         error: routed.error,
+        route: routed.route,
         contextUsed: routed.contextUsed,
         at: new Date().toISOString(),
       };
 
       const coreText = suggestion
-        ? `${routed.reply}\n\nCore Suggestion: this sounds worth saving to Memory.`
+        ? `${routed.reply}\n\nCore suggestion: this sounds worth saving to Memory.`
         : routed.reply;
 
       const next = [
@@ -130,6 +123,7 @@ export default function Talk({ mode }) {
       setMessages(next);
       save('messages', next);
       setLastMeta(meta);
+      setDeepNext(false);
       if (conversationId) saveConversationMessage(conversationId, next[next.length - 1]).catch(() => null);
       save('lastAiMeta', meta);
 
@@ -142,15 +136,14 @@ export default function Talk({ mode }) {
 
       logActivity({
         engine: 'Dylan Core Engine',
-        action: routed.source === 'dylan-core-engine' ? 'Processed through router' : 'Used fallback safely',
-        detail: `${routed.reasoningMode || 'standard'} / ${routed.route || 'standard'} / Context: ${routed.contextUsed.relevantMemories} memories, ${routed.contextUsed.projects} projects, ${routed.contextUsed.goals} goals.`,
+        action: routed.route?.reasoning === 'deep' ? 'Processed with Deep Think route' : 'Processed with Standard route',
+        detail: `Mode ${mode}. Context: ${routed.contextUsed.relevantMemories} memories, ${routed.contextUsed.projects} projects, ${routed.contextUsed.goals} goals.`,
       });
     } catch (error) {
-      const failMessage = {
+      const failMessage = buildMessage({
         from: 'core',
-        text: `Core Engine failed safely. ${error.message || 'Unknown error.'}`,
-        at: new Date().toISOString(),
-      };
+        text: `Core failed safely. ${error.message || 'Unknown error.'}`,
+      });
       const next = [...optimistic, failMessage];
       setMessages(next);
       save('messages', next);
@@ -159,62 +152,51 @@ export default function Talk({ mode }) {
     }
   }
 
-  const quickActions = [
-    { label: 'Continue Project', text: 'Look at my active projects and tell me the best next move.' },
-    { label: 'Review Goals', text: 'Review my goals and tell me what matters most next.' },
-    { label: 'Deep Research', text: 'Deep think about Core Self and what we should build next.' },
-    { label: 'Live Scan', text: 'When Live Scan is connected, search the internet for the latest information on this.' },
-  ];
-
   return (
-    <section className="screen talkScreen">
-      <div className="coreHeader">
+    <section className="screen talkScreen dylanCoreTalk">
+      <div className="coreTalkHeader">
         <div>
-          <span className="eyebrow">CORE ENGINE</span>
-          <h2>Dylan Core</h2>
+          <p className="eyebrow">DYLAN CORE</p>
+          <h2>Talk</h2>
+          <p className="muted">Persistent identity, memory context, and routing foundation.</p>
         </div>
-        <div className="coreHeaderStatus">
-          <strong>{engineState.connected ? 'Online' : 'Fallback'}</strong>
-          <small>{cloudState}</small>
+        <div className="coreStatusStack">
+          <span className="online">Online</span>
+          <span>{deepNext ? 'Deep next' : 'Standard'}</span>
         </div>
       </div>
 
       <PresenceBanner mode={mode} />
 
-      <div className={`aiStatusPanel coreEnginePanel ${engineState.connected ? 'connected' : 'fallback'}`}>
-        <div className="engineMetric"><span>Status</span><strong>{engineState.connected ? 'Online' : 'Safe Mode'}</strong></div>
-        <div className="engineMetric"><span>Memory</span><strong>{engineState.memoryCount ? `${engineState.memoryCount} loaded` : 'Standby'}</strong></div>
-        <div className="engineMetric"><span>Projects</span><strong>{engineState.projectCount}</strong></div>
-        <div className="engineMetric"><span>Goals</span><strong>{engineState.goalCount}</strong></div>
-        <div className="engineMetric"><span>Reasoning</span><strong>{engineState.reasoning}</strong></div>
-        <div className="engineMetric"><span>Live Scan</span><strong>{engineState.liveScan}</strong></div>
+      <div className={`aiStatusPanel coreIdentityPanel ${lastMeta?.source === 'local-fallback' ? 'fallback' : 'connected'}`}>
+        <span>{statusLabel(lastMeta)}</span>
+        <small>{cloudState}</small>
+        <div className="coreBadges">
+          {routeBadges(lastMeta).map((badge) => <em key={badge}>{badge}</em>)}
+        </div>
+        <small>
+          Context loaded: {lastMeta?.contextUsed?.relevantMemories || 0} relevant memories, {lastMeta?.contextUsed?.projects || 0} projects, {lastMeta?.contextUsed?.goals || 0} goals.
+        </small>
       </div>
 
-      <div className="quickActions">
-        {quickActions.map((action) => (
-          <button key={action.label} type="button" onClick={() => setInput(action.text)} disabled={isSending}>{action.label}</button>
-        ))}
+      <div className="quickPrompts">
+        <button onClick={() => send(false, 'Where are we now and what is the next build step?')} disabled={isSending}>Next step</button>
+        <button onClick={() => send(true, 'Deep think on the Core Self roadmap and tell me the safest next stack.')} disabled={isSending}>Deep roadmap</button>
+        <button onClick={() => send(false, 'What do you know about me and my projects?')} disabled={isSending}>Check memory</button>
       </div>
 
       <div className="chat coreChat">
         {messages.map((m, i) => (
           <div key={i} className={'bubble ' + m.from}>
-            {m.from === 'core' && <b>Dylan Core</b>}
-            <span>{m.text}</span>
+            <MessageText text={m.text} />
             {m.meta && (
               <small>
-                {statusLabel(m.meta)} • Route: {routeLabel(m.meta)} • Context: {m.meta.contextUsed?.relevantMemories || 0} memories, {m.meta.contextUsed?.projects || 0} projects, {m.meta.contextUsed?.goals || 0} goals
+                {statusLabel(m.meta)} • {m.meta.contextUsed?.relevantMemories || 0} memories • {m.meta.route?.internetAvailable ? 'Live Scan' : 'No Live Scan'}
               </small>
-            )}
-            {m.from === 'core' && (
-              <div className="messageActions">
-                <button type="button" onClick={() => copyText(m.text)}>Copy</button>
-                <button type="button" onClick={() => send('deep', m.text)}>Deep Think</button>
-              </div>
             )}
           </div>
         ))}
-        {isSending && <div className="bubble core thinking"><b>Dylan Core</b><span>Routing request through memory, projects, goals, and reasoning engine...</span></div>}
+        {isSending && <div className="bubble core thinking">Dylan Core is thinking with memory and project context...</div>}
         <div ref={chatEndRef} />
       </div>
 
@@ -226,16 +208,14 @@ export default function Talk({ mode }) {
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
-              send('standard');
+              send(false);
             }
           }}
           placeholder="Ask Dylan Core..."
           rows={2}
         />
-        <div className="sendStack">
-          <button onClick={() => send('standard')} disabled={isSending}>{isSending ? 'Thinking' : 'Send'}</button>
-          <button className="deepButton" onClick={() => send('deep')} disabled={isSending}>Deep Think</button>
-        </div>
+        <button onClick={() => send(false)} disabled={isSending}>{isSending ? 'Thinking' : 'Send'}</button>
+        <button className={deepNext ? 'activeDeep' : 'secondary'} onClick={() => setDeepNext((value) => !value)} disabled={isSending}>Deep Think</button>
       </div>
 
       {!!pendingSuggestions && (

@@ -23,7 +23,7 @@ export function remove(key) {
 
 export function exportCoreData() {
   return {
-    version: 'Genesis 0.2.0',
+    version: 'Genesis 0.4.1',
     exportedAt: new Date().toISOString(),
     memories: load('memories', []),
     projects: load('projects', []),

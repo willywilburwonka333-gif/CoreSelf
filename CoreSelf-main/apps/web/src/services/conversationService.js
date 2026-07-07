@@ -50,7 +50,7 @@ export async function ensureConversation(existingConversationId = null, titleSee
     title: titleSeed.slice(0, 70),
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
-    version: 'Genesis 0.3.0',
+    version: 'Genesis 0.4.1',
   });
 
   return { ok: true, conversationId: created.id };
@@ -77,7 +77,7 @@ export async function saveConversationMessage(conversationId, message) {
       updatedAt: serverTimestamp(),
       lastMessage: cleanMessage.text.slice(0, 180),
       lastFrom: cleanMessage.from,
-      version: 'Genesis 0.3.0',
+      version: 'Genesis 0.4.1',
     }, { merge: true });
   });
 
