@@ -6,6 +6,7 @@ import { load } from '../services/localStore';
 import { defaultProjects, defaultGoals } from '../data/defaults';
 import { buildDailyReflection, buildTodayContext } from '../services/livingMemoryEngine';
 import { buildMorningPriorityStack } from '../services/proactiveEngine';
+import { buildReasoningSnapshot } from '../services/reasoningEngine';
 
 export default function Home({ mode }) {
   const memories = load('memories', []);
@@ -17,6 +18,7 @@ export default function Home({ mode }) {
   const messages = load('messages', []);
   const queue = load('actionQueue', []);
   const priorityStack = buildMorningPriorityStack({ memories, projects, goals, plans, suggestions, activityLog, messages, queue });
+  const reasoning = buildReasoningSnapshot({ memories, projects, goals, plans, suggestions, activityLog, messages, queue });
   const today = buildTodayContext({ memories, projects, goals, plans, suggestions, activityLog });
   const reflection = buildDailyReflection({ memories, projects, goals, plans, suggestions, activityLog });
 
@@ -24,7 +26,7 @@ export default function Home({ mode }) {
     <section className="screen">
       <div className="hero">
         <div>
-          <p className="eyebrow">CORE SELF / GENESIS 0.7.3</p>
+          <p className="eyebrow">CORE SELF / GENESIS 0.7.4</p>
           <h1>Dylan Core</h1>
           <p>{constitution.primeDirective}</p>
           <p className="muted">{reflection.greeting} {reflection.summary}</p>
@@ -73,6 +75,14 @@ export default function Home({ mode }) {
             <small>{item.priority}</small>
           </div>
         )) : <p className="muted">No priority stack yet. Add more goals, memories, or actions.</p>}
+      </div>
+
+
+      <div className="briefing livingBrief">
+        <h3>Reasoning Snapshot</h3>
+        <p><strong>Strongest Move:</strong> {reasoning.strongestMove}</p>
+        <p><strong>Strategic Themes:</strong> {reasoning.themes.join(' • ')}</p>
+        <small>Memory depth: {reasoning.memoryDepth} • Open queue: {reasoning.activeQueueCount}</small>
       </div>
 
       <ProgressTracker />

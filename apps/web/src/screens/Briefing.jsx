@@ -3,6 +3,7 @@ import { defaultProjects, defaultGoals, defaultLifeGraphNodes } from '../data/de
 import { buildPlanningBriefing } from '../services/planningEngine';
 import { buildDailyReflection, buildMemoryTimeline } from '../services/livingMemoryEngine';
 import { buildMorningPriorityStack } from '../services/proactiveEngine';
+import { buildReasoningSnapshot, detectMemoryContradictions } from '../services/reasoningEngine';
 
 export default function Briefing() {
   const memories = load('memories', []);
@@ -19,6 +20,8 @@ export default function Briefing() {
   const reflection = buildDailyReflection({ memories, projects, goals, suggestions, activityLog: logs });
   const timeline = buildMemoryTimeline({ memories, messages, activityLog: logs, suggestions }, 6);
   const priorityStack = buildMorningPriorityStack({ memories, projects, goals, suggestions, activityLog: logs, messages, queue });
+  const reasoning = buildReasoningSnapshot({ memories, projects, goals, suggestions, activityLog: logs, messages, queue, lifeGraphNodes: nodes });
+  const contradictions = detectMemoryContradictions(memories);
 
   return (
     <section className="screen">
@@ -42,6 +45,25 @@ export default function Briefing() {
         </ul>
       </div>
 
+
+
+      <div className="briefing">
+        <h3>Reasoning Layer</h3>
+        <p><strong>Strongest Move:</strong> {reasoning.strongestMove}</p>
+        <ul>
+          {reasoning.horizon.map((item) => (
+            <li key={item.period}><strong>{item.period}:</strong> {item.intent} <span className="muted">Proof: {item.proof}</span></li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="briefing">
+        <h3>Risk / Drift Check</h3>
+        <ul>
+          {reasoning.risks.map((risk) => <li key={risk}>{risk}</li>)}
+          {contradictions.length ? contradictions.map((item) => <li key={item.id}><strong>{item.label}:</strong> {item.detail}</li>) : <li>No obvious memory contradictions detected.</li>}
+        </ul>
+      </div>
 
       <div className="briefing">
         <h3>Proactive Priority Stack</h3>

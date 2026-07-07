@@ -2,19 +2,60 @@ import { useMemo } from 'react';
 import { load } from '../services/localStore';
 import { defaultGoals, defaultProjects, defaultLifeGraphNodes } from '../data/defaults';
 import { buildPlanningBriefing } from '../services/planningEngine';
+import { buildReasoningSnapshot, detectMemoryContradictions } from '../services/reasoningEngine';
 
 export default function Planning() {
   const memories = load('memories', []);
   const projects = load('projects', defaultProjects);
   const goals = load('goals', defaultGoals);
   const lifeGraphNodes = load('lifeGraphNodes', defaultLifeGraphNodes);
+  const suggestions = load('memorySuggestions', []);
+  const activityLog = load('activityLog', []);
+  const messages = load('messages', []);
+  const queue = load('actionQueue', []);
 
   const briefing = useMemo(() => buildPlanningBriefing({ memories, projects, goals, lifeGraphNodes }), [memories, projects, goals, lifeGraphNodes]);
+  const reasoning = useMemo(() => buildReasoningSnapshot({ memories, projects, goals, suggestions, activityLog, messages, queue, lifeGraphNodes }), [memories, projects, goals, suggestions, activityLog, messages, queue, lifeGraphNodes]);
+  const contradictions = useMemo(() => detectMemoryContradictions(memories), [memories]);
 
   return (
     <section className="screen">
       <h2>Planning Engine</h2>
-      <p className="muted">Genesis planning turns goals, projects, and memories into a practical next-action stack.</p>
+      <p className="muted">Genesis planning now combines goals, projects, memories, queue state, and risk checks into a long-term reasoning snapshot.</p>
+
+
+      <div className="briefing">
+        <h3>Long-Term Reasoning Snapshot</h3>
+        <p><strong>Strongest Move:</strong> {reasoning.strongestMove}</p>
+        <p><strong>Strategic Themes:</strong> {reasoning.themes.join(' • ')}</p>
+        <div className="list compactReasoningList">
+          {reasoning.horizon.map((item) => (
+            <article key={item.period}>
+              <div className="cardTop"><h3>{item.period}</h3><small>{item.proof}</small></div>
+              <p>{item.intent}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+
+      <div className="briefing">
+        <h3>Decision Rationale</h3>
+        {reasoning.rankedProjects.length ? reasoning.rankedProjects.map((project) => (
+          <div className="miniActionCard" key={project.id}>
+            <div className="itemTopline"><strong>{project.title}</strong><small>{project.score}/112</small></div>
+            <p><strong>Why:</strong> {project.why}</p>
+            <p><strong>Next:</strong> {project.nextStep}</p>
+          </div>
+        )) : <p className="muted">No ranked projects yet.</p>}
+      </div>
+
+      <div className="briefing">
+        <h3>Risk / Contradiction Check</h3>
+        <ul>
+          {reasoning.risks.map((risk) => <li key={risk}>{risk}</li>)}
+          {contradictions.length ? contradictions.map((item) => <li key={item.id}><strong>{item.label}:</strong> {item.detail}</li>) : <li>No obvious contradictions detected.</li>}
+        </ul>
+      </div>
 
       <div className="briefing">
         <h3>Today&apos;s Stack</h3>
