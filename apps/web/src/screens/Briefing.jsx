@@ -2,6 +2,7 @@ import { load } from '../services/localStore';
 import { defaultProjects, defaultGoals, defaultLifeGraphNodes } from '../data/defaults';
 import { buildPlanningBriefing } from '../services/planningEngine';
 import { buildDailyReflection, buildMemoryTimeline } from '../services/livingMemoryEngine';
+import { buildMorningPriorityStack } from '../services/proactiveEngine';
 
 export default function Briefing() {
   const memories = load('memories', []);
@@ -11,11 +12,13 @@ export default function Briefing() {
   const logs = load('activityLog', []);
   const suggestions = load('memorySuggestions', []);
   const messages = load('messages', []);
+  const queue = load('actionQueue', []);
   const briefing = buildPlanningBriefing({ memories, projects, goals, lifeGraphNodes: nodes });
   const criticalMemories = memories.filter((m) => m.importance === 'Critical' || m.level === 'Permanent');
   const pendingSuggestions = suggestions.filter((item) => item.status === 'Pending');
   const reflection = buildDailyReflection({ memories, projects, goals, suggestions, activityLog: logs });
   const timeline = buildMemoryTimeline({ memories, messages, activityLog: logs, suggestions }, 6);
+  const priorityStack = buildMorningPriorityStack({ memories, projects, goals, suggestions, activityLog: logs, messages, queue });
 
   return (
     <section className="screen">
@@ -37,6 +40,18 @@ export default function Briefing() {
           <li><strong>Life Graph Nodes:</strong> {nodes.length}</li>
           <li><strong>Activity Log Entries:</strong> {logs.length}</li>
         </ul>
+      </div>
+
+
+      <div className="briefing">
+        <h3>Proactive Priority Stack</h3>
+        {priorityStack.length ? priorityStack.map((item) => (
+          <div className="miniActionCard" key={`${item.rank}-${item.title}`}>
+            <strong>#{item.rank} {item.title}</strong>
+            <p>{item.nextStep}</p>
+            <small>{item.priority}</small>
+          </div>
+        )) : <p className="muted">No proactive priorities yet.</p>}
       </div>
 
       <div className="briefing">

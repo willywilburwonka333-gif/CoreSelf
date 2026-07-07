@@ -5,6 +5,7 @@ import { constitution } from '../data/constitution';
 import { load } from '../services/localStore';
 import { defaultProjects, defaultGoals } from '../data/defaults';
 import { buildDailyReflection, buildTodayContext } from '../services/livingMemoryEngine';
+import { buildMorningPriorityStack } from '../services/proactiveEngine';
 
 export default function Home({ mode }) {
   const memories = load('memories', []);
@@ -13,6 +14,9 @@ export default function Home({ mode }) {
   const plans = load('plans', []);
   const suggestions = load('memorySuggestions', []);
   const activityLog = load('activityLog', []);
+  const messages = load('messages', []);
+  const queue = load('actionQueue', []);
+  const priorityStack = buildMorningPriorityStack({ memories, projects, goals, plans, suggestions, activityLog, messages, queue });
   const today = buildTodayContext({ memories, projects, goals, plans, suggestions, activityLog });
   const reflection = buildDailyReflection({ memories, projects, goals, plans, suggestions, activityLog });
 
@@ -20,7 +24,7 @@ export default function Home({ mode }) {
     <section className="screen">
       <div className="hero">
         <div>
-          <p className="eyebrow">CORE SELF / GENESIS 0.7.2</p>
+          <p className="eyebrow">CORE SELF / GENESIS 0.7.3</p>
           <h1>Dylan Core</h1>
           <p>{constitution.primeDirective}</p>
           <p className="muted">{reflection.greeting} {reflection.summary}</p>
@@ -57,6 +61,18 @@ export default function Home({ mode }) {
           <li><strong>Active Goals:</strong> {today.goalCount}</li>
           <li><strong>Reflection:</strong> {reflection.question}</li>
         </ul>
+      </div>
+
+
+      <div className="briefing livingBrief">
+        <h3>Proactive Priorities</h3>
+        {priorityStack.length ? priorityStack.map((item) => (
+          <div className="miniActionCard" key={`${item.rank}-${item.title}`}>
+            <strong>#{item.rank} {item.title}</strong>
+            <p>{item.nextStep}</p>
+            <small>{item.priority}</small>
+          </div>
+        )) : <p className="muted">No priority stack yet. Add more goals, memories, or actions.</p>}
       </div>
 
       <ProgressTracker />
