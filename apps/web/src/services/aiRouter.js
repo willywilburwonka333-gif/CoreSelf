@@ -98,8 +98,8 @@ const SEED_PLANS = [
     id: 'seed-plan-core-roadmap',
     title: 'Core Self Genesis roadmap',
     status: 'Active',
-    summary: '0.5.2 seed memory + coding capability, 0.5.3 live internet scan, 0.6 model router/deep think, 0.7 action engine.',
-    nextAction: 'Test live internet scan with current/news/search questions, then move to model router and Deep Think.',
+    summary: '0.5.2 seed memory + coding capability, 0.5.3 live internet scan, 0.6 model router/deep think, 0.6.1 action engine + memory approval.',
+    nextAction: 'Build Action Engine foundation and approve/reject useful memory suggestions from Talk.',
   },
 ];
 
@@ -119,6 +119,80 @@ function wantsCodingHelp(input = '') {
 
 function wantsDeepReasoning(input = '') {
   return /\b(deep|strategy|architecture|roadmap|business plan|funding|refactor|complex|compare|decide|analyse|analyze|reason|system design|model router|action engine|hard problem)\b/i.test(input || '');
+}
+
+
+function actionTypeFor(input = '') {
+  const lower = String(input || '').toLowerCase();
+  if (/\b(remind|reminder|tomorrow|later|next week|tonight|morning|afternoon|evening)\b/.test(lower)) return 'reminder';
+  if (/\b(task|todo|to-do|do this|need to)\b/.test(lower)) return 'task';
+  if (/\b(project|feature|build|fix|code|debug|deploy|commit|zip|replacement)\b/.test(lower)) return 'code_plan';
+  if (/\b(goal|target|aim|objective)\b/.test(lower)) return 'goal_update';
+  return 'note';
+}
+
+function buildPreparedActions(input = '', routeProfile = 'standard') {
+  const clean = String(input || '').trim();
+  if (!clean) return [];
+  const type = actionTypeFor(clean);
+  const actions = [];
+
+  if (type === 'reminder') {
+    actions.push({
+      id: `action-${Date.now()}-reminder`,
+      type: 'reminder',
+      title: 'Prepare reminder',
+      detail: clean,
+      status: 'prepared',
+      nextStep: 'Confirm the exact time/date before turning this into a real reminder.',
+    });
+  }
+
+  if (type === 'task') {
+    actions.push({
+      id: `action-${Date.now()}-task`,
+      type: 'task',
+      title: 'Create task',
+      detail: clean,
+      status: 'prepared',
+      nextStep: 'Save this to the action queue or convert it into a goal/project task.',
+    });
+  }
+
+  if (type === 'code_plan') {
+    actions.push({
+      id: `action-${Date.now()}-code`,
+      type: 'code_plan',
+      title: 'Prepare code/build plan',
+      detail: clean,
+      status: 'prepared',
+      nextStep: 'Identify changed files, give exact replacements, then run build, deploy, commit and push.',
+    });
+  }
+
+  if (type === 'goal_update') {
+    actions.push({
+      id: `action-${Date.now()}-goal`,
+      type: 'goal_update',
+      title: 'Update goal',
+      detail: clean,
+      status: 'prepared',
+      nextStep: 'Save this as a goal update after Dylan confirms the wording.',
+    });
+  }
+
+  if (!actions.length && (routeProfile === 'deep-think' || routeProfile === 'internet-scan')) {
+    actions.push({
+      id: `action-${Date.now()}-review`,
+      type: 'review',
+      title: 'Review answer for next action',
+      detail: clean,
+      status: 'prepared',
+      nextStep: 'If useful, save the conclusion as memory, task, project update, or goal update.',
+    });
+  }
+
+  return actions.slice(0, 3);
 }
 
 function routeProfileFor(input, deepThink) {
@@ -142,6 +216,7 @@ function buildContext({ input, mode, memories, projects, goals, plans, messages,
     mode,
     deepThink: Boolean(deepThink),
     routeProfile: routeProfileFor(input, deepThink),
+    preparedActions: buildPreparedActions(input, routeProfileFor(input, deepThink)),
     deepRecommended: wantsDeepReasoning(input) || wantsCodingHelp(input),
     codingRequest: wantsCodingHelp(input),
     internetNeeded: wantsLiveInternet(input),
@@ -239,6 +314,7 @@ export async function routeCoreRequest({ input, mode, memories = [], projects = 
       reply: result.reply,
       source: result.source || 'dylan-core-engine',
       routeProfile: result.diagnostics?.routeProfile || routeProfileFor(input, deepThink),
+      preparedActions: result.preparedActions || context.preparedActions || [],
       deepRecommended: Boolean(result.diagnostics?.deepRecommended || wantsDeepReasoning(input) || wantsCodingHelp(input)),
       latencyMs: result.latencyMs || null,
       error: result.internetError || null,
@@ -278,6 +354,7 @@ What to check:
 4. The selected model is available.`,
       source: 'local-fallback',
       routeProfile: routeProfileFor(input, deepThink),
+      preparedActions: context.preparedActions || [],
       deepRecommended: wantsDeepReasoning(input) || wantsCodingHelp(input),
       latencyMs: null,
       error: error.message,

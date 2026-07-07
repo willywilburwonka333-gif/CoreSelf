@@ -3,7 +3,7 @@ import { load, save } from '../services/localStore';
 import { CURRENT_CONVERSATION_KEY, buildMessage, ensureConversation, loadLatestConversationMessages, saveConversationMessage } from '../services/conversationService';
 import { routeCoreRequest } from '../services/aiRouter';
 import { logActivity } from '../services/activityLog';
-import { suggestMemoryFromMessage } from '../services/memorySuggestions';
+import { acceptSuggestion, suggestMemoryFromMessage } from '../services/memorySuggestions';
 import PresenceBanner from '../components/PresenceBanner';
 
 function statusLabel(meta) {
@@ -31,6 +31,7 @@ export default function Talk({ mode }) {
   const [isSending, setIsSending] = useState(false);
   const [deepThink, setDeepThink] = useState(false);
   const [lastMeta, setLastMeta] = useState(load('lastAiMeta', null));
+  const [actionQueue, setActionQueue] = useState(load('actionQueue', []));
   const [conversationId, setConversationId] = useState(load(CURRENT_CONVERSATION_KEY, null));
   const [cloudState, setCloudState] = useState('Preparing cloud memory...');
   const chatEndRef = useRef(null);
@@ -98,6 +99,7 @@ export default function Talk({ mode }) {
         internetNeeded: routed.internetNeeded,
         internetUsed: routed.internetUsed,
         sources: routed.sources || [],
+        preparedActions: routed.preparedActions || [],
         deepThink,
         routeProfile: routed.routeProfile,
         deepRecommended: routed.deepRecommended,
@@ -145,6 +147,34 @@ export default function Talk({ mode }) {
     }
   }
 
+  function approveSuggestion(suggestion) {
+    const memory = acceptSuggestion(suggestion);
+    const currentMemories = load('memories', []);
+    save('memories', [memory, ...currentMemories]);
+    const nextSuggestions = suggestions.map((item) => item.id === suggestion.id ? { ...item, status: 'Accepted', acceptedAt: new Date().toISOString() } : item);
+    setSuggestions(nextSuggestions);
+    save('memorySuggestions', nextSuggestions);
+    logActivity({ engine: 'Memory Vault', action: 'Accepted memory suggestion', detail: memory.title });
+  }
+
+  function rejectSuggestion(suggestion) {
+    const nextSuggestions = suggestions.map((item) => item.id === suggestion.id ? { ...item, status: 'Rejected', rejectedAt: new Date().toISOString() } : item);
+    setSuggestions(nextSuggestions);
+    save('memorySuggestions', nextSuggestions);
+    logActivity({ engine: 'Memory Vault', action: 'Rejected memory suggestion', detail: suggestion.title });
+  }
+
+  function savePreparedAction(action) {
+    const prepared = { ...action, id: action.id || crypto.randomUUID(), savedAt: new Date().toISOString(), status: 'Queued' };
+    const nextQueue = [prepared, ...actionQueue].slice(0, 50);
+    setActionQueue(nextQueue);
+    save('actionQueue', nextQueue);
+    logActivity({ engine: 'Action Engine', action: 'Queued prepared action', detail: prepared.title });
+  }
+
+  const latestPendingSuggestions = suggestions.filter((item) => item.status === 'Pending').slice(0, 3);
+  const latestPreparedActions = lastMeta?.preparedActions || [];
+
   return (
     <section className="screen talkScreen">
       <div className="talkHeader">
@@ -169,6 +199,7 @@ export default function Talk({ mode }) {
         {lastMeta?.internetNeeded && !lastMeta?.internetUsed && <small>Internet Scan requested but answered safely without live results.</small>}
         {lastMeta?.deepRecommended && !lastMeta?.deepThink && <small>Router note: Deep Think may improve this kind of request.</small>}
         {lastMeta?.routeProfile && <small>Route: {lastMeta.routeProfile}</small>}
+        {latestPreparedActions.length > 0 && <small>Action Engine prepared {latestPreparedActions.length} action(s).</small>}
       </div>
       <div className="quickChips" aria-label="Quick actions">
         <button type="button" onClick={() => send('What is the next best step for Core Self right now?')}>Next Step</button>
@@ -176,6 +207,7 @@ export default function Talk({ mode }) {
         <button type="button" onClick={() => send('Summarise the current Core Self build status.')}>Status</button>
         <button type="button" onClick={() => { setDeepThink(true); send('Deep Think: what is the strongest next architecture move for Core Self?'); }}>Deep Plan</button>
         <button type="button" onClick={() => send('Search the internet for the latest useful AI tools for building Core Self cheaply.')}>Web Scan</button>
+        <button type="button" onClick={() => send('Create an action plan for the next Core Self build.')}>Action Plan</button>
       </div>
       <div className="chat">
         {messages.map((m, i) => (
@@ -184,6 +216,9 @@ export default function Talk({ mode }) {
             {m.meta && <small>{statusLabel(m.meta)} • {contextLine(m.meta)}{m.meta.deepThink ? ' • Deep Think' : ''}</small>}
             {m.meta?.sources?.length > 0 && (
               <small>Sources: {m.meta.sources.slice(0, 3).map((source) => source.title || source.url).join(' • ')}</small>
+            )}
+            {m.meta?.preparedActions?.length > 0 && (
+              <small>Actions prepared: {m.meta.preparedActions.map((action) => action.title).join(' • ')}</small>
             )}
           </div>
         ))}
@@ -206,10 +241,32 @@ export default function Talk({ mode }) {
         />
         <button onClick={() => send()} disabled={isSending}>{isSending ? 'Thinking' : 'Send'}</button>
       </div>
+      {latestPreparedActions.length > 0 && (
+        <div className="briefing actionNotice">
+          <h3>Prepared Actions</h3>
+          {latestPreparedActions.map((action) => (
+            <div className="miniActionCard" key={action.id}>
+              <strong>{action.title}</strong>
+              <p>{action.nextStep}</p>
+              <button type="button" onClick={() => savePreparedAction(action)}>Save to Action Queue</button>
+            </div>
+          ))}
+        </div>
+      )}
       {!!pendingSuggestions && (
         <div className="briefing suggestionNotice">
           <h3>Pending Core Suggestions</h3>
           <p>{pendingSuggestions} memory suggestion(s) are waiting in Memory Vault.</p>
+          {latestPendingSuggestions.map((suggestion) => (
+            <div className="miniActionCard" key={suggestion.id}>
+              <strong>{suggestion.title}</strong>
+              <p>{suggestion.content}</p>
+              <div className="miniActionButtons">
+                <button type="button" onClick={() => approveSuggestion(suggestion)}>Save Memory</button>
+                <button type="button" onClick={() => rejectSuggestion(suggestion)}>Reject</button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </section>

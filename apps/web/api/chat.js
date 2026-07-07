@@ -1,6 +1,6 @@
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
 const OPENAI_RESPONSES_URL = 'https://api.openai.com/v1/responses';
-const GENESIS_VERSION = '0.6.0';
+const GENESIS_VERSION = '0.6.1';
 
 const DYLAN_SEED_MEMORY = [
   'Dylan Corr is building Core Self / Dylan Core as a persistent digital second self and personal AI operating system.',
@@ -50,7 +50,7 @@ function wantsDeepReasoning(input = '') {
 function chooseModel(body = {}) {
   const standardModel = process.env.OPENAI_MODEL || 'gpt-4o-mini';
   const deepModel = process.env.OPENAI_DEEP_MODEL || process.env.OPENAI_REASONING_MODEL || standardModel;
-  const webModel = chooseModel({ ...body, input: body.input }).webModel;
+  const webModel = process.env.OPENAI_WEB_MODEL || process.env.OPENAI_MODEL || 'gpt-4o-mini';
   const internet = wantsLiveInternet(body.input);
   const coding = wantsCodingHelp(body.input);
   const deepRequested = Boolean(body.deepThink);
@@ -98,6 +98,11 @@ Coding/project behaviour:
 - When asked to build features, group compatible changes into safe stacks.
 - When asked for replacements, provide only changed files and do not invent unrelated changes.
 - Track the release mindset: small, shippable Genesis versions.
+
+Action Engine behaviour:
+- When Dylan asks for reminders, tasks, goals, project updates, code plans, or next steps, prepare the action clearly but do not claim it has been executed unless the app/tool confirms it.
+- Use wording like: Prepared action, Next command, Save this to memory, or Confirm this reminder.
+- For coding actions, always include changed file paths, build commands, deploy commands, and commit commands when relevant.
 
 Response style:
 - Short sections only when helpful.
@@ -156,6 +161,9 @@ ${plans}
 
 Runtime flags:
 ${flags}
+
+Prepared actions from app router:
+${safeList(body.preparedActions, (action, index) => `${index + 1}. ${action.title || action.type || 'Action'} — ${action.nextStep || action.detail || ''}`)}
 
 Core mode: ${body.mode || 'Talk'}
 
@@ -290,7 +298,7 @@ async function callOpenAiChat({ model, body }) {
 }
 
 async function callOpenAiWeb({ body }) {
-  const webModel = chooseModel({ ...body, input: body.input }).webModel;
+  const webModel = process.env.OPENAI_WEB_MODEL || process.env.OPENAI_MODEL || 'gpt-4o-mini';
   const webPrompt = `${buildSystemPrompt()}\n\nInternet Scan rules:\n- Use live/current web evidence for the answer.\n- Keep the answer direct and useful for Dylan.\n- Include a short Sources section when sources are available.\n- Do not turn this into generic onboarding.`;
 
   const openaiResponse = await fetch(OPENAI_RESPONSES_URL, {
@@ -394,6 +402,7 @@ export default async function handler(request, response) {
       internetUsed: Boolean(aiResult.internetUsed),
       internetError,
       sources: aiResult.sources || [],
+      preparedActions: body.preparedActions || [],
       codingRequest: wantsCodingHelp(body.input),
       diagnostics: { hasOpenAIKey: true, version: GENESIS_VERSION, selectedModel, routeProfile: route.profile, deepRecommended: route.deepRecommended, codingRequest: route.coding },
     });
