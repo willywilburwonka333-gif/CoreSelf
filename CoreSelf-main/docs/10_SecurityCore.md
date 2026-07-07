@@ -1,6 +1,6 @@
-# Security Core
+# Real AI Brain
 
-Genesis 0.1.1 adds the first security layer for Core Self.
+Genesis 0.1.2 adds the first security layer for Core Self.
 
 ## Rules
 

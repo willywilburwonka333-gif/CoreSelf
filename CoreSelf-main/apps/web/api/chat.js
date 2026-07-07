@@ -5,45 +5,67 @@ function safeList(items, formatter) {
   return items.map(formatter).join('\n');
 }
 
+function cleanMessages(messages = []) {
+  if (!Array.isArray(messages)) return [];
+  return messages
+    .slice(-8)
+    .filter((message) => message && message.text)
+    .map((message) => `${message.from === 'dylan' ? 'Dylan' : 'Core'}: ${String(message.text).slice(0, 900)}`)
+    .join('\n');
+}
+
 function buildSystemPrompt() {
-  return `You are Dylan Core inside the Core Self app. You are not a generic chatbot.
+  return `You are Dylan Core inside the Core Self app. You are the Real AI Brain layer for a personal AI operating system, not a generic chatbot.
 
 Prime directive: help Dylan become the highest possible version of himself while protecting family, health, freedom, future, and control.
 
-Rules:
-- Be direct, practical, and grounded in the supplied Core Self context.
-- Use saved memories, projects, goals, and plans when relevant.
-- If context is missing, say what is missing and give the next useful action.
-- Do not pretend you have cloud memory, external access, calendar access, email access, or authority you do not have.
-- Keep replies concise enough for mobile, but useful.
-- End with one clear next action when appropriate.`;
+Operating rules:
+- Be direct, practical, grounded, and useful.
+- Use the supplied Core Self context before answering: memories, projects, goals, plans, mode, and recent chat.
+- When context is relevant, connect it to the answer naturally instead of dumping raw data.
+- If context is missing, say what is missing and give the next useful step.
+- Never claim tool access you do not have. You cannot browse, email, edit files, spend money, or control services unless a future tool route explicitly provides that capability.
+- Security first: for risky actions, recommend an approval step.
+- Keep responses mobile-friendly. Prefer tight paragraphs and one clear next action.
+- You are allowed to think strategically, but do not overpromise.
+- If Dylan asks what you are, say you are Dylan Core running through Core Self with an external AI provider underneath.`;
 }
 
 function buildUserPrompt(body) {
   const memories = safeList(body.relevantMemories, (memory, index) =>
-    `${index + 1}. ${memory.title || 'Untitled'} — ${memory.content || ''} ${memory.futureAction ? `Future action: ${memory.futureAction}` : ''}`
+    `${index + 1}. ${memory.title || 'Untitled'} — ${memory.content || ''} ${memory.lesson ? `Lesson: ${memory.lesson}` : ''} ${memory.futureAction ? `Future action: ${memory.futureAction}` : ''}`
   );
 
   const projects = safeList(body.projects, (project, index) =>
-    `${index + 1}. ${project.name} [${project.priority || 'No priority'} / ${project.status || 'No status'}] — ${project.purpose || ''} Next: ${project.nextAction || 'Not set'}`
+    `${index + 1}. ${project.name || project.title || 'Untitled project'} [${project.priority || 'No priority'} / ${project.status || 'No status'}] — ${project.purpose || ''} Next: ${project.nextAction || 'Not set'}`
   );
 
   const goals = safeList(body.goals, (goal, index) =>
-    `${index + 1}. ${goal.title} [${goal.priority || 'No priority'} / ${goal.status || 'No status'}] — ${goal.target || ''}`
+    `${index + 1}. ${goal.title || 'Untitled goal'} [${goal.priority || 'No priority'} / ${goal.status || 'No status'}] — ${goal.target || ''}`
   );
 
-  return `Mode: ${body.mode || 'Talk'}
+  const plans = safeList(body.plans, (plan, index) =>
+    `${index + 1}. ${plan.title || plan.name || 'Untitled plan'} — ${plan.nextAction || plan.summary || 'No next action set.'}`
+  );
+
+  return `Core mode: ${body.mode || 'Talk'}
 
 Relevant memories:
 ${memories}
 
-Projects:
+Active projects:
 ${projects}
 
-Goals:
+Active goals:
 ${goals}
 
-Dylan says:
+Planning context:
+${plans}
+
+Recent conversation:
+${cleanMessages(body.messages)}
+
+Current message from Dylan:
 ${body.input || ''}`;
 }
 
@@ -52,12 +74,21 @@ export default async function handler(request, response) {
     return response.status(405).json({ error: 'Method not allowed' });
   }
 
+  const startedAt = Date.now();
+
   if (!process.env.OPENAI_API_KEY) {
-    return response.status(501).json({ error: 'OPENAI_API_KEY is not configured in Vercel.' });
+    return response.status(501).json({
+      provider: 'local-fallback',
+      model: 'none',
+      reply: null,
+      error: 'OPENAI_API_KEY is not configured in Vercel.',
+    });
   }
 
   try {
     const body = request.body || {};
+    const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+
     const openaiResponse = await fetch(OPENAI_URL, {
       method: 'POST',
       headers: {
@@ -65,9 +96,9 @@ export default async function handler(request, response) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+        model,
         temperature: 0.35,
-        max_tokens: 450,
+        max_tokens: 700,
         messages: [
           { role: 'system', content: buildSystemPrompt() },
           { role: 'user', content: buildUserPrompt(body) },
@@ -75,21 +106,32 @@ export default async function handler(request, response) {
       }),
     });
 
-    const data = await openaiResponse.json();
+    const data = await openaiResponse.json().catch(() => ({}));
 
     if (!openaiResponse.ok) {
       return response.status(openaiResponse.status).json({
+        provider: 'openai',
+        model,
         error: data?.error?.message || 'OpenAI request failed.',
       });
     }
 
+    const reply = data.choices?.[0]?.message?.content?.trim();
+
     return response.status(200).json({
       provider: 'openai',
-      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-      confidence: 0.82,
-      reply: data.choices?.[0]?.message?.content?.trim() || 'Core AI returned no message.',
+      model,
+      source: 'real-ai-brain',
+      confidence: 0.88,
+      latencyMs: Date.now() - startedAt,
+      reply: reply || 'Core AI returned no message.',
+      usage: data.usage || null,
     });
   } catch (error) {
-    return response.status(500).json({ error: error.message || 'Core API error.' });
+    return response.status(500).json({
+      provider: 'openai',
+      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+      error: error.message || 'Core API error.',
+    });
   }
 }

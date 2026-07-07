@@ -2,7 +2,7 @@ import { load, save } from './localStore';
 import { saveKeyToCloud } from './cloudStore';
 import { currentCoreUser } from './authService';
 
-export const SECURITY_VERSION = 'Genesis 0.1.1';
+export const SECURITY_VERSION = 'Genesis 0.1.2';
 
 export const permissionCatalog = [
   {
@@ -91,7 +91,7 @@ export function getSecurityState() {
     email: user?.email || null,
     firestorePath: user ? `/users/${user.uid}/core/{store}` : '/users/{uid}/core/{store}',
     rules: 'User scoped: request.auth.uid must match users/{userId}.',
-    mode: 'Security Core v1',
+    mode: 'Real AI Brain v1',
   };
 }
 
@@ -99,7 +99,7 @@ export function loadAuditLog() {
   return load('auditLog', []);
 }
 
-export async function recordAudit({ action, detail = '', level = 'Info', policy = 'safe', engine = 'Security Core' }) {
+export async function recordAudit({ action, detail = '', level = 'Info', policy = 'safe', engine = 'Real AI Brain' }) {
   const user = currentCoreUser();
   const entry = {
     id: `audit-${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -123,7 +123,7 @@ export async function requireApproval({ action, detail, policy = 'cloudWrite' })
   const rule = actionPolicies[policy] || actionPolicies.safe;
   if (!rule.allowed) {
     await recordAudit({ action, detail, policy, level: 'Blocked' });
-    return { ok: false, reason: `${rule.label} is blocked by Security Core.` };
+    return { ok: false, reason: `${rule.label} is blocked by Real AI Brain.` };
   }
 
   const needsConfirm = policy === 'cloudWrite' || policy === 'dangerous' || policy === 'externalAction';

@@ -8,7 +8,7 @@ export default function Home({ mode }) {
     <section className="screen">
       <div className="hero">
         <div>
-          <p className="eyebrow">CORE SELF / GENESIS 0.1.1</p>
+          <p className="eyebrow">CORE SELF / GENESIS 0.1.2</p>
           <h1>Dylan Core</h1>
           <p>{constitution.primeDirective}</p>
         </div>
@@ -26,7 +26,7 @@ export default function Home({ mode }) {
         <article>
           <span>Today</span>
           <h3>Build the Platform</h3>
-          <p>Cloud Brain, security gates, memory context routing, relationships, planning, and real AI routing.</p>
+          <p>Cloud Brain, security gates and real AI routing, memory context routing, relationships, planning, and real AI routing.</p>
         </article>
         <article>
           <span>Rule</span>

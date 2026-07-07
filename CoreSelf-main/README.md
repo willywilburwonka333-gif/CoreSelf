@@ -1,8 +1,8 @@
 # Core Self
 
-Genesis 0.1.1 — Security Core.
+Genesis 0.1.2 — Real AI Brain.
 
-Core Self is Dylan Core: a personal AI operating system foundation with memory, projects, goals, planning, cloud sync, AI routing, and security gates.
+Core Self is Dylan Core: a personal AI operating system foundation with memory, projects, goals, planning, cloud sync, AI routing, and security gates and real AI routing.
 
 ## Current build
 

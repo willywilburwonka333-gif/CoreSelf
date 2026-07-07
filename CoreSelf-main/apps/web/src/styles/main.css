@@ -735,3 +735,46 @@ button:disabled {
   .securityGrid, .policyGrid { grid-template-columns: 1fr; }
   .permissionRow { grid-template-columns: 1fr; }
 }
+
+.aiStatusPanel {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 11px 13px;
+  margin: 12px 0;
+  background: rgba(4, 9, 20, 0.72);
+}
+
+.aiStatusPanel span {
+  color: var(--green);
+  font-weight: 950;
+}
+
+.aiStatusPanel small, .bubble small {
+  color: var(--gold);
+  display: block;
+  margin-top: 7px;
+  font-size: 11px;
+}
+
+.bubble span {
+  white-space: pre-wrap;
+}
+
+.bubble.thinking {
+  opacity: 0.82;
+  animation: thinkingPulse 1.2s infinite ease-in-out;
+}
+
+@keyframes thinkingPulse {
+  0%,100% { transform: translateY(0); opacity: 0.72; }
+  50% { transform: translateY(-2px); opacity: 1; }
+}
+
+button:disabled, input:disabled {
+  opacity: 0.62;
+  cursor: not-allowed;
+}

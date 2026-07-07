@@ -72,10 +72,10 @@ export default function App() {
           <Brain />
           <div>
             <strong>CORE SELF</strong>
-            <span>Dylan Core Genesis 0.1.1 • Security Core</span>
+            <span>Dylan Core Genesis 0.1.2 • Real AI Brain</span>
           </div>
         </div>
-        <div className="statusCluster"><span className="online">Security Core Online</span><button className="iconButton" onClick={() => signOutCore()} title="Sign out"><LogOut size={16} /></button></div>
+        <div className="statusCluster"><span className="online">Real AI Brain Online</span><button className="iconButton" onClick={() => signOutCore()} title="Sign out"><LogOut size={16} /></button></div>
       </header>
 
       <ModeBar mode={mode} setMode={setMode} />

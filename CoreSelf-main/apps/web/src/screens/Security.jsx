@@ -7,8 +7,8 @@ export default function Security() {
 
   return (
     <section className="screen">
-      <h2>Security Core</h2>
-      <p className="muted">Genesis 0.1.1 adds the first real safety layer: user-scoped data, permission gates, blocked dangerous actions, and an audit trail.</p>
+      <h2>Real AI Brain</h2>
+      <p className="muted">Genesis 0.1.2 adds the first real safety layer: user-scoped data, permission gates, blocked dangerous actions, and an audit trail.</p>
 
       <div className="securityGrid">
         <article className="securityCard good">
