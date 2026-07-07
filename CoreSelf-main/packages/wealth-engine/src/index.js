@@ -1,0 +1,1 @@
+// wealth-engine\nexport const packageName = 'wealth-engine';\n

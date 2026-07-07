@@ -1,0 +1,1 @@
+// life-graph\nexport const packageName = 'life-graph';\n
