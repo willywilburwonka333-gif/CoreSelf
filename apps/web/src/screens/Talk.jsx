@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { load, save } from '../services/localStore';
 import { coreReply } from '../services/coreReply';
+import PresenceBanner from '../components/PresenceBanner';
 
 export default function Talk({ mode }) {
   const [messages, setMessages] = useState(load('messages', [
@@ -24,6 +25,7 @@ export default function Talk({ mode }) {
   return (
     <section className="screen">
       <h2>Talk</h2>
+      <PresenceBanner mode={mode} />
       <div className="chat">
         {messages.map((m, i) => <div key={i} className={'bubble ' + m.from}>{m.text}</div>)}
       </div>

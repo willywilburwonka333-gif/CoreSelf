@@ -3,6 +3,8 @@ const nodes = [
   ['Executive Dylan', 'Projects', 'Wealth', 'Learning', 'Creation'],
   ['Projects', 'THE SYSTEM', 'Core Self', 'Reality Project', 'Music'],
   ['Engines', 'Memory', 'Learning', 'Wealth', 'Creation', 'Guardian'],
+  ['Future', 'Phone App', 'Device', 'Robot', 'Future Interface'],
+  ['Protection', 'Family Time', 'Health', 'Control', 'Truth']
 ];
 
 export default function LifeGraph() {

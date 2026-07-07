@@ -1,39 +1,82 @@
 import { useState } from 'react';
 import { load, save } from '../services/localStore';
 
+const types = ['Dylan Memory', 'Project', 'Skill', 'Decision', 'Lesson', 'Preference', 'Goal', 'Warning'];
+const levels = ['Permanent', 'Long-term', 'Active', 'Short-term', 'Archive'];
+const importance = ['Low', 'Medium', 'High', 'Critical'];
+
 export default function Memory() {
   const [items, setItems] = useState(load('memories', []));
-  const [text, setText] = useState('');
+  const [form, setForm] = useState({
+    type: 'Dylan Memory',
+    level: 'Active',
+    importance: 'High',
+    title: '',
+    content: '',
+    lesson: '',
+    futureAction: ''
+  });
+
+  function setField(key, value) {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  }
 
   function add() {
-    const clean = text.trim();
-    if (!clean) return;
+    if (!form.content.trim() && !form.title.trim()) return;
     const memory = {
       id: crypto.randomUUID(),
-      title: clean.slice(0, 50),
-      content: clean,
-      level: 'Active',
-      truth: 'Confirmed by Dylan',
+      ...form,
+      title: form.title.trim() || form.content.trim().slice(0, 50),
+      truthStatus: 'Confirmed by Dylan',
       createdAt: new Date().toISOString(),
     };
     const next = [memory, ...items];
     setItems(next);
     save('memories', next);
-    setText('');
+    setForm({ type: 'Dylan Memory', level: 'Active', importance: 'High', title: '', content: '', lesson: '', futureAction: '' });
+  }
+
+  function remove(id) {
+    const next = items.filter((m) => m.id !== id);
+    setItems(next);
+    save('memories', next);
   }
 
   return (
     <section className="screen">
       <h2>Memory Vault</h2>
-      <p className="muted">Save what Dylan Core should learn.</p>
-      <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Save a rule, lesson, memory, goal, preference..." />
+      <p className="muted">Structured memories become the foundation of Dylan Core.</p>
+
+      <div className="formGrid">
+        <select value={form.type} onChange={(e) => setField('type', e.target.value)}>
+          {types.map((t) => <option key={t}>{t}</option>)}
+        </select>
+        <select value={form.level} onChange={(e) => setField('level', e.target.value)}>
+          {levels.map((l) => <option key={l}>{l}</option>)}
+        </select>
+        <select value={form.importance} onChange={(e) => setField('importance', e.target.value)}>
+          {importance.map((i) => <option key={i}>{i}</option>)}
+        </select>
+      </div>
+
+      <input value={form.title} onChange={(e) => setField('title', e.target.value)} placeholder="Memory title..." />
+      <textarea value={form.content} onChange={(e) => setField('content', e.target.value)} placeholder="What should Dylan Core remember?" />
+      <input value={form.lesson} onChange={(e) => setField('lesson', e.target.value)} placeholder="Lesson learned..." />
+      <input value={form.futureAction} onChange={(e) => setField('futureAction', e.target.value)} placeholder="Future action..." />
+
       <button className="primary" onClick={add}>Save Memory</button>
+
       <div className="list">
         {items.length ? items.map((m) => (
           <article key={m.id}>
-            <h3>{m.title}</h3>
+            <div className="cardTop">
+              <h3>{m.title}</h3>
+              <small>{m.type} • {m.level} • {m.importance}</small>
+            </div>
             <p>{m.content}</p>
-            <small>{m.level} • {m.truth}</small>
+            {m.lesson && <p><strong>Lesson:</strong> {m.lesson}</p>}
+            {m.futureAction && <p><strong>Future Action:</strong> {m.futureAction}</p>}
+            <button className="danger" onClick={() => remove(m.id)}>Archive / Remove</button>
           </article>
         )) : <p className="muted">No memories yet.</p>}
       </div>

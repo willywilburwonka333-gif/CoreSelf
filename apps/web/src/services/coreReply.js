@@ -1,25 +1,19 @@
+import { presenceLine } from './presenceEngine';
+
 export function coreReply(input, mode) {
   const text = input.toLowerCase();
 
   if (text.includes('next')) {
-    return 'Next: strengthen Memory and the Life Graph. That is the foundation of Dylan Core.';
+    return 'Next: strengthen Memory, Projects, Goals, and the Life Graph. That is the foundation of Dylan Core.';
   }
 
   if (text.includes('remember') || text.includes('save')) {
-    return 'Memory noted. This is the kind of information Dylan Core should learn and preserve.';
+    return 'Memory noted. Store it in Memory Vault so I can use it as part of Dylan’s Life Graph.';
   }
 
-  if (mode === 'Wealth') {
-    return 'Wealth Mode: maximise sustainable income and freedom while protecting family time and downside risk.';
+  if (text.includes('why')) {
+    return 'Because every part of Core Self must answer one question: does this help Dylan become closer to his highest potential?';
   }
 
-  if (mode === 'Build') {
-    return 'Build Mode: turn ideas into working software, clean systems, and assets.';
-  }
-
-  if (mode === 'Create') {
-    return 'Create Mode: turn ideas into books, songs, apps, anime, stories, and IP.';
-  }
-
-  return 'I am Dylan Core Genesis. My purpose is to help Dylan become his highest possible self.';
+  return presenceLine(mode);
 }

@@ -1,7 +1,9 @@
 import PotentialAvatar from '../components/PotentialAvatar';
+import ProgressTracker from '../components/ProgressTracker';
+import PresenceBanner from '../components/PresenceBanner';
 import { constitution } from '../data/constitution';
 
-export default function Home() {
+export default function Home({ mode }) {
   return (
     <section className="screen">
       <div className="hero">
@@ -10,8 +12,10 @@ export default function Home() {
           <h1>Dylan Core</h1>
           <p>{constitution.primeDirective}</p>
         </div>
-        <PotentialAvatar />
+        <PotentialAvatar mode={mode} />
       </div>
+
+      <PresenceBanner mode={mode} />
 
       <div className="cards">
         <article>
@@ -22,7 +26,7 @@ export default function Home() {
         <article>
           <span>Today</span>
           <h3>Build the Foundation</h3>
-          <p>Memory and Life Graph first. Autonomy later.</p>
+          <p>Memory, Projects, Goals, and Life Graph first. Autonomy later.</p>
         </article>
         <article>
           <span>Rule</span>
@@ -30,6 +34,8 @@ export default function Home() {
           <p>Every decision should improve Dylan’s long-term life.</p>
         </article>
       </div>
+
+      <ProgressTracker />
     </section>
   );
 }

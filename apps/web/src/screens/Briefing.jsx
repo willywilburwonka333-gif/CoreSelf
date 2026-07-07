@@ -1,14 +1,30 @@
+import { load } from '../services/localStore';
+import { defaultProjects, defaultGoals } from '../data/defaults';
+import { getTopProject, scorePotential } from '../services/decisionEngine';
+
 export default function Briefing() {
+  const memories = load('memories', []);
+  const projects = load('projects', defaultProjects);
+  const goals = load('goals', defaultGoals);
+  const topProject = getTopProject(projects);
+  const topScore = topProject ? scorePotential(topProject) : null;
+  const criticalMemories = memories.filter((m) => m.importance === 'Critical' || m.level === 'Permanent');
+
   return (
     <section className="screen">
       <h2>Daily Briefing</h2>
       <div className="briefing">
         <h3>Morning Dylan.</h3>
-        <p>Genesis briefing is manual for now. The future version will prepare this automatically.</p>
+        <p>Dylan Core has reviewed your local Genesis data.</p>
         <ul>
-          <li><strong>Highest Impact:</strong> Build Memory + Life Graph.</li>
-          <li><strong>Best Opportunity:</strong> Turn Core Self into a reusable platform.</li>
-          <li><strong>Risk:</strong> Rushing into too many features too early.</li>
+          <li><strong>Highest Impact:</strong> {topProject ? `${topProject.name} — ${topProject.nextAction}` : 'Build Memory + Life Graph.'}</li>
+          <li><strong>Decision Score:</strong> {topScore ? `${topScore.score}/100 (${topScore.tier})` : 'Not enough data.'}</li>
+          <li><strong>Best Opportunity:</strong> Turn Core Self into a reusable platform where every person can create their Core.</li>
+          <li><strong>Risk:</strong> Building flashy features before the Core can remember and reason properly.</li>
+          <li><strong>Memory Count:</strong> {memories.length}</li>
+          <li><strong>Critical/Permanent Memories:</strong> {criticalMemories.length}</li>
+          <li><strong>Tracked Projects:</strong> {projects.length}</li>
+          <li><strong>Tracked Goals:</strong> {goals.length}</li>
         </ul>
       </div>
     </section>
