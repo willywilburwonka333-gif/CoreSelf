@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Brain, Home as HomeIcon, MessageCircle, Database, Network, Sun, Shield, FolderKanban, Target } from 'lucide-react';
+import { Brain, Home as HomeIcon, MessageCircle, Database, Network, Sun, Shield, FolderKanban, Target, Cpu } from 'lucide-react';
 import ModeBar from './components/ModeBar';
 import Home from './screens/Home';
 import Talk from './screens/Talk';
@@ -9,6 +9,7 @@ import Briefing from './screens/Briefing';
 import Core from './screens/Core';
 import Projects from './screens/Projects';
 import Goals from './screens/Goals';
+import Engines from './screens/Engines';
 
 const tabs = [
   ['home', 'Home', HomeIcon],
@@ -17,6 +18,7 @@ const tabs = [
   ['graph', 'Graph', Network],
   ['projects', 'Projects', FolderKanban],
   ['goals', 'Goals', Target],
+  ['engines', 'Engines', Cpu],
   ['briefing', 'Briefing', Sun],
   ['core', 'Core', Shield],
 ];
@@ -32,6 +34,7 @@ export default function App() {
     tab === 'graph' ? <LifeGraph /> :
     tab === 'projects' ? <Projects /> :
     tab === 'goals' ? <Goals /> :
+    tab === 'engines' ? <Engines /> :
     tab === 'briefing' ? <Briefing /> :
     <Core />;
 
@@ -42,7 +45,7 @@ export default function App() {
           <Brain />
           <div>
             <strong>CORE SELF</strong>
-            <span>Dylan Core Genesis 0.0.4</span>
+            <span>Dylan Core Genesis 0.0.5</span>
           </div>
         </div>
         <span className="online">Core Online</span>

@@ -4,7 +4,7 @@ export function coreReply(input, mode) {
   const text = input.toLowerCase();
 
   if (text.includes('next')) {
-    return 'Next: strengthen Memory, Projects, Goals, and the Life Graph. That is the foundation of Dylan Core.';
+    return 'Next: connect Memory, Projects, Goals, and the Life Graph through the AI Router. That is how Dylan Core begins to think with context.';
   }
 
   if (text.includes('remember') || text.includes('save')) {

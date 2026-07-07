@@ -6,6 +6,7 @@ export default function Briefing() {
   const memories = load('memories', []);
   const projects = load('projects', defaultProjects);
   const goals = load('goals', defaultGoals);
+  const nodes = load('lifeGraphNodes', []);
   const topProject = getTopProject(projects);
   const topScore = topProject ? scorePotential(topProject) : null;
   const criticalMemories = memories.filter((m) => m.importance === 'Critical' || m.level === 'Permanent');
@@ -19,12 +20,13 @@ export default function Briefing() {
         <ul>
           <li><strong>Highest Impact:</strong> {topProject ? `${topProject.name} — ${topProject.nextAction}` : 'Build Memory + Life Graph.'}</li>
           <li><strong>Decision Score:</strong> {topScore ? `${topScore.score}/100 (${topScore.tier})` : 'Not enough data.'}</li>
-          <li><strong>Best Opportunity:</strong> Turn Core Self into a reusable platform where every person can create their Core.</li>
+          <li><strong>Best Opportunity:</strong> Connect Memory, Life Graph, Projects, and Goals through the AI Router.</li>
           <li><strong>Risk:</strong> Building flashy features before the Core can remember and reason properly.</li>
           <li><strong>Memory Count:</strong> {memories.length}</li>
           <li><strong>Critical/Permanent Memories:</strong> {criticalMemories.length}</li>
           <li><strong>Tracked Projects:</strong> {projects.length}</li>
           <li><strong>Tracked Goals:</strong> {goals.length}</li>
+          <li><strong>Life Graph Nodes:</strong> {nodes.length}</li>
         </ul>
       </div>
     </section>

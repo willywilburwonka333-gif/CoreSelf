@@ -83,3 +83,24 @@ export const defaultGoals = [
     target: 'Create long-term IP and products.'
   }
 ];
+
+export const defaultLifeGraphNodes = [
+  { id: 'human-dylan', group: 'Human Dylan', title: 'Family', detail: 'Jennifer, children, home life, memories.' },
+  { id: 'health', group: 'Human Dylan', title: 'Health', detail: 'Energy, fitness, recovery, long-term strength.' },
+  { id: 'freedom', group: 'Human Dylan', title: 'Freedom', detail: 'Time, options, family presence.' },
+  { id: 'projects', group: 'Executive Dylan', title: 'Projects', detail: 'THE SYSTEM, Core Self, Reality Project.' },
+  { id: 'wealth', group: 'Executive Dylan', title: 'Wealth', detail: 'Income, assets, investments, automation.' },
+  { id: 'creation', group: 'Executive Dylan', title: 'Creation', detail: 'Apps, music, books, anime, systems.' },
+  { id: 'memory-engine', group: 'Engines', title: 'Memory Engine', detail: 'Stores what matters.' },
+  { id: 'guardian-engine', group: 'Engines', title: 'Guardian Engine', detail: 'Protects Dylan’s future.' }
+];
+
+export const engineStatuses = [
+  { name: 'Identity Engine', status: 'Online', progress: 35, next: 'Keep constitution synced with app.' },
+  { name: 'Memory Engine', status: 'Genesis', progress: 18, next: 'Add Firestore and retrieval.' },
+  { name: 'Life Graph Engine', status: 'Genesis', progress: 15, next: 'Add relationships between nodes.' },
+  { name: 'Decision Engine', status: 'Local Prototype', progress: 10, next: 'Use scoring across briefing/actions.' },
+  { name: 'Guardian Engine', status: 'Designed', progress: 8, next: 'Add risk warnings and authority gates.' },
+  { name: 'AI Router', status: 'Prepared', progress: 5, next: 'Connect model API later.' },
+  { name: 'Firestore Layer', status: 'Prepared', progress: 5, next: 'Add Firebase config when ready.' }
+];

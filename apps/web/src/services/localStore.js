@@ -12,3 +12,7 @@ export function load(key, fallback) {
 export function save(key, value) {
   localStorage.setItem(prefix + key, JSON.stringify(value));
 }
+
+export function remove(key) {
+  localStorage.removeItem(prefix + key);
+}

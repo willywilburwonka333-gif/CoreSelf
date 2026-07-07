@@ -25,8 +25,8 @@ export default function Home({ mode }) {
         </article>
         <article>
           <span>Today</span>
-          <h3>Build the Foundation</h3>
-          <p>Memory, Projects, Goals, and Life Graph first. Autonomy later.</p>
+          <h3>Build the Brain</h3>
+          <p>Memory search, Life Graph editing, AI Router prep, and Firestore prep.</p>
         </article>
         <article>
           <span>Rule</span>

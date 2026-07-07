@@ -40,7 +40,7 @@ body::before {
   max-width: 1160px;
   min-height: 100vh;
   margin: 0 auto;
-  padding: 16px 16px 104px;
+  padding: 16px 16px 112px;
   position: relative;
   z-index: 1;
 }
@@ -117,7 +117,7 @@ button {
   background: rgba(11, 21, 41, 0.72);
 }
 
-.modeBar button.active, .primary, .inputRow button {
+.modeBar button.active, .primary, .inputRow button, .inlinePrimary {
   color: #06101f;
   background: linear-gradient(135deg, var(--mode), #dbeafe);
   box-shadow: 0 0 26px color-mix(in srgb, var(--mode), transparent 65%);
@@ -367,11 +367,11 @@ textarea {
   padding: 10px 12px;
 }
 
-.formGrid {
+.filterPanel, .formGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 11px;
-  margin-bottom: 11px;
+  margin: 12px 0;
 }
 
 .chat {
@@ -510,9 +510,9 @@ textarea {
   left: 50%;
   bottom: 14px;
   transform: translateX(-50%);
-  width: min(780px, calc(100% - 24px));
+  width: min(900px, calc(100% - 24px));
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
+  grid-template-columns: repeat(9, 1fr);
   gap: 6px;
   padding: 8px;
   border: 1px solid var(--line);
@@ -539,10 +539,10 @@ textarea {
 }
 
 @media (max-width: 850px) {
-  .hero, .cards, .graph, .projectCards, .formGrid, .miniScores {
+  .hero, .cards, .graph, .projectCards, .formGrid, .filterPanel, .miniScores {
     grid-template-columns: 1fr;
   }
   .online { display: none; }
-  .nav { grid-template-columns: repeat(4, 1fr); }
+  .nav { grid-template-columns: repeat(3, 1fr); }
   .projectHeader { display: grid; }
 }

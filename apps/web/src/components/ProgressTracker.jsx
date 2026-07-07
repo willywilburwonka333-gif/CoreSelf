@@ -1,8 +1,8 @@
 const items = [
-  ['Dream Product', 3],
-  ['Phone App', 18],
-  ['Useful AI Assistant', 7],
-  ['Learning AI Self', 3],
+  ['Dream Product', 5],
+  ['Phone App', 25],
+  ['Useful AI Foundation', 10],
+  ['Learning AI Self', 5],
   ['Autonomous Helper', 1],
 ];
 

@@ -1,12 +1,15 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { load, save } from '../services/localStore';
 
-const types = ['Dylan Memory', 'Project', 'Skill', 'Decision', 'Lesson', 'Preference', 'Goal', 'Warning'];
-const levels = ['Permanent', 'Long-term', 'Active', 'Short-term', 'Archive'];
-const importance = ['Low', 'Medium', 'High', 'Critical'];
+const types = ['All', 'Dylan Memory', 'Project', 'Skill', 'Decision', 'Lesson', 'Preference', 'Goal', 'Warning'];
+const levels = ['All', 'Permanent', 'Long-term', 'Active', 'Short-term', 'Archive'];
+const importanceOptions = ['Low', 'Medium', 'High', 'Critical'];
 
 export default function Memory() {
   const [items, setItems] = useState(load('memories', []));
+  const [query, setQuery] = useState('');
+  const [filterType, setFilterType] = useState('All');
+  const [filterLevel, setFilterLevel] = useState('All');
   const [form, setForm] = useState({
     type: 'Dylan Memory',
     level: 'Active',
@@ -16,6 +19,16 @@ export default function Memory() {
     lesson: '',
     futureAction: ''
   });
+
+  const filtered = useMemo(() => {
+    const q = query.toLowerCase();
+    return items.filter((m) => {
+      const matchesText = !q || [m.title, m.content, m.lesson, m.futureAction].join(' ').toLowerCase().includes(q);
+      const matchesType = filterType === 'All' || m.type === filterType;
+      const matchesLevel = filterLevel === 'All' || m.level === filterLevel;
+      return matchesText && matchesType && matchesLevel;
+    });
+  }, [items, query, filterType, filterLevel]);
 
   function setField(key, value) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -49,13 +62,13 @@ export default function Memory() {
 
       <div className="formGrid">
         <select value={form.type} onChange={(e) => setField('type', e.target.value)}>
-          {types.map((t) => <option key={t}>{t}</option>)}
+          {types.filter((t) => t !== 'All').map((t) => <option key={t}>{t}</option>)}
         </select>
         <select value={form.level} onChange={(e) => setField('level', e.target.value)}>
-          {levels.map((l) => <option key={l}>{l}</option>)}
+          {levels.filter((l) => l !== 'All').map((l) => <option key={l}>{l}</option>)}
         </select>
         <select value={form.importance} onChange={(e) => setField('importance', e.target.value)}>
-          {importance.map((i) => <option key={i}>{i}</option>)}
+          {importanceOptions.map((i) => <option key={i}>{i}</option>)}
         </select>
       </div>
 
@@ -66,8 +79,20 @@ export default function Memory() {
 
       <button className="primary" onClick={add}>Save Memory</button>
 
+      <div className="filterPanel">
+        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search memories..." />
+        <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+          {types.map((t) => <option key={t}>{t}</option>)}
+        </select>
+        <select value={filterLevel} onChange={(e) => setFilterLevel(e.target.value)}>
+          {levels.map((l) => <option key={l}>{l}</option>)}
+        </select>
+      </div>
+
+      <p className="muted">Showing {filtered.length} of {items.length} memories.</p>
+
       <div className="list">
-        {items.length ? items.map((m) => (
+        {filtered.length ? filtered.map((m) => (
           <article key={m.id}>
             <div className="cardTop">
               <h3>{m.title}</h3>
@@ -78,7 +103,7 @@ export default function Memory() {
             {m.futureAction && <p><strong>Future Action:</strong> {m.futureAction}</p>}
             <button className="danger" onClick={() => remove(m.id)}>Archive / Remove</button>
           </article>
-        )) : <p className="muted">No memories yet.</p>}
+        )) : <p className="muted">No matching memories.</p>}
       </div>
     </section>
   );

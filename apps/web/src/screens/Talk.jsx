@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { load, save } from '../services/localStore';
-import { coreReply } from '../services/coreReply';
+import { routeCoreRequest } from '../services/aiRouter';
 import PresenceBanner from '../components/PresenceBanner';
 
 export default function Talk({ mode }) {
@@ -9,13 +9,18 @@ export default function Talk({ mode }) {
   ]));
   const [input, setInput] = useState('');
 
-  function send() {
+  async function send() {
     const clean = input.trim();
     if (!clean) return;
+    const memories = load('memories', []);
+    const projects = load('projects', []);
+    const goals = load('goals', []);
+    const routed = await routeCoreRequest({ input: clean, mode, memories, projects, goals });
+
     const next = [
       ...messages,
       { from: 'dylan', text: clean },
-      { from: 'core', text: coreReply(clean, mode) },
+      { from: 'core', text: routed.reply },
     ];
     setMessages(next);
     save('messages', next);
