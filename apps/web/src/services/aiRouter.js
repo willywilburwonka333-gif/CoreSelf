@@ -1,10 +1,23 @@
 import { coreReply } from './coreReply';
 import { retrieveRelevantMemories } from './memoryRetrieval';
 
-function buildContext({ input, mode, memories, projects, goals, plans, messages, relevantMemories }) {
+function activeOnly(items = []) {
+  if (!Array.isArray(items)) return [];
+  return items.filter((item) => {
+    const status = String(item.status || '').toLowerCase();
+    return !status.includes('archived') && !status.includes('done') && !status.includes('complete');
+  });
+}
+
+function buildContext({ input, mode, memories, projects, goals, plans, messages, relevantMemories, deepThink }) {
+  const activeProjects = activeOnly(projects);
+  const activeGoals = activeOnly(goals);
+  const activePlans = activeOnly(plans);
+
   return {
     input,
     mode,
+    deepThink: Boolean(deepThink),
     relevantMemories: relevantMemories.map((memory) => ({
       title: memory.title,
       content: memory.content,
@@ -12,27 +25,27 @@ function buildContext({ input, mode, memories, projects, goals, plans, messages,
       futureAction: memory.futureAction,
       relationshipTags: memory.relationshipTags || [],
     })),
-    projects: projects.slice(0, 8).map((project) => ({
+    projects: activeProjects.slice(0, 10).map((project) => ({
       name: project.name,
       status: project.status,
       priority: project.priority,
       purpose: project.purpose,
       nextAction: project.nextAction,
     })),
-    goals: goals.slice(0, 8).map((goal) => ({
+    goals: activeGoals.slice(0, 10).map((goal) => ({
       title: goal.title,
       category: goal.category,
       priority: goal.priority,
       status: goal.status,
       target: goal.target,
     })),
-    plans: plans.slice(0, 5).map((plan) => ({
+    plans: activePlans.slice(0, 6).map((plan) => ({
       title: plan.title || plan.name,
       summary: plan.summary,
       nextAction: plan.nextAction,
       status: plan.status,
     })),
-    messages: messages.slice(-8).map((message) => ({
+    messages: messages.slice(-10).map((message) => ({
       from: message.from,
       text: message.text,
     })),
@@ -55,28 +68,29 @@ async function callCoreApi(payload) {
   return data;
 }
 
-export async function routeCoreRequest({ input, mode, memories = [], projects = [], goals = [], plans = [], messages = [] }) {
-  const relevantMemories = retrieveRelevantMemories(input, memories, 8);
-  const context = buildContext({ input, mode, memories, projects, goals, plans, messages, relevantMemories });
+export async function routeCoreRequest({ input, mode, memories = [], projects = [], goals = [], plans = [], messages = [], deepThink = false }) {
+  const relevantMemories = retrieveRelevantMemories(input, memories, deepThink ? 12 : 8);
+  const context = buildContext({ input, mode, memories, projects, goals, plans, messages, relevantMemories, deepThink });
 
   try {
     const result = await callCoreApi(context);
     return {
       mode,
-      provider: result.provider || 'openai',
+      provider: result.provider || 'core-provider',
       model: result.model || 'configured-model',
-      confidence: result.confidence || 0.82,
+      confidence: result.confidence || 0.84,
       reply: result.reply,
-      source: result.source || 'real-ai-brain',
+      source: result.source || 'dylan-core-engine',
       latencyMs: result.latencyMs || null,
       error: null,
+      internetNeeded: Boolean(result.internetNeeded),
       contextUsed: {
         memories: memories.length,
         relevantMemories: relevantMemories.length,
-        projects: projects.length,
-        goals: goals.length,
-        plans: plans.length,
-        messages: messages.length,
+        projects: context.projects.length,
+        goals: context.goals.length,
+        plans: context.plans.length,
+        messages: context.messages.length,
       },
       relevantMemories,
     };
@@ -86,26 +100,17 @@ export async function routeCoreRequest({ input, mode, memories = [], projects = 
       provider: 'local-fallback',
       model: 'offline-core-reply',
       confidence: 0.44,
-      reply: `${coreReply(input, mode, relevantMemories)}\n\nCore AI note: Real AI failed safely.
-
-Status: ${error.message}
-
-What to check:
-1. Vercel has OPENAI_API_KEY on the current deployment.
-2. The deployment was redeployed after adding the key.
-3. OpenAI API billing/credits are active.
-4. The selected model is available.
-
-I am using local Core fallback so the app does not crash.`,
+      reply: `${coreReply(input, mode, relevantMemories)}\n\nDylan Core note: provider route failed safely.\n\nStatus: ${error.message}\n\nCheck Vercel env vars, billing/credits, deployment, and /api/chat logs.`,
       source: 'local-fallback',
       latencyMs: null,
       error: error.message,
+      internetNeeded: false,
       contextUsed: {
         memories: memories.length,
         relevantMemories: relevantMemories.length,
-        projects: projects.length,
-        goals: goals.length,
-        plans: plans.length,
+        projects: activeOnly(projects).length,
+        goals: activeOnly(goals).length,
+        plans: activeOnly(plans).length,
         messages: messages.length,
       },
       relevantMemories,

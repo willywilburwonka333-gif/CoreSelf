@@ -7,22 +7,30 @@ import { suggestMemoryFromMessage } from '../services/memorySuggestions';
 import PresenceBanner from '../components/PresenceBanner';
 
 function statusLabel(meta) {
-  if (!meta) return 'Core ready';
-  if (meta.source === 'real-ai-brain') return `Real AI • ${meta.provider}${meta.model ? ` • ${meta.model}` : ''}`;
-  if (meta.source === 'cloud-memory') return 'Cloud conversation memory';
-  return 'Fallback mode • local Core reply';
+  if (!meta) return 'Dylan Core ready';
+  if (meta.source === 'dylan-core-engine') return 'Dylan Core Engine online';
+  if (meta.source === 'real-ai-brain') return 'Dylan Core Engine online';
+  if (meta.source === 'cloud-memory') return 'Cloud memory active';
+  return 'Safe fallback mode';
+}
+
+function contextLine(meta) {
+  const used = meta?.contextUsed;
+  if (!used) return 'Identity guard active. Memory, projects, goals and plans load when available.';
+  return `Context loaded: ${used.relevantMemories || 0} memories • ${used.projects || 0} projects • ${used.goals || 0} goals • ${used.plans || 0} plans.`;
 }
 
 export default function Talk({ mode }) {
   const [messages, setMessages] = useState(load('messages', [
-    { from: 'core', text: 'I am Dylan Core Genesis 0.3.0. Talk to me, and I will remember the conversation through the Cloud Brain.' },
+    { from: 'core', text: 'Dylan. Core pipeline online. I will use memory, projects, goals, and plans when they are loaded. What are we fixing next?' },
   ]));
   const [suggestions, setSuggestions] = useState(load('memorySuggestions', []));
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [deepThink, setDeepThink] = useState(false);
   const [lastMeta, setLastMeta] = useState(load('lastAiMeta', null));
   const [conversationId, setConversationId] = useState(load(CURRENT_CONVERSATION_KEY, null));
-  const [cloudState, setCloudState] = useState('Preparing conversation memory...');
+  const [cloudState, setCloudState] = useState('Preparing cloud memory...');
   const chatEndRef = useRef(null);
 
   useEffect(() => {
@@ -57,8 +65,8 @@ export default function Talk({ mode }) {
     [suggestions]
   );
 
-  async function send() {
-    const clean = input.trim();
+  async function send(overrideInput) {
+    const clean = (overrideInput ?? input).trim();
     if (!clean || isSending) return;
 
     const userMessage = buildMessage({ from: 'dylan', text: clean });
@@ -74,7 +82,7 @@ export default function Talk({ mode }) {
       const projects = load('projects', []);
       const goals = load('goals', []);
       const plans = load('plans', []);
-      const routed = await routeCoreRequest({ input: clean, mode, memories, projects, goals, plans, messages: optimistic });
+      const routed = await routeCoreRequest({ input: clean, mode, memories, projects, goals, plans, messages: optimistic, deepThink });
       const suggestion = suggestMemoryFromMessage(clean, suggestions);
 
       const meta = {
@@ -85,6 +93,8 @@ export default function Talk({ mode }) {
         latencyMs: routed.latencyMs,
         error: routed.error,
         contextUsed: routed.contextUsed,
+        internetNeeded: routed.internetNeeded,
+        deepThink,
         at: new Date().toISOString(),
       };
 
@@ -111,8 +121,8 @@ export default function Talk({ mode }) {
       }
 
       logActivity({
-        engine: 'Production AI Backend',
-        action: routed.source === 'real-ai-brain' ? 'Processed with OpenAI' : 'Used fallback safely',
+        engine: 'Dylan Core Pipeline',
+        action: routed.source === 'dylan-core-engine' ? 'Processed with identity guard' : 'Used fallback safely',
         detail: `Mode ${mode}. Context: ${routed.contextUsed.relevantMemories} memories, ${routed.contextUsed.projects} projects, ${routed.contextUsed.goals} goals.`,
       });
     } catch (error) {
@@ -131,25 +141,39 @@ export default function Talk({ mode }) {
 
   return (
     <section className="screen talkScreen">
-      <h2>Talk</h2>
+      <div className="talkHeader">
+        <div>
+          <p className="eyebrow">DYLAN CORE</p>
+          <h2>Talk</h2>
+        </div>
+        <button
+          className={`deepToggle ${deepThink ? 'active' : ''}`}
+          type="button"
+          onClick={() => setDeepThink((value) => !value)}
+        >
+          {deepThink ? 'Deep On' : 'Deep'}
+        </button>
+      </div>
       <PresenceBanner mode={mode} />
-      <div className={`aiStatusPanel ${lastMeta?.source === 'real-ai-brain' ? 'connected' : 'fallback'}`}>
+      <div className={`aiStatusPanel ${lastMeta?.source === 'dylan-core-engine' || lastMeta?.source === 'real-ai-brain' ? 'connected' : 'fallback'}`}>
         <span>{statusLabel(lastMeta)}</span>
         <small>{cloudState}</small>
-        <small>
-          {lastMeta?.source === 'real-ai-brain'
-            ? `Context used: ${lastMeta.contextUsed?.relevantMemories || 0} memories, ${lastMeta.contextUsed?.projects || 0} projects, ${lastMeta.contextUsed?.goals || 0} goals.`
-            : 'Real AI activates when Vercel has OPENAI_API_KEY and the deployment is current.'}
-        </small>
+        <small>{contextLine(lastMeta)}</small>
+        {lastMeta?.internetNeeded && <small>Internet scan needed: placeholder only in this build.</small>}
+      </div>
+      <div className="quickChips" aria-label="Quick actions">
+        <button type="button" onClick={() => send('What is the next best step for Core Self right now?')}>Next Step</button>
+        <button type="button" onClick={() => send('What context are you using right now?')}>Context</button>
+        <button type="button" onClick={() => send('Summarise the current Core Self build status.')}>Status</button>
       </div>
       <div className="chat">
         {messages.map((m, i) => (
           <div key={i} className={'bubble ' + m.from}>
             <span>{m.text}</span>
-            {m.meta && <small>{statusLabel(m.meta)}</small>}
+            {m.meta && <small>{statusLabel(m.meta)} • {contextLine(m.meta)}</small>}
           </div>
         ))}
-        {isSending && <div className="bubble core thinking">Core is thinking with long-term memory context...</div>}
+        {isSending && <div className="bubble core thinking">Dylan Core is thinking with identity and context loaded...</div>}
         <div ref={chatEndRef} />
       </div>
       <div className="inputRow">
@@ -163,10 +187,10 @@ export default function Talk({ mode }) {
               send();
             }
           }}
-          placeholder="Speak to Dylan Core..."
+          placeholder="Ask Dylan Core..."
           rows={2}
         />
-        <button onClick={send} disabled={isSending}>{isSending ? 'Thinking' : 'Send'}</button>
+        <button onClick={() => send()} disabled={isSending}>{isSending ? 'Thinking' : 'Send'}</button>
       </div>
       {!!pendingSuggestions && (
         <div className="briefing suggestionNotice">

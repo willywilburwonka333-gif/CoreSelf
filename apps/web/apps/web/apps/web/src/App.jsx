@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Activity as ActivityIcon, Brain, Home as HomeIcon, MessageCircle, Database, Network, Sun, Shield, FolderKanban, Target, Cpu, Settings as SettingsIcon, ListChecks, LogOut, ShieldCheck, MoreHorizontal } from 'lucide-react';
 import ModeBar from './components/ModeBar';
 import Home from './screens/Home';
@@ -23,11 +23,11 @@ const primaryTabs = [
   ['memory', 'Memory', Database],
   ['projects', 'Projects', FolderKanban],
   ['goals', 'Goals', Target],
+  ['planning', 'Plan', ListChecks],
 ];
 
 const moreTabs = [
   ['graph', 'Graph', Network],
-  ['planning', 'Plan', ListChecks],
   ['engines', 'Engines', Cpu],
   ['activity', 'Log', ActivityIcon],
   ['briefing', 'Briefing', Sun],
@@ -35,6 +35,8 @@ const moreTabs = [
   ['security', 'Security', ShieldCheck],
   ['core', 'Core', Shield],
 ];
+
+const allTabs = [...primaryTabs, ...moreTabs];
 
 export default function App() {
   const [tab, setTab] = useState('home');
@@ -47,6 +49,15 @@ export default function App() {
     setUser(nextUser);
     setAuthReady(true);
   }), []);
+
+  const currentTab = useMemo(() => allTabs.find(([id]) => id === tab), [tab]);
+  const isMoreActive = moreTabs.some(([id]) => id === tab);
+
+  function chooseTab(nextTab) {
+    setTab(nextTab);
+    setMoreOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 
   if (!authReady) {
     return <main className="app"><section className="briefing"><h2>Starting Cloud Brain...</h2><p className="muted">Checking Firebase Auth.</p></section></main>;
@@ -69,11 +80,6 @@ export default function App() {
     tab === 'security' ? <Security /> :
     <Core />;
 
-  function chooseTab(id) {
-    setTab(id);
-    setMoreOpen(false);
-  }
-
   return (
     <main className={`app mode-${mode.toLowerCase()}`}>
       <header className="topbar">
@@ -81,7 +87,7 @@ export default function App() {
           <Brain />
           <div>
             <strong>CORE SELF</strong>
-            <span>Dylan Core Genesis 0.5.1 • Identity + Context Pipeline</span>
+            <span>Dylan Core Genesis 0.5.0 • Core Pipeline</span>
           </div>
         </div>
         <div className="statusCluster"><span className="online">Core Online</span><button className="iconButton" onClick={() => signOutCore()} title="Sign out"><LogOut size={16} /></button></div>
@@ -93,12 +99,18 @@ export default function App() {
 
       {moreOpen && (
         <div className="moreNavPanel">
-          {moreTabs.map(([id, label, Icon]) => (
-            <button key={id} className={tab === id ? 'active' : ''} onClick={() => chooseTab(id)}>
-              <Icon size={16} />
-              <span>{label}</span>
-            </button>
-          ))}
+          <div className="moreNavHeader">
+            <strong>More</strong>
+            <span>{currentTab?.[1] || 'Core tools'}</span>
+          </div>
+          <div className="moreNavGrid">
+            {moreTabs.map(([id, label, Icon]) => (
+              <button key={id} className={tab === id ? 'active' : ''} onClick={() => chooseTab(id)}>
+                <Icon size={18} />
+                <span>{label}</span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -109,7 +121,7 @@ export default function App() {
             <span>{label}</span>
           </button>
         ))}
-        <button className={moreOpen || moreTabs.some(([id]) => id === tab) ? 'active' : ''} onClick={() => setMoreOpen((value) => !value)}>
+        <button className={isMoreActive || moreOpen ? 'active' : ''} onClick={() => setMoreOpen((value) => !value)}>
           <MoreHorizontal size={17} />
           <span>More</span>
         </button>
