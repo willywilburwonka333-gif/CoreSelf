@@ -1,14 +1,14 @@
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
 const OPENAI_RESPONSES_URL = 'https://api.openai.com/v1/responses';
-const GENESIS_VERSION = '0.6.1';
+const GENESIS_VERSION = '0.7.0';
 
 const DYLAN_SEED_MEMORY = [
   'Dylan Corr is building Core Self / Dylan Core as a persistent digital second self and personal AI operating system.',
   'Dylan wants Core Self to maximise his life: family, health, money, creativity, knowledge, app building, freedom, and long-term control.',
   'Dylan is Australian and works on multiple projects in spare time while supporting his family.',
   'Dylan prefers direct, practical, build-first answers. Do not waste time with generic onboarding or corporate filler.',
-  'Dylan has repeatedly chosen an implementation workflow: latest ZIP or single-file replacements, then npm build, Vercel deploy, git commit, git push.',
-  'Dylan expects Core Self to help with code, debugging, commands, build/deploy steps, project planning, prompts, business strategy, and memory/goal tracking.',
+  'Dylan has repeatedly chosen an implementation workflow: latest ZIP or single-file TXT replacements, then npm build, Vercel deploy, git commit, git push.',
+  'Dylan expects Core Self to help with code, debugging, exact commands, changed file lists, build/deploy steps, commit/push commands, project planning, prompts, business strategy, and memory/goal tracking.',
   'Core Self must eventually support memory, projects, goals, plans, live internet, model routing, vision, files, reminders, calendar, email, GitHub, Firebase, Vercel, and action tools.',
 ];
 
@@ -83,7 +83,7 @@ Permanent behaviour rules:
 - Do not ask generic onboarding questions such as "what are your goals?" or "list 3-5 tasks" unless Dylan explicitly asks to brainstorm from zero.
 - Use the supplied Core Context first: seed memory, retrieved memories, projects, goals, plans, mode, and recent conversation.
 - Start with the useful answer. Keep it tight, direct, and mobile-friendly.
-- If Dylan asks "what's next", give the next concrete command/action/check.
+- If Dylan says "next", treat it as meaning he has completed the previous replacement/build/deploy/commit step and wants the next build step.
 - If context is missing, say exactly what is missing and what to do next.
 - Never say "I can't build code directly" as a dead-end. Instead say what you can do: write code, produce replacement files, explain commands, debug errors, review screenshots, plan builds, guide deploys, and prepare exact implementation steps.
 - Be honest about tool limits: you cannot personally click buttons, spend money, access private services, or deploy unless a tool route supplies that access. But you can still help Dylan execute those actions safely.
@@ -93,7 +93,8 @@ Permanent behaviour rules:
 - You can mention that Core Self uses an external AI provider underneath if Dylan asks what powers it, but do not brand normal replies around provider/model names.
 
 Coding/project behaviour:
-- Dylan often wants minimal friction. Prefer direct file names, exact commands, and clear next action.
+- Dylan often wants minimal friction. Prefer direct file names, exact commands, what changed, and clear next action.
+- For Core Self coding releases, always include: files changed, commands, what changed, progress estimate, and next milestone.
 - When a build/test error is shown, diagnose from the error first, then give the next command or file fix.
 - When asked to build features, group compatible changes into safe stacks.
 - When asked for replacements, provide only changed files and do not invent unrelated changes.
@@ -309,7 +310,7 @@ async function callOpenAiWeb({ body }) {
     },
     body: JSON.stringify({
       model: webModel,
-      tools: [{ type: 'web_search', search_context_size: 'low' }],
+      tools: [{ type: process.env.OPENAI_WEB_TOOL || 'web_search_preview', search_context_size: body.deepThink ? 'medium' : 'low' }],
       tool_choice: 'required',
       max_output_tokens: body.deepThink ? 1200 : 850,
       input: [
@@ -396,7 +397,7 @@ export default async function handler(request, response) {
       source: aiResult.internetUsed ? 'dylan-core-internet-engine' : 'dylan-core-engine',
       confidence: aiResult.internetUsed ? 0.92 : (route.deepRequested ? 0.93 : 0.9),
       latencyMs: Date.now() - startedAt,
-      reply: reply || 'Dylan Core returned no message.',
+      reply: reply || 'Dylan. Core Engine returned no message, so the safe next step is to check Vercel function logs for /api/chat.',
       usage: aiResult.usage || null,
       internetNeeded: needsInternet,
       internetUsed: Boolean(aiResult.internetUsed),

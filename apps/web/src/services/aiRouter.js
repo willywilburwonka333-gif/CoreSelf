@@ -1,105 +1,98 @@
 import { coreReply } from './coreReply';
 import { retrieveRelevantMemories } from './memoryRetrieval';
+import { load, save } from './localStore';
+import { coreSeedMemories } from '../data/coreSeeds';
+import { defaultGoals, defaultProjects } from '../data/defaults';
 
 const SEED_MEMORIES = [
+  ...coreSeedMemories,
   {
-    id: 'seed-dylan-core-purpose',
-    title: 'Dylan Core purpose',
-    content: 'Dylan is building Core Self / Dylan Core as a persistent digital second self and personal AI operating system.',
-    lesson: 'Do not behave like a fresh generic chatbot. Use Dylan/project context immediately.',
-    futureAction: 'Help Dylan build, debug, plan, deploy, and improve his systems with direct next steps.',
-    relationshipTags: ['identity', 'core-self', 'dylan'],
+    id: 'seed-build-workflow-commands',
+    title: 'Core Self build workflow rule',
+    type: 'Workflow',
+    level: 'Permanent',
+    importance: 'Critical',
+    content: 'Dylan wants Core Self coding replies to include the exact replacement files, terminal commands, what changed, and how far the project is from completion.',
+    lesson: 'Always be practical and file-level when building Core Self.',
+    futureAction: 'When giving code/build help, include files, commands, summary, and progress.',
+    relationshipTags: ['workflow', 'coding', 'commands', 'Core Self'],
     status: 'Seed',
   },
   {
-    id: 'seed-workflow',
-    title: 'Preferred build workflow',
-    content: 'Dylan prefers either latest ZIP drops or single-file TXT replacements, then npm build, Vercel deploy, git commit, and git push.',
-    lesson: 'Be concrete. Give exact commands and exact file paths.',
-    futureAction: 'When Dylan asks for fixes, provide only changed files unless he asks for a full ZIP.',
-    relationshipTags: ['workflow', 'coding', 'deployment'],
+    id: 'seed-no-code-refusal',
+    title: 'Coding capability expectation',
+    type: 'Capability',
+    level: 'Permanent',
+    importance: 'Critical',
+    content: 'Dylan expects Dylan Core to help write code, prepare single-file replacements, inspect bugs, debug builds, explain terminal commands, deploy, commit, and push.',
+    lesson: 'Never use dead-end wording like “I cannot build code directly.” Explain the practical path instead.',
+    futureAction: 'For feature requests, produce a safe stack and exact next commands.',
+    relationshipTags: ['coding', 'debugging', 'replacement files'],
     status: 'Seed',
   },
   {
-    id: 'seed-coding-capability',
-    title: 'Coding support expectation',
-    content: 'Dylan expects Dylan Core to help with code, file replacements, debugging, build errors, deploy commands, architecture, and feature stacks.',
-    lesson: 'Never answer coding requests with a dead-end refusal like “I cannot build code directly.”',
-    futureAction: 'Explain the practical coding path and produce implementation-ready changes when requested.',
-    relationshipTags: ['coding', 'debugging', 'builds'],
+    id: 'seed-all-engines-roadmap',
+    title: 'Dylan Core engine roadmap',
+    type: 'Architecture',
+    level: 'Permanent',
+    importance: 'Critical',
+    content: 'Dylan Core should become a personal AI OS with memory, projects, goals, plans, live internet, Deep Think, model routing, vision/files, action queue, reminders, calendar, email, GitHub, Firebase, Vercel and notifications.',
+    lesson: 'Build useful engines, not just chat polish.',
+    futureAction: 'Keep stacking shippable Genesis releases toward action-capable second-self behaviour.',
+    relationshipTags: ['roadmap', 'AI OS', 'engines'],
     status: 'Seed',
   },
 ];
 
 const SEED_PROJECTS = [
+  ...defaultProjects,
   {
-    id: 'seed-project-core-self',
-    name: 'Core Self / Dylan Core',
-    status: 'Active Genesis build',
-    priority: 'Critical',
-    purpose: 'Build a persistent personal AI operating system and digital second self for Dylan Corr.',
-    nextAction: 'Finish seed memory, coding capability, live internet scan, model router, and action engine.',
-  },
-  {
-    id: 'seed-project-the-system',
-    name: 'THE SYSTEM',
-    status: 'Active product/app launch',
-    priority: 'High',
-    purpose: 'Gamified fitness/RPG life app with ranks, dungeons, AI coach, lore, stores, and marketing.',
-    nextAction: 'Keep release stability, store readiness, marketing, and future wearable/action roadmap aligned.',
-  },
-  {
-    id: 'seed-project-dungeon-protocol',
+    id: 'dungeon-protocol',
     name: 'Dungeon Protocol',
-    status: 'Active game layer',
-    priority: 'Medium',
-    purpose: 'Inner RPG/battle layer connected to THE SYSTEM universe.',
-    nextAction: 'Improve gameplay feel, animations, mobs, bosses, room scale, and battle identity.',
+    status: 'Active',
+    priority: 'A-Tier',
+    engine: 'Creation / Game Layer',
+    purpose: 'Inner RPG battle/game layer connected to THE SYSTEM universe.',
+    nextAction: 'Improve battle feel, animations, mobs, boss encounters, map scale, and identity.',
   },
   {
-    id: 'seed-project-reality',
-    name: 'Reality Project / HSET',
-    status: 'Research track',
-    priority: 'Medium',
-    purpose: 'Investigate reality through rigorous formalisation, comparison with mathematics/physics, and careful theory development.',
-    nextAction: 'Formalise definitions before making stronger claims.',
+    id: 'music-marketing',
+    name: 'Music / Marketing Assets',
+    status: 'Active',
+    priority: 'A-Tier',
+    engine: 'Creation / Growth',
+    purpose: 'Songs, film clips, TikTok posts, launch promos, lore and brand storytelling.',
+    nextAction: 'Use assets to market THE SYSTEM and build Core Self identity.',
   },
 ];
 
 const SEED_GOALS = [
+  ...defaultGoals,
   {
-    id: 'seed-goal-dylan-maximiser',
-    title: 'Maximise Dylan Corr',
-    category: 'Core Life System',
-    priority: 'Critical',
-    status: 'Active',
-    target: 'Use Core Self to improve family time, work output, product building, financial freedom, health, knowledge, and long-term control.',
-  },
-  {
-    id: 'seed-goal-useful-ai',
-    title: 'Make Dylan Core useful, not just chatty',
+    id: 'goal-dylan-core-useful',
+    title: 'Make Dylan Core genuinely useful',
     category: 'Product',
-    priority: 'Critical',
+    priority: 'S-Tier',
     status: 'Active',
-    target: 'Add seed memory, coding support, internet scan, model routing, memory retrieval, and tool/action capability.',
+    target: 'Move from generic chat to persistent AI OS with memory, internet, model routing, actions and tool execution.',
   },
   {
-    id: 'seed-goal-cheap-best-ai',
+    id: 'goal-cheap-best-ai-stack',
     title: 'Use the best AI stack cheaply',
     category: 'Architecture',
     priority: 'High',
     status: 'Active',
-    target: 'Cheap fast model by default, stronger Deep Think only when needed, internet only when needed, memory every time.',
+    target: 'Use cheap standard model by default, Deep Think only when useful, Internet Scan only when needed, and memory every time.',
   },
 ];
 
 const SEED_PLANS = [
   {
-    id: 'seed-plan-core-roadmap',
+    id: 'seed-plan-core-roadmap-070',
     title: 'Core Self Genesis roadmap',
     status: 'Active',
-    summary: '0.5.2 seed memory + coding capability, 0.5.3 live internet scan, 0.6 model router/deep think, 0.6.1 action engine + memory approval.',
-    nextAction: 'Build Action Engine foundation and approve/reject useful memory suggestions from Talk.',
+    summary: '0.7.0 focuses on Dylan Core intelligence: seed context, action queue, better routing, internet status and mobile usability.',
+    nextAction: 'Test Dylan Core with code help, latest web search, action queue and memory questions.',
   },
 ];
 
@@ -108,26 +101,60 @@ function activeOnly(items = []) {
   return items.filter((item) => item && item.status !== 'Archived' && item.status !== 'Rejected');
 }
 
+function itemKey(item = {}) {
+  return item.id || item.title || item.name || item.content;
+}
+
+function mergeSeeds(seedItems, userItems) {
+  const existing = activeOnly(userItems);
+  const existingKeys = new Set(existing.map(itemKey).filter(Boolean));
+  const seedsToAdd = seedItems.filter((item) => !existingKeys.has(itemKey(item)));
+  return [...seedsToAdd, ...existing];
+}
+
+export function seedCoreSelfData() {
+  const memories = load('memories', []);
+  const projects = load('projects', []);
+  const goals = load('goals', []);
+  const plans = load('plans', []);
+
+  const nextMemories = mergeSeeds(SEED_MEMORIES, memories);
+  const nextProjects = mergeSeeds(SEED_PROJECTS, projects);
+  const nextGoals = mergeSeeds(SEED_GOALS, goals);
+  const nextPlans = mergeSeeds(SEED_PLANS, plans);
+
+  save('memories', nextMemories);
+  save('projects', nextProjects);
+  save('goals', nextGoals);
+  save('plans', nextPlans);
+
+  return {
+    memories: nextMemories.length,
+    projects: nextProjects.length,
+    goals: nextGoals.length,
+    plans: nextPlans.length,
+  };
+}
 
 function wantsLiveInternet(input = '') {
-  return /\b(today|latest|current|news|search|internet|google|look up|price|prices|release|version|now|2026|recent|live|web)\b/i.test(input || '');
+  return /\b(today|latest|current|news|search|internet|google|look up|price|prices|release|version|now|2026|recent|live|web|source|sources|verify|check online)\b/i.test(input || '');
 }
 
 function wantsCodingHelp(input = '') {
-  return /\b(code|coding|build|fix|debug|bug|zip|replacement|file|deploy|vercel|firebase|github|commit|push|npm|react|vite|api|javascript|jsx|css|html|typescript|node)\b/i.test(input || '');
+  return /\b(code|coding|build|fix|debug|bug|zip|replacement|file|deploy|vercel|firebase|github|commit|push|npm|react|vite|api|javascript|jsx|css|html|typescript|node|terminal|command)\b/i.test(input || '');
 }
 
 function wantsDeepReasoning(input = '') {
-  return /\b(deep|strategy|architecture|roadmap|business plan|funding|refactor|complex|compare|decide|analyse|analyze|reason|system design|model router|action engine|hard problem)\b/i.test(input || '');
+  return /\b(deep|strategy|architecture|roadmap|business plan|funding|refactor|complex|compare|decide|analyse|analyze|reason|system design|model router|action engine|hard problem|best option)\b/i.test(input || '');
 }
-
 
 function actionTypeFor(input = '') {
   const lower = String(input || '').toLowerCase();
   if (/\b(remind|reminder|tomorrow|later|next week|tonight|morning|afternoon|evening)\b/.test(lower)) return 'reminder';
   if (/\b(task|todo|to-do|do this|need to)\b/.test(lower)) return 'task';
-  if (/\b(project|feature|build|fix|code|debug|deploy|commit|zip|replacement)\b/.test(lower)) return 'code_plan';
+  if (/\b(project|feature|build|fix|code|debug|deploy|commit|zip|replacement|terminal|command)\b/.test(lower)) return 'code_plan';
   if (/\b(goal|target|aim|objective)\b/.test(lower)) return 'goal_update';
+  if (/\b(memory|remember|save this|learn this)\b/.test(lower)) return 'memory_update';
   return 'note';
 }
 
@@ -136,121 +163,70 @@ function buildPreparedActions(input = '', routeProfile = 'standard') {
   if (!clean) return [];
   const type = actionTypeFor(clean);
   const actions = [];
+  const idBase = Date.now();
 
-  if (type === 'reminder') {
-    actions.push({
-      id: `action-${Date.now()}-reminder`,
-      type: 'reminder',
-      title: 'Prepare reminder',
-      detail: clean,
-      status: 'prepared',
-      nextStep: 'Confirm the exact time/date before turning this into a real reminder.',
-    });
-  }
+  const add = (action) => actions.push({ id: `action-${idBase}-${actions.length}`, status: 'prepared', ...action });
 
-  if (type === 'task') {
-    actions.push({
-      id: `action-${Date.now()}-task`,
-      type: 'task',
-      title: 'Create task',
-      detail: clean,
-      status: 'prepared',
-      nextStep: 'Save this to the action queue or convert it into a goal/project task.',
-    });
-  }
-
-  if (type === 'code_plan') {
-    actions.push({
-      id: `action-${Date.now()}-code`,
-      type: 'code_plan',
-      title: 'Prepare code/build plan',
-      detail: clean,
-      status: 'prepared',
-      nextStep: 'Identify changed files, give exact replacements, then run build, deploy, commit and push.',
-    });
-  }
-
-  if (type === 'goal_update') {
-    actions.push({
-      id: `action-${Date.now()}-goal`,
-      type: 'goal_update',
-      title: 'Update goal',
-      detail: clean,
-      status: 'prepared',
-      nextStep: 'Save this as a goal update after Dylan confirms the wording.',
-    });
-  }
-
-  if (!actions.length && (routeProfile === 'deep-think' || routeProfile === 'internet-scan')) {
-    actions.push({
-      id: `action-${Date.now()}-review`,
-      type: 'review',
-      title: 'Review answer for next action',
-      detail: clean,
-      status: 'prepared',
-      nextStep: 'If useful, save the conclusion as memory, task, project update, or goal update.',
-    });
-  }
+  if (type === 'reminder') add({ type: 'reminder', title: 'Prepare reminder', detail: clean, nextStep: 'Confirm exact date/time, then save it as a real reminder when reminder tools are connected.' });
+  if (type === 'task') add({ type: 'task', title: 'Create task', detail: clean, nextStep: 'Save this to Action Queue or convert it into a project task.' });
+  if (type === 'code_plan') add({ type: 'code_plan', title: 'Prepare code/build plan', detail: clean, nextStep: 'List changed files, provide replacements, run build, deploy, commit, and push.' });
+  if (type === 'goal_update') add({ type: 'goal_update', title: 'Update goal', detail: clean, nextStep: 'Save this as a goal update after confirming wording.' });
+  if (type === 'memory_update') add({ type: 'memory_update', title: 'Save memory', detail: clean, nextStep: 'Convert this into a permanent memory if it will matter later.' });
+  if (!actions.length && (routeProfile === 'deep-think' || routeProfile === 'internet-scan')) add({ type: 'review', title: 'Review for next action', detail: clean, nextStep: 'Save the useful conclusion as memory, task, goal or project update.' });
 
   return actions.slice(0, 3);
 }
 
 function routeProfileFor(input, deepThink) {
-  if (wantsLiveInternet(input)) return 'internet-scan';
+  if (wantsLiveInternet(input)) return deepThink ? 'deep-internet-scan' : 'internet-scan';
   if (deepThink) return 'deep-think';
   if (wantsCodingHelp(input)) return 'coding-standard';
   if (wantsDeepReasoning(input)) return 'standard-deep-recommended';
   return 'standard';
 }
 
-function mergeSeeds(seedItems, userItems, key = 'id') {
-  const existing = activeOnly(userItems);
-  const existingKeys = new Set(existing.map((item) => item?.[key] || item?.title || item?.name));
-  const seedsToAdd = seedItems.filter((item) => !existingKeys.has(item?.[key] || item?.title || item?.name));
-  return [...seedsToAdd, ...existing];
-}
-
-function buildContext({ input, mode, memories, projects, goals, plans, messages, relevantMemories, deepThink }) {
+function buildContext({ input, mode, projects, goals, plans, messages, relevantMemories, deepThink }) {
+  const routeProfile = routeProfileFor(input, deepThink);
   return {
     input,
     mode,
     deepThink: Boolean(deepThink),
-    routeProfile: routeProfileFor(input, deepThink),
-    preparedActions: buildPreparedActions(input, routeProfileFor(input, deepThink)),
+    routeProfile,
+    preparedActions: buildPreparedActions(input, routeProfile),
     deepRecommended: wantsDeepReasoning(input) || wantsCodingHelp(input),
     codingRequest: wantsCodingHelp(input),
     internetNeeded: wantsLiveInternet(input),
     relevantMemories: relevantMemories.map((memory) => ({
       title: memory.title,
+      type: memory.type,
+      level: memory.level,
+      importance: memory.importance,
       content: memory.content,
       lesson: memory.lesson,
       futureAction: memory.futureAction,
       relationshipTags: memory.relationshipTags || [],
     })),
-    projects: projects.slice(0, 10).map((project) => ({
+    projects: projects.slice(0, 12).map((project) => ({
       name: project.name || project.title,
       status: project.status,
       priority: project.priority,
       purpose: project.purpose || project.description,
       nextAction: project.nextAction,
     })),
-    goals: goals.slice(0, 10).map((goal) => ({
+    goals: goals.slice(0, 12).map((goal) => ({
       title: goal.title,
       category: goal.category,
       priority: goal.priority,
       status: goal.status,
       target: goal.target || goal.description,
     })),
-    plans: plans.slice(0, 6).map((plan) => ({
+    plans: plans.slice(0, 8).map((plan) => ({
       title: plan.title || plan.name,
       summary: plan.summary,
       nextAction: plan.nextAction,
       status: plan.status,
     })),
-    messages: messages.slice(-10).map((message) => ({
-      from: message.from,
-      text: message.text,
-    })),
+    messages: messages.slice(-12).map((message) => ({ from: message.from, text: message.text })),
   };
 }
 
@@ -262,40 +238,36 @@ async function callCoreApi(payload) {
   });
 
   const data = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(data.error || `Core API failed with ${response.status}`);
-  }
-
+  if (!response.ok) throw new Error(data.error || `Core API failed with ${response.status}`);
   return data;
 }
 
 function codingAwareFallback(input, mode, relevantMemories) {
-  if (/\b(code|coding|build|fix|debug|bug|zip|replacement|deploy|vercel|firebase|github|commit|push|npm|react|vite|api|javascript|jsx|css|html)\b/i.test(input || '')) {
-    return `Yes. I can help with the coding workflow.
+  if (wantsCodingHelp(input)) {
+    return `Yes. I can help with this build.
 
-What I can do here:
-1. read the error or feature request,
-2. identify the file/layer that needs changing,
-3. give exact replacement code or commands,
-4. guide build, deploy, commit, and push.
+What I can do:
+1. identify the exact files/layer,
+2. write replacement code,
+3. give build/deploy/commit commands,
+4. diagnose screenshots and terminal errors,
+5. keep changes small and shippable.
 
-Next step: send the exact error, screenshot, or feature stack and I’ll turn it into file-level changes.`;
+Next step: send the latest ZIP, file, screenshot, or error and I’ll turn it into exact replacements.`;
   }
-
   return coreReply(input, mode, relevantMemories);
 }
 
 export async function routeCoreRequest({ input, mode, memories = [], projects = [], goals = [], plans = [], messages = [], deepThink = false }) {
-  const mergedMemories = mergeSeeds(SEED_MEMORIES, memories, 'id');
-  const mergedProjects = mergeSeeds(SEED_PROJECTS, projects, 'id');
-  const mergedGoals = mergeSeeds(SEED_GOALS, goals, 'id');
-  const mergedPlans = mergeSeeds(SEED_PLANS, plans, 'id');
-  const relevantMemories = retrieveRelevantMemories(input, mergedMemories, deepThink ? 12 : 8);
+  const mergedMemories = mergeSeeds(SEED_MEMORIES, memories);
+  const mergedProjects = mergeSeeds(SEED_PROJECTS, projects);
+  const mergedGoals = mergeSeeds(SEED_GOALS, goals);
+  const mergedPlans = mergeSeeds(SEED_PLANS, plans);
+  const relevantMemories = retrieveRelevantMemories(input, mergedMemories, deepThink ? 14 : 9);
+
   const context = buildContext({
     input,
     mode,
-    memories: mergedMemories,
     projects: mergedProjects,
     goals: mergedGoals,
     plans: mergedPlans,
@@ -318,10 +290,10 @@ export async function routeCoreRequest({ input, mode, memories = [], projects = 
       deepRecommended: Boolean(result.diagnostics?.deepRecommended || wantsDeepReasoning(input) || wantsCodingHelp(input)),
       latencyMs: result.latencyMs || null,
       error: result.internetError || null,
-      internetNeeded: Boolean(result.internetNeeded),
+      internetNeeded: Boolean(result.internetNeeded || context.internetNeeded),
       internetUsed: Boolean(result.internetUsed),
       sources: Array.isArray(result.sources) ? result.sources : [],
-      codingRequest: Boolean(result.codingRequest),
+      codingRequest: Boolean(result.codingRequest || context.codingRequest),
       contextUsed: {
         memories: mergedMemories.length,
         relevantMemories: relevantMemories.length,
@@ -343,13 +315,13 @@ export async function routeCoreRequest({ input, mode, memories = [], projects = 
       confidence: 0.48,
       reply: `${codingAwareFallback(input, mode, relevantMemories)}
 
-Core AI note: Real AI failed safely.
+Core AI note: real AI failed safely.
 
 Status: ${error.message}
 
 What to check:
 1. Vercel has OPENAI_API_KEY on the current deployment.
-2. The deployment was redeployed after adding the key.
+2. The deployment was redeployed after adding/changing the key.
 3. OpenAI API billing/credits are active.
 4. The selected model is available.`,
       source: 'local-fallback',

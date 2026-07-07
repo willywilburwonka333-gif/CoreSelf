@@ -1,1 +1,0 @@
-// creation-engine\nexport const packageName = 'creation-engine';\n

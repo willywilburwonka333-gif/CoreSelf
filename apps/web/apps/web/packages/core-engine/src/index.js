@@ -1,1 +1,0 @@
-// core-engine\nexport const packageName = 'core-engine';\n

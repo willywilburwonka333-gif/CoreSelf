@@ -1182,3 +1182,192 @@ button:disabled, input:disabled {
   gap: 8px;
   flex-wrap: wrap;
 }
+
+/* Genesis 0.7.0 — Intelligence, action queue, tighter mobile shell */
+.actionQueueList article.doneAction {
+  opacity: 0.62;
+  border-color: rgba(53, 228, 139, 0.22);
+}
+
+.itemTopline {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+
+.itemTopline small {
+  color: var(--muted);
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.miniActionCard small {
+  display: block;
+  color: var(--muted);
+  margin-top: 4px;
+  font-size: 11px;
+}
+
+.nav.compactNav {
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(720px, calc(100% - 18px));
+  bottom: 7px;
+  padding: 6px;
+  border-radius: 20px;
+  gap: 4px;
+}
+
+.nav.compactNav button {
+  min-height: 42px;
+  padding: 6px 7px;
+  border-radius: 15px;
+  gap: 2px;
+}
+
+.nav.compactNav button svg {
+  width: 15px;
+  height: 15px;
+}
+
+.nav.compactNav button span {
+  font-size: 9px;
+  line-height: 1;
+}
+
+.moreNavPanel {
+  bottom: 61px;
+  width: min(720px, calc(100% - 18px));
+  padding: 8px;
+  border-radius: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.moreNavPanel button {
+  min-height: 36px;
+  padding: 7px 8px;
+}
+
+.talkScreen {
+  padding-bottom: 118px;
+}
+
+.talkScreen .chat {
+  padding-bottom: 88px;
+}
+
+.talkScreen .inputRow {
+  bottom: 62px;
+  width: min(720px, calc(100% - 18px));
+  padding: 7px;
+  border-radius: 18px;
+}
+
+.talkScreen .inputRow textarea {
+  min-height: 42px;
+  max-height: 94px;
+  font-size: 14px;
+}
+
+.talkScreen .inputRow button {
+  min-width: 72px;
+  padding: 0 12px;
+}
+
+.aiStatusPanel {
+  padding: 11px 12px;
+  gap: 4px;
+}
+
+.aiStatusPanel small {
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.quickChips {
+  gap: 6px;
+  margin: 8px 0 10px;
+}
+
+.quickChips button {
+  padding: 7px 9px;
+  font-size: 11px;
+}
+
+.bubble {
+  padding: 12px 13px;
+}
+
+.bubble span {
+  white-space: pre-wrap;
+}
+
+@media (max-width: 720px) {
+  .app {
+    padding: 8px 8px 82px;
+  }
+
+  .topbar {
+    padding: 9px 10px;
+    border-radius: 17px;
+  }
+
+  .brand strong {
+    font-size: 11px;
+  }
+
+  .brand span {
+    font-size: 10px;
+  }
+
+  .online {
+    display: none;
+  }
+
+  .modeBar {
+    padding: 8px 1px;
+    gap: 5px;
+  }
+
+  .modeBar button {
+    padding: 7px 9px;
+    font-size: 11px;
+  }
+
+  .talkHeader {
+    margin-top: 2px;
+  }
+
+  .talkHeader h2 {
+    font-size: 22px;
+    margin: 3px 0 0;
+  }
+
+  .deepToggle {
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+
+  .quickChips {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 3px;
+  }
+
+  .quickChips button {
+    flex: 0 0 auto;
+  }
+
+  .talkScreen .inputRow {
+    bottom: 58px;
+  }
+
+  .nav.compactNav {
+    bottom: 5px;
+  }
+
+  .nav.compactNav button {
+    min-height: 39px;
+  }
+}

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { load, save } from '../services/localStore';
 import { CURRENT_CONVERSATION_KEY, buildMessage, ensureConversation, loadLatestConversationMessages, saveConversationMessage } from '../services/conversationService';
-import { routeCoreRequest } from '../services/aiRouter';
+import { routeCoreRequest, seedCoreSelfData } from '../services/aiRouter';
 import { logActivity } from '../services/activityLog';
 import { acceptSuggestion, suggestMemoryFromMessage } from '../services/memorySuggestions';
 import PresenceBanner from '../components/PresenceBanner';
@@ -18,8 +18,8 @@ function statusLabel(meta) {
 
 function contextLine(meta) {
   const used = meta?.contextUsed;
-  if (!used) return 'Identity guard active. Memory, projects, goals and plans load when available.';
-  return `Context loaded: ${used.relevantMemories || 0} memories • ${used.projects || 0} projects • ${used.goals || 0} goals • ${used.plans || 0} plans.`;
+  if (!used) return 'Seed pack active. Memory, projects, goals and plans load before every reply.';
+  return `Context loaded: ${used.relevantMemories || 0} relevant / ${used.memories || 0} total memories • ${used.projects || 0} projects • ${used.goals || 0} goals • ${used.plans || 0} plans.`;
 }
 
 export default function Talk({ mode }) {
@@ -34,7 +34,16 @@ export default function Talk({ mode }) {
   const [actionQueue, setActionQueue] = useState(load('actionQueue', []));
   const [conversationId, setConversationId] = useState(load(CURRENT_CONVERSATION_KEY, null));
   const [cloudState, setCloudState] = useState('Preparing cloud memory...');
+  const [seedState, setSeedState] = useState(load('coreSeedState', null));
   const chatEndRef = useRef(null);
+
+
+  useEffect(() => {
+    const seeded = seedCoreSelfData();
+    setSeedState(seeded);
+    save('coreSeedState', seeded);
+    logActivity({ engine: 'Dylan Core Seed Pack', action: 'Seed context checked', detail: `${seeded.memories} memories, ${seeded.projects} projects, ${seeded.goals} goals, ${seeded.plans} plans available.` });
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -195,6 +204,8 @@ export default function Talk({ mode }) {
         <span>{statusLabel(lastMeta)}</span>
         <small>{cloudState}</small>
         <small>{contextLine(lastMeta)}</small>
+        {seedState && <small>Seed pack: {seedState.memories} memories • {seedState.projects} projects • {seedState.goals} goals • {seedState.plans} plans.</small>}
+        {actionQueue.length > 0 && <small>Action Queue: {actionQueue.length} saved item(s).</small>}
         {lastMeta?.internetUsed && <small>Internet Scan used{lastMeta?.sources?.length ? ` • ${lastMeta.sources.length} source(s)` : ''}</small>}
         {lastMeta?.internetNeeded && !lastMeta?.internetUsed && <small>Internet Scan requested but answered safely without live results.</small>}
         {lastMeta?.deepRecommended && !lastMeta?.deepThink && <small>Router note: Deep Think may improve this kind of request.</small>}
@@ -208,6 +219,7 @@ export default function Talk({ mode }) {
         <button type="button" onClick={() => { setDeepThink(true); send('Deep Think: what is the strongest next architecture move for Core Self?'); }}>Deep Plan</button>
         <button type="button" onClick={() => send('Search the internet for the latest useful AI tools for building Core Self cheaply.')}>Web Scan</button>
         <button type="button" onClick={() => send('Create an action plan for the next Core Self build.')}>Action Plan</button>
+        <button type="button" onClick={() => { const seeded = seedCoreSelfData(); setSeedState(seeded); save('coreSeedState', seeded); }}>Reseed Core</button>
       </div>
       <div className="chat">
         {messages.map((m, i) => (
@@ -241,6 +253,18 @@ export default function Talk({ mode }) {
         />
         <button onClick={() => send()} disabled={isSending}>{isSending ? 'Thinking' : 'Send'}</button>
       </div>
+      {actionQueue.length > 0 && (
+        <div className="briefing actionNotice">
+          <h3>Action Queue</h3>
+          {actionQueue.slice(0, 5).map((action) => (
+            <div className="miniActionCard" key={action.id}>
+              <strong>{action.title}</strong>
+              <p>{action.nextStep || action.detail}</p>
+              <small>{action.type} • {action.status}</small>
+            </div>
+          ))}
+        </div>
+      )}
       {latestPreparedActions.length > 0 && (
         <div className="briefing actionNotice">
           <h3>Prepared Actions</h3>
