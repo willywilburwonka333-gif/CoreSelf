@@ -1,1 +1,0 @@
-// memory-engine\nexport const packageName = 'memory-engine';\n

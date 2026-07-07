@@ -1,1 +1,0 @@
-// guardian-engine\nexport const packageName = 'guardian-engine';\n
