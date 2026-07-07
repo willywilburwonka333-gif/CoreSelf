@@ -8,6 +8,7 @@ import PresenceBanner from '../components/PresenceBanner';
 
 function statusLabel(meta) {
   if (!meta) return 'Dylan Core ready';
+  if (meta.source === 'dylan-core-internet-engine') return 'Internet Scan online';
   if (meta.source === 'dylan-core-engine') return 'Dylan Core Engine online';
   if (meta.source === 'real-ai-brain') return 'Dylan Core Engine online';
   if (meta.source === 'cloud-memory') return 'Cloud memory active';
@@ -94,6 +95,8 @@ export default function Talk({ mode }) {
         error: routed.error,
         contextUsed: routed.contextUsed,
         internetNeeded: routed.internetNeeded,
+        internetUsed: routed.internetUsed,
+        sources: routed.sources || [],
         deepThink,
         at: new Date().toISOString(),
       };
@@ -159,18 +162,23 @@ export default function Talk({ mode }) {
         <span>{statusLabel(lastMeta)}</span>
         <small>{cloudState}</small>
         <small>{contextLine(lastMeta)}</small>
-        {lastMeta?.internetNeeded && <small>Internet scan needed: placeholder only in this build.</small>}
+        {lastMeta?.internetUsed && <small>Internet Scan used{lastMeta?.sources?.length ? ` • ${lastMeta.sources.length} source(s)` : ''}</small>}
+        {lastMeta?.internetNeeded && !lastMeta?.internetUsed && <small>Internet Scan requested but answered safely without live results.</small>}
       </div>
       <div className="quickChips" aria-label="Quick actions">
         <button type="button" onClick={() => send('What is the next best step for Core Self right now?')}>Next Step</button>
         <button type="button" onClick={() => send('What context are you using right now?')}>Context</button>
         <button type="button" onClick={() => send('Summarise the current Core Self build status.')}>Status</button>
+        <button type="button" onClick={() => send('Search the internet for the latest useful AI tools for building Core Self cheaply.')}>Web Scan</button>
       </div>
       <div className="chat">
         {messages.map((m, i) => (
           <div key={i} className={'bubble ' + m.from}>
             <span>{m.text}</span>
             {m.meta && <small>{statusLabel(m.meta)} • {contextLine(m.meta)}</small>}
+            {m.meta?.sources?.length > 0 && (
+              <small>Sources: {m.meta.sources.slice(0, 3).map((source) => source.title || source.url).join(' • ')}</small>
+            )}
           </div>
         ))}
         {isSending && <div className="bubble core thinking">Dylan Core is thinking with identity and context loaded...</div>}

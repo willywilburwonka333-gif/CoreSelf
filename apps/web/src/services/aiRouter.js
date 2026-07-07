@@ -99,7 +99,7 @@ const SEED_PLANS = [
     title: 'Core Self Genesis roadmap',
     status: 'Active',
     summary: '0.5.2 seed memory + coding capability, 0.5.3 live internet scan, 0.6 model router/deep think, 0.7 action engine.',
-    nextAction: 'Test 0.5.2 with coding and context questions, then move to live internet scan.',
+    nextAction: 'Test live internet scan with current/news/search questions, then move to model router and Deep Think.',
   },
 ];
 
@@ -214,8 +214,10 @@ export async function routeCoreRequest({ input, mode, memories = [], projects = 
       reply: result.reply,
       source: result.source || 'dylan-core-engine',
       latencyMs: result.latencyMs || null,
-      error: null,
+      error: result.internetError || null,
       internetNeeded: Boolean(result.internetNeeded),
+      internetUsed: Boolean(result.internetUsed),
+      sources: Array.isArray(result.sources) ? result.sources : [],
       codingRequest: Boolean(result.codingRequest),
       contextUsed: {
         memories: mergedMemories.length,
@@ -251,6 +253,8 @@ What to check:
       latencyMs: null,
       error: error.message,
       internetNeeded: /\b(today|latest|current|news|search|internet|google|look up|price|prices|release|version|now|2026|recent|live|web)\b/i.test(input || ''),
+      internetUsed: false,
+      sources: [],
       codingRequest: /\b(code|coding|build|fix|debug|bug|zip|replacement|deploy|vercel|firebase|github|commit|push|npm|react|vite|api|javascript|jsx|css|html)\b/i.test(input || ''),
       contextUsed: {
         memories: mergedMemories.length,
