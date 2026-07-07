@@ -8,7 +8,7 @@ export default function Home({ mode }) {
     <section className="screen">
       <div className="hero">
         <div>
-          <p className="eyebrow">CORE SELF / GENESIS</p>
+          <p className="eyebrow">CORE SELF / GENESIS 0.0.9</p>
           <h1>Dylan Core</h1>
           <p>{constitution.primeDirective}</p>
         </div>
@@ -26,7 +26,7 @@ export default function Home({ mode }) {
         <article>
           <span>Today</span>
           <h3>Build the Platform</h3>
-          <p>Backup, settings, activity logs, AI Router prep, and Firestore readiness.</p>
+          <p>Real AI provider connection, memory context routing, relationships, planning, and Firestore readiness.</p>
         </article>
         <article>
           <span>Rule</span>

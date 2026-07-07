@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { load, save } from '../services/localStore';
 import { routeCoreRequest } from '../services/aiRouter';
 import { logActivity } from '../services/activityLog';
+import { suggestMemoryFromMessage } from '../services/memorySuggestions';
 import PresenceBanner from '../components/PresenceBanner';
 
 export default function Talk({ mode }) {
   const [messages, setMessages] = useState(load('messages', [
     { from: 'core', text: 'I am Dylan Core Genesis. Teach me, and I will grow into your Core.' },
   ]));
+  const [suggestions, setSuggestions] = useState(load('memorySuggestions', []));
   const [input, setInput] = useState('');
 
   async function send() {
@@ -17,14 +19,23 @@ export default function Talk({ mode }) {
     const projects = load('projects', []);
     const goals = load('goals', []);
     const routed = await routeCoreRequest({ input: clean, mode, memories, projects, goals });
+    const suggestion = suggestMemoryFromMessage(clean, suggestions);
 
     const next = [
       ...messages,
       { from: 'dylan', text: clean },
-      { from: 'core', text: routed.reply },
+      { from: 'core', text: suggestion ? `${routed.reply}\n\nCore Suggestion: this sounds worth saving to Memory.` : routed.reply },
     ];
     setMessages(next);
     save('messages', next);
+
+    if (suggestion) {
+      const nextSuggestions = [suggestion, ...suggestions];
+      setSuggestions(nextSuggestions);
+      save('memorySuggestions', nextSuggestions);
+      logActivity({ engine: 'Memory Suggestions', action: 'Created suggestion', detail: suggestion.title });
+    }
+
     logActivity({
       engine: 'AI Router',
       action: 'Processed message',
@@ -44,6 +55,12 @@ export default function Talk({ mode }) {
         <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && send()} placeholder="Speak to Dylan Core..." />
         <button onClick={send}>Send</button>
       </div>
+      {!!suggestions.filter((item) => item.status === 'Pending').length && (
+        <div className="briefing suggestionNotice">
+          <h3>Pending Core Suggestions</h3>
+          <p>{suggestions.filter((item) => item.status === 'Pending').length} memory suggestion(s) are waiting in Memory Vault.</p>
+        </div>
+      )}
     </section>
   );
 }

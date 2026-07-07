@@ -513,7 +513,7 @@ textarea {
   transform: translateX(-50%);
   width: min(980px, calc(100% - 24px));
   display: grid;
-  grid-template-columns: repeat(11, 1fr);
+  grid-template-columns: repeat(12, 1fr);
   gap: 6px;
   padding: 8px;
   border: 1px solid var(--line);
@@ -550,4 +550,29 @@ textarea {
     overflow-y: auto;
   }
   .projectHeader { display: grid; }
+}
+
+
+.buttonRow {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.buttonRow .primary, .buttonRow .danger {
+  margin-top: 8px;
+}
+
+.compactList article {
+  background: rgba(3, 8, 18, 0.42);
+}
+
+.suggestionNotice {
+  border-color: rgba(255, 209, 102, 0.35);
+}
+
+ol {
+  color: var(--muted);
+  line-height: 1.55;
 }

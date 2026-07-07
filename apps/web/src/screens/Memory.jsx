@@ -1,6 +1,9 @@
 import { useMemo, useState } from 'react';
 import { load, save } from '../services/localStore';
 import { logActivity } from '../services/activityLog';
+import { acceptSuggestion } from '../services/memorySuggestions';
+import { buildRelationshipLinks, detectRelationshipTags } from '../services/relationshipEngine';
+import { defaultProjects, defaultGoals, defaultLifeGraphNodes } from '../data/defaults';
 
 const types = ['All', 'Dylan Memory', 'Project', 'Skill', 'Decision', 'Lesson', 'Preference', 'Goal', 'Warning'];
 const levels = ['All', 'Permanent', 'Long-term', 'Active', 'Short-term', 'Archive'];
@@ -8,6 +11,7 @@ const importanceOptions = ['Low', 'Medium', 'High', 'Critical'];
 
 export default function Memory() {
   const [items, setItems] = useState(load('memories', []));
+  const [suggestions, setSuggestions] = useState(load('memorySuggestions', []));
   const [query, setQuery] = useState('');
   const [filterType, setFilterType] = useState('All');
   const [filterLevel, setFilterLevel] = useState('All');
@@ -21,10 +25,17 @@ export default function Memory() {
     futureAction: ''
   });
 
+  const links = useMemo(() => buildRelationshipLinks({
+    memories: items,
+    projects: load('projects', defaultProjects),
+    goals: load('goals', defaultGoals),
+    lifeGraphNodes: load('lifeGraphNodes', defaultLifeGraphNodes),
+  }), [items]);
+
   const filtered = useMemo(() => {
     const q = query.toLowerCase();
     return items.filter((m) => {
-      const matchesText = !q || [m.title, m.content, m.lesson, m.futureAction].join(' ').toLowerCase().includes(q);
+      const matchesText = !q || [m.title, m.content, m.lesson, m.futureAction, m.relationshipTags?.join(' ')].join(' ').toLowerCase().includes(q);
       const matchesType = filterType === 'All' || m.type === filterType;
       const matchesLevel = filterLevel === 'All' || m.level === filterLevel;
       return matchesText && matchesType && matchesLevel;
@@ -37,10 +48,12 @@ export default function Memory() {
 
   function add() {
     if (!form.content.trim() && !form.title.trim()) return;
+    const body = [form.title, form.content, form.lesson, form.futureAction].join(' ');
     const memory = {
       id: crypto.randomUUID(),
       ...form,
       title: form.title.trim() || form.content.trim().slice(0, 50),
+      relationshipTags: detectRelationshipTags(body),
       truthStatus: 'Confirmed by Dylan',
       createdAt: new Date().toISOString(),
     };
@@ -58,10 +71,55 @@ export default function Memory() {
     logActivity({ engine: 'Memory Engine', action: 'Removed memory', detail: id, level: 'Warning' });
   }
 
+  function accept(id) {
+    const suggestion = suggestions.find((item) => item.id === id);
+    if (!suggestion) return;
+    const memory = acceptSuggestion(suggestion);
+    const nextMemories = [memory, ...items];
+    const nextSuggestions = suggestions.map((item) => item.id === id ? { ...item, status: 'Accepted', acceptedAt: new Date().toISOString() } : item);
+    setItems(nextMemories);
+    setSuggestions(nextSuggestions);
+    save('memories', nextMemories);
+    save('memorySuggestions', nextSuggestions);
+    logActivity({ engine: 'Memory Suggestions', action: 'Accepted suggestion', detail: memory.title });
+  }
+
+  function reject(id) {
+    const nextSuggestions = suggestions.map((item) => item.id === id ? { ...item, status: 'Rejected', rejectedAt: new Date().toISOString() } : item);
+    setSuggestions(nextSuggestions);
+    save('memorySuggestions', nextSuggestions);
+    logActivity({ engine: 'Memory Suggestions', action: 'Rejected suggestion', detail: id, level: 'Warning' });
+  }
+
+  const pending = suggestions.filter((item) => item.status === 'Pending');
+
   return (
     <section className="screen">
       <h2>Memory Vault</h2>
-      <p className="muted">Structured memories become the foundation of Dylan Core.</p>
+      <p className="muted">Structured memories now connect to projects, goals, and Life Graph context.</p>
+
+      {!!pending.length && (
+        <div className="briefing">
+          <h3>Core Suggestions</h3>
+          <p>Dylan Core detected useful memory candidates from Talk. Accept the ones that matter.</p>
+          <div className="list compactList">
+            {pending.map((s) => (
+              <article key={s.id}>
+                <div className="cardTop">
+                  <h3>{s.title}</h3>
+                  <small>{s.type} • {s.importance}</small>
+                </div>
+                <p>{s.content}</p>
+                {!!s.relationshipTags?.length && <p><strong>Links:</strong> {s.relationshipTags.join(', ')}</p>}
+                <div className="buttonRow">
+                  <button className="primary" onClick={() => accept(s.id)}>Accept Memory</button>
+                  <button className="danger" onClick={() => reject(s.id)}>Reject</button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="formGrid">
         <select value={form.type} onChange={(e) => setField('type', e.target.value)}>
@@ -92,21 +150,26 @@ export default function Memory() {
         </select>
       </div>
 
-      <p className="muted">Showing {filtered.length} of {items.length} memories.</p>
+      <p className="muted">Showing {filtered.length} of {items.length} memories • {links.length} relationship link(s) detected.</p>
 
       <div className="list">
-        {filtered.length ? filtered.map((m) => (
-          <article key={m.id}>
-            <div className="cardTop">
-              <h3>{m.title}</h3>
-              <small>{m.type} • {m.level} • {m.importance}</small>
-            </div>
-            <p>{m.content}</p>
-            {m.lesson && <p><strong>Lesson:</strong> {m.lesson}</p>}
-            {m.futureAction && <p><strong>Future Action:</strong> {m.futureAction}</p>}
-            <button className="danger" onClick={() => remove(m.id)}>Archive / Remove</button>
-          </article>
-        )) : <p className="muted">No matching memories.</p>}
+        {filtered.length ? filtered.map((m) => {
+          const memoryLinks = links.filter((link) => link.fromId === m.id);
+          return (
+            <article key={m.id}>
+              <div className="cardTop">
+                <h3>{m.title}</h3>
+                <small>{m.type} • {m.level} • {m.importance}</small>
+              </div>
+              <p>{m.content}</p>
+              {m.lesson && <p><strong>Lesson:</strong> {m.lesson}</p>}
+              {m.futureAction && <p><strong>Future Action:</strong> {m.futureAction}</p>}
+              {!!m.relationshipTags?.length && <p><strong>Tags:</strong> {m.relationshipTags.join(', ')}</p>}
+              {!!memoryLinks.length && <p><strong>Linked to:</strong> {memoryLinks.map((link) => `${link.toLabel} (${link.strength})`).join(', ')}</p>}
+              <button className="danger" onClick={() => remove(m.id)}>Archive / Remove</button>
+            </article>
+          );
+        }) : <p className="muted">No matching memories.</p>}
       </div>
     </section>
   );

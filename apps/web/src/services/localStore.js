@@ -19,12 +19,13 @@ export function remove(key) {
 
 export function exportCoreData() {
   return {
-    version: 'Genesis 0.0.6',
+    version: 'Genesis 0.0.8',
     exportedAt: new Date().toISOString(),
     memories: load('memories', []),
     projects: load('projects', []),
     goals: load('goals', []),
     lifeGraphNodes: load('lifeGraphNodes', []),
+    memorySuggestions: load('memorySuggestions', []),
     activityLog: load('activityLog', []),
     settings: load('settings', {}),
     messages: load('messages', []),
@@ -37,6 +38,7 @@ export function importCoreData(data) {
   if (Array.isArray(data.projects)) save('projects', data.projects);
   if (Array.isArray(data.goals)) save('goals', data.goals);
   if (Array.isArray(data.lifeGraphNodes)) save('lifeGraphNodes', data.lifeGraphNodes);
+  if (Array.isArray(data.memorySuggestions)) save('memorySuggestions', data.memorySuggestions);
   if (Array.isArray(data.activityLog)) save('activityLog', data.activityLog);
   if (data.settings) save('settings', data.settings);
   if (Array.isArray(data.messages)) save('messages', data.messages);

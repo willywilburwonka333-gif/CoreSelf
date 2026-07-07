@@ -20,7 +20,7 @@ export default function Settings() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'core-self-backup-genesis-0.0.6.json';
+    a.download = 'core-self-backup-genesis-0.0.9.json';
     a.click();
     URL.revokeObjectURL(url);
     logActivity({ engine: 'Backup', action: 'Exported Core data', detail: 'Local JSON backup created.' });
@@ -39,7 +39,7 @@ export default function Settings() {
   return (
     <section className="screen">
       <h2>Settings</h2>
-      <p className="muted">Genesis settings are local only. Cloud and real AI providers are prepared but not connected yet.</p>
+      <p className="muted">Genesis 0.0.9 can use a real AI provider through the Vercel API route when OPENAI_API_KEY is configured. Local fallback remains active.</p>
 
       <div className="list">
         <article>

@@ -1,9 +1,9 @@
 const items = [
-  ['Dream Product', 7],
-  ['Phone App', 32],
-  ['Useful AI Foundation', 18],
-  ['Learning AI Self', 8],
-  ['Autonomous Helper', 2],
+  ['Dream Product', 9],
+  ['Phone App', 36],
+  ['Useful AI Foundation', 26],
+  ['Learning AI Self', 14],
+  ['Autonomous Helper', 4],
 ];
 
 export default function ProgressTracker() {

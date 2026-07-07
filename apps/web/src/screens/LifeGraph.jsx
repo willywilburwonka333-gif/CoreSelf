@@ -1,11 +1,19 @@
-import { useState } from 'react';
-import { defaultLifeGraphNodes } from '../data/defaults';
+import { useMemo, useState } from 'react';
+import { defaultLifeGraphNodes, defaultProjects, defaultGoals } from '../data/defaults';
 import { load, save } from '../services/localStore';
 import { logActivity } from '../services/activityLog';
+import { buildRelationshipLinks } from '../services/relationshipEngine';
 
 export default function LifeGraph() {
   const [nodes, setNodes] = useState(load('lifeGraphNodes', defaultLifeGraphNodes));
   const [form, setForm] = useState({ group: 'New', title: '', detail: '' });
+
+  const relationshipLinks = useMemo(() => buildRelationshipLinks({
+    memories: load('memories', []),
+    projects: load('projects', defaultProjects),
+    goals: load('goals', defaultGoals),
+    lifeGraphNodes: nodes,
+  }), [nodes]);
 
   function persist(next) {
     setNodes(next);
@@ -32,7 +40,12 @@ export default function LifeGraph() {
   return (
     <section className="screen">
       <h2>Life Graph</h2>
-      <p className="muted">The editable living model of Dylan’s life.</p>
+      <p className="muted">The editable living model of Dylan’s life. Relationship links now appear when memories connect to graph nodes.</p>
+
+      <div className="briefing">
+        <h3>Relationship Map</h3>
+        <p>{relationshipLinks.length} live relationship link(s) detected between Memory and Dylan&apos;s world model.</p>
+      </div>
 
       <div className="formGrid">
         <input value={form.group} onChange={(e) => setForm({ ...form, group: e.target.value })} placeholder="Group" />
@@ -42,14 +55,18 @@ export default function LifeGraph() {
       <textarea value={form.detail} onChange={(e) => setForm({ ...form, detail: e.target.value })} placeholder="Node detail..." />
 
       <div className="graph">
-        {nodes.map((node) => (
-          <article key={node.id}>
-            <small>{node.group}</small>
-            <input value={node.title} onChange={(e) => updateNode(node.id, 'title', e.target.value)} />
-            <textarea value={node.detail} onChange={(e) => updateNode(node.id, 'detail', e.target.value)} />
-            <button className="danger" onClick={() => removeNode(node.id)}>Remove Node</button>
-          </article>
-        ))}
+        {nodes.map((node) => {
+          const links = relationshipLinks.filter((link) => link.toId === node.id);
+          return (
+            <article key={node.id}>
+              <small>{node.group}</small>
+              <input value={node.title} onChange={(e) => updateNode(node.id, 'title', e.target.value)} />
+              <textarea value={node.detail} onChange={(e) => updateNode(node.id, 'detail', e.target.value)} />
+              {!!links.length && <p><strong>Memory Links:</strong> {links.map((link) => `${link.fromLabel} (${link.strength})`).join(', ')}</p>}
+              <button className="danger" onClick={() => removeNode(node.id)}>Remove Node</button>
+            </article>
+          );
+        })}
       </div>
     </section>
   );

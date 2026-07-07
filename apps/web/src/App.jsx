@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Activity as ActivityIcon, Brain, Home as HomeIcon, MessageCircle, Database, Network, Sun, Shield, FolderKanban, Target, Cpu, Settings as SettingsIcon } from 'lucide-react';
+import { Activity as ActivityIcon, Brain, Home as HomeIcon, MessageCircle, Database, Network, Sun, Shield, FolderKanban, Target, Cpu, Settings as SettingsIcon, ListChecks } from 'lucide-react';
 import ModeBar from './components/ModeBar';
 import Home from './screens/Home';
 import Talk from './screens/Talk';
@@ -9,6 +9,7 @@ import Briefing from './screens/Briefing';
 import Core from './screens/Core';
 import Projects from './screens/Projects';
 import Goals from './screens/Goals';
+import Planning from './screens/Planning';
 import Engines from './screens/Engines';
 import Activity from './screens/Activity';
 import Settings from './screens/Settings';
@@ -20,6 +21,7 @@ const tabs = [
   ['graph', 'Graph', Network],
   ['projects', 'Projects', FolderKanban],
   ['goals', 'Goals', Target],
+  ['planning', 'Plan', ListChecks],
   ['engines', 'Engines', Cpu],
   ['activity', 'Log', ActivityIcon],
   ['briefing', 'Briefing', Sun],
@@ -38,6 +40,7 @@ export default function App() {
     tab === 'graph' ? <LifeGraph /> :
     tab === 'projects' ? <Projects /> :
     tab === 'goals' ? <Goals /> :
+    tab === 'planning' ? <Planning /> :
     tab === 'engines' ? <Engines /> :
     tab === 'activity' ? <Activity /> :
     tab === 'briefing' ? <Briefing /> :
@@ -51,7 +54,7 @@ export default function App() {
           <Brain />
           <div>
             <strong>CORE SELF</strong>
-            <span>Dylan Core Genesis 0.0.6</span>
+            <span>Dylan Core Genesis 0.0.9</span>
           </div>
         </div>
         <span className="online">Core Online</span>

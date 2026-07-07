@@ -22,7 +22,7 @@ export const defaultProjects = [
     priority: 'S-Tier',
     engine: 'Identity / Memory / Learning',
     purpose: 'Lifelong AI Core platform, starting with Dylan Core.',
-    nextAction: 'Build Memory and Life Graph foundation.',
+    nextAction: 'Connect real AI provider through Genesis 0.0.9 and prepare cloud sync.',
     familyFreedom: 5,
     wealth: 5,
     health: 3,
@@ -97,12 +97,13 @@ export const defaultLifeGraphNodes = [
 
 export const engineStatuses = [
   { name: 'Identity Engine', status: 'Online', progress: 45, next: 'Keep constitution synced with app.' },
-  { name: 'Memory Engine', status: 'Genesis+', progress: 28, next: 'Add Firestore and retrieval scoring.' },
-  { name: 'Life Graph Engine', status: 'Editable Local', progress: 25, next: 'Add relationships between nodes.' },
-  { name: 'Decision Engine', status: 'Local Prototype', progress: 18, next: 'Use scoring across all actions.' },
+  { name: 'Memory Engine', status: 'Suggestions + AI Context Online', progress: 44, next: 'Use model output to improve extraction and retrieval scoring.' },
+  { name: 'Life Graph Engine', status: 'Relationship Links Online', progress: 35, next: 'Make links manually editable.' },
+  { name: 'Planning Engine', status: 'Local V1 + AI Context', progress: 26, next: 'Turn plans into tracked tasks and reminders.' },
+  { name: 'Decision Engine', status: 'Local Prototype', progress: 22, next: 'Use scoring across all actions.' },
   { name: 'Guardian Engine', status: 'Designed', progress: 12, next: 'Add risk warnings and authority gates.' },
-  { name: 'AI Router', status: 'Prepared', progress: 10, next: 'Connect model API later.' },
-  { name: 'Firestore Layer', status: 'Prepared', progress: 10, next: 'Add Firebase config when ready.' },
+  { name: 'AI Router', status: 'Real Provider Route Online', progress: 28, next: 'Add OPENAI_API_KEY in Vercel and test real replies.' },
+  { name: 'Firestore Layer', status: 'Prepared for memory/plans', progress: 14, next: 'Add Firebase config when ready.' },
   { name: 'Activity Log', status: 'Local', progress: 15, next: 'Log engine actions automatically.' },
   { name: 'Backup System', status: 'Local', progress: 20, next: 'Add cloud backup later.' }
 ];
