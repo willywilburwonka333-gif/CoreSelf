@@ -1,11 +1,32 @@
+import { useEffect, useState } from 'react';
 import { engineStatuses } from '../data/defaults';
 import { firestoreStatus } from '../services/firestoreService';
 
 export default function Engines() {
+  const [aiStatus, setAiStatus] = useState({ ok: false, message: 'Checking Real AI Brain...', provider: 'checking', model: 'checking' });
+
+  useEffect(() => {
+    let alive = true;
+    fetch('/api/ai-status')
+      .then((response) => response.json())
+      .then((data) => { if (alive) setAiStatus(data); })
+      .catch((error) => {
+        if (alive) setAiStatus({ ok: false, message: `AI status check failed: ${error.message}`, provider: 'unknown', model: 'unknown' });
+      });
+    return () => { alive = false; };
+  }, []);
+
   return (
     <section className="screen">
       <h2>Engine Status</h2>
       <p className="muted">This shows which parts of Dylan Core are real, prepared, or still only designed.</p>
+
+      <div className={`briefing aiStatusPanel ${aiStatus.ok ? 'connected' : 'fallback'}`}>
+        <h3>Real AI Brain</h3>
+        <p>{aiStatus.message}</p>
+        <small>Provider: {aiStatus.provider} • Model: {aiStatus.model} • Genesis {aiStatus.version || '0.1.3'}</small>
+        {!aiStatus.ok && <p className="muted"><strong>Next:</strong> {aiStatus.nextAction}</p>}
+      </div>
 
       <div className="briefing">
         <h3>Cloud Readiness</h3>

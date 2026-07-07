@@ -22,7 +22,7 @@ export const defaultProjects = [
     priority: 'S-Tier',
     engine: 'Identity / Memory / Learning',
     purpose: 'Lifelong AI Core platform, starting with Dylan Core.',
-    nextAction: 'Connect real AI provider through Genesis 0.0.9 and prepare cloud sync.',
+    nextAction: 'Harden Cloud Brain with Real AI Brain, audit logs, and approval gates.',
     familyFreedom: 5,
     wealth: 5,
     health: 3,

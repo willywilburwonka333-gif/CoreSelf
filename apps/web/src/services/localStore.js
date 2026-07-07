@@ -11,6 +11,10 @@ export function load(key, fallback) {
 
 export function save(key, value) {
   localStorage.setItem(prefix + key, JSON.stringify(value));
+  // Fire-and-forget cloud sync. Local storage remains the source of truth offline.
+  import('./cloudStore.js')
+    .then(({ saveKeyToCloud }) => saveKeyToCloud(key, value).catch(() => null))
+    .catch(() => null);
 }
 
 export function remove(key) {
@@ -19,7 +23,7 @@ export function remove(key) {
 
 export function exportCoreData() {
   return {
-    version: 'Genesis 0.0.8',
+    version: 'Genesis 0.1.2',
     exportedAt: new Date().toISOString(),
     memories: load('memories', []),
     projects: load('projects', []),
@@ -29,6 +33,7 @@ export function exportCoreData() {
     activityLog: load('activityLog', []),
     settings: load('settings', {}),
     messages: load('messages', []),
+    auditLog: load('auditLog', []),
   };
 }
 
@@ -42,4 +47,5 @@ export function importCoreData(data) {
   if (Array.isArray(data.activityLog)) save('activityLog', data.activityLog);
   if (data.settings) save('settings', data.settings);
   if (Array.isArray(data.messages)) save('messages', data.messages);
+  if (Array.isArray(data.auditLog)) save('auditLog', data.auditLog);
 }

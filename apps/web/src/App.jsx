@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Activity as ActivityIcon, Brain, Home as HomeIcon, MessageCircle, Database, Network, Sun, Shield, FolderKanban, Target, Cpu, Settings as SettingsIcon, ListChecks } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Activity as ActivityIcon, Brain, Home as HomeIcon, MessageCircle, Database, Network, Sun, Shield, FolderKanban, Target, Cpu, Settings as SettingsIcon, ListChecks, LogOut, ShieldCheck } from 'lucide-react';
 import ModeBar from './components/ModeBar';
 import Home from './screens/Home';
 import Talk from './screens/Talk';
@@ -13,6 +13,9 @@ import Planning from './screens/Planning';
 import Engines from './screens/Engines';
 import Activity from './screens/Activity';
 import Settings from './screens/Settings';
+import Security from './screens/Security';
+import AuthPanel from './components/AuthPanel';
+import { observeCoreUser, signOutCore } from './services/authService';
 
 const tabs = [
   ['home', 'Home', HomeIcon],
@@ -26,12 +29,26 @@ const tabs = [
   ['activity', 'Log', ActivityIcon],
   ['briefing', 'Briefing', Sun],
   ['settings', 'Settings', SettingsIcon],
+  ['security', 'Security', ShieldCheck],
   ['core', 'Core', Shield],
 ];
 
 export default function App() {
   const [tab, setTab] = useState('home');
   const [mode, setMode] = useState('Talk');
+  const [user, setUser] = useState(null);
+  const [authReady, setAuthReady] = useState(false);
+
+  useEffect(() => observeCoreUser((nextUser) => {
+    setUser(nextUser);
+    setAuthReady(true);
+  }), []);
+
+  if (!authReady) {
+    return <main className="app"><section className="briefing"><h2>Starting Cloud Brain...</h2><p className="muted">Checking Firebase Auth.</p></section></main>;
+  }
+
+  if (!user) return <AuthPanel />;
 
   const screen =
     tab === 'home' ? <Home mode={mode} /> :
@@ -45,6 +62,7 @@ export default function App() {
     tab === 'activity' ? <Activity /> :
     tab === 'briefing' ? <Briefing /> :
     tab === 'settings' ? <Settings /> :
+    tab === 'security' ? <Security /> :
     <Core />;
 
   return (
@@ -54,10 +72,10 @@ export default function App() {
           <Brain />
           <div>
             <strong>CORE SELF</strong>
-            <span>Dylan Core Genesis 0.0.9</span>
+            <span>Dylan Core Genesis 0.1.3 • AI Fix + Mobile UX</span>
           </div>
         </div>
-        <span className="online">Core Online</span>
+        <div className="statusCluster"><span className="online">Core Online</span><button className="iconButton" onClick={() => signOutCore()} title="Sign out"><LogOut size={16} /></button></div>
       </header>
 
       <ModeBar mode={mode} setMode={setMode} />

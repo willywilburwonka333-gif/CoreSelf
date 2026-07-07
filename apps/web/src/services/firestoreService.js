@@ -1,26 +1,29 @@
-/**
- * Firestore preparation layer.
- * Genesis 0.0.6 does not connect to Firebase yet.
- * These functions define the shape we will replace with real Firestore calls.
- */
+import { loadKeyFromCloud, saveKeyToCloud } from './cloudStore';
+import { currentCoreUser } from './authService';
 
 export const firestoreStatus = {
-  connected: false,
-  authReady: false,
-  message: 'Firestore is prepared but not connected. Add Firebase config in a future build.',
+  connected: true,
+  authReady: true,
+  message: 'Firestore Cloud Brain connected through Firebase Auth. Data is stored under users/{uid}/core/{key}.',
 };
 
 export async function saveMemoryToCloud(memory) {
-  console.info('[Firestore Prep] saveMemoryToCloud', memory);
-  return { ok: false, reason: 'Firestore not connected yet.' };
+  const existing = await loadKeyFromCloud('memories', []);
+  const memories = Array.isArray(existing.value) ? existing.value : [];
+  const next = [memory, ...memories.filter((item) => item.id !== memory.id)];
+  return saveKeyToCloud('memories', next);
 }
 
 export async function loadMemoriesFromCloud() {
-  console.info('[Firestore Prep] loadMemoriesFromCloud');
-  return { ok: false, memories: [], reason: 'Firestore not connected yet.' };
+  const result = await loadKeyFromCloud('memories', []);
+  return { ok: result.ok, memories: result.value || [], reason: result.reason };
 }
 
 export async function saveLifeGraphToCloud(nodes) {
-  console.info('[Firestore Prep] saveLifeGraphToCloud', nodes);
-  return { ok: false, reason: 'Firestore not connected yet.' };
+  return saveKeyToCloud('lifeGraphNodes', nodes);
+}
+
+export function getCloudBrainUser() {
+  const user = currentCoreUser();
+  return user ? { uid: user.uid, email: user.email } : null;
 }
