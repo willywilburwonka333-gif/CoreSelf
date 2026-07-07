@@ -1,6 +1,6 @@
 # Core Self
 
-Genesis 0.1.2 — Real AI Brain.
+Genesis 0.2.0 — Production AI Backend.
 
 Core Self is Dylan Core: a personal AI operating system foundation with memory, projects, goals, planning, cloud sync, AI routing, and security gates and real AI routing.
 

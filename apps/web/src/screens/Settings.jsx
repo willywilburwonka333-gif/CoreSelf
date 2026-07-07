@@ -25,7 +25,7 @@ export default function Settings() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'core-self-backup-genesis-0.1.2.json';
+    a.download = 'core-self-backup-genesis-0.2.0.json';
     a.click();
     URL.revokeObjectURL(url);
     logActivity({ engine: 'Backup', action: 'Exported Core data', detail: 'Local JSON backup created.' });
@@ -63,7 +63,7 @@ export default function Settings() {
   return (
     <section className="screen">
       <h2>Settings</h2>
-      <p className="muted">Genesis 0.1.2 adds Real AI Brain: user-scoped cloud paths, approval gates, blocked dangerous actions, audit logging, and production Firestore rules.</p>
+      <p className="muted">Genesis 0.2.0 adds Production AI Backend: user-scoped cloud paths, approval gates, blocked dangerous actions, audit logging, and production Firestore rules.</p>
 
       <div className="list">
         <article>
@@ -74,12 +74,12 @@ export default function Settings() {
             <button className="primary" onClick={pushCloud}>Push This Device to Cloud</button>
             <button className="primary" onClick={pullCloud}>Pull Cloud to This Device</button>
           </div>
-          <p className="muted">Cloud sync now runs through the Real AI Brain approval gate and writes to your signed-in /users/uid scope.</p>
+          <p className="muted">Cloud sync now runs through the Production AI Backend approval gate and writes to your signed-in /users/uid scope.</p>
         </article>
 
 
         <article>
-          <h3>Real AI Brain</h3>
+          <h3>Production AI Backend</h3>
           <p><strong>Mode:</strong> User-scoped Firebase + approval gates</p>
           <p className="muted">External actions, purchases, destructive operations, and tool access remain blocked until you explicitly approve those systems in later builds.</p>
           <details>

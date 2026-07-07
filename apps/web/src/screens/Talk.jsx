@@ -77,7 +77,7 @@ export default function Talk({ mode }) {
       }
 
       logActivity({
-        engine: 'Real AI Brain',
+        engine: 'Production AI Backend',
         action: routed.source === 'real-ai-brain' ? 'Processed with OpenAI' : 'Used fallback safely',
         detail: `Mode ${mode}. Context: ${routed.contextUsed.relevantMemories} memories, ${routed.contextUsed.projects} projects, ${routed.contextUsed.goals} goals.`,
       });

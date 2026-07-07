@@ -780,7 +780,7 @@ button:disabled, input:disabled {
 }
 
 
-/* Genesis 0.1.3 — AI diagnostics + mobile Talk UX */
+/* Genesis 0.2.0 — AI diagnostics + mobile Talk UX */
 .aiStatusPanel {
   margin: 10px 0 12px;
   border: 1px solid var(--line);

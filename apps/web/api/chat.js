@@ -1,4 +1,5 @@
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
+const GENESIS_VERSION = '0.2.0';
 
 function safeList(items, formatter) {
   if (!Array.isArray(items) || !items.length) return 'None yet.';
@@ -15,7 +16,7 @@ function cleanMessages(messages = []) {
 }
 
 function buildSystemPrompt() {
-  return `You are Dylan Core inside the Core Self app. You are the Real AI Brain layer for a personal AI operating system, not a generic chatbot.
+  return `You are Dylan Core inside the Core Self app. You are the Production AI Backend layer for a personal AI operating system, not a generic chatbot.
 
 Prime directive: help Dylan become the highest possible version of himself while protecting family, health, freedom, future, and control.
 
@@ -94,14 +95,15 @@ export default async function handler(request, response) {
       source: 'diagnostic',
       reply: null,
       code: 'MISSING_OPENAI_API_KEY',
-      error: 'OPENAI_API_KEY is missing from this Vercel deployment.',
+      error: 'OPENAI_API_KEY is missing from this server deployment.',
       nextAction: 'Add OPENAI_API_KEY in Vercel Project Settings → Environment Variables, then redeploy the latest production deployment.',
-      diagnostics: { hasOpenAIKey: false, deployment: 'vercel-or-local', version: '0.1.3' },
+      diagnostics: { hasOpenAIKey: false, deployment: process.env.VERCEL ? 'vercel' : 'local-node', version: GENESIS_VERSION },
     });
   }
 
   try {
     const body = request.body || {};
+    const isVercel = Boolean(process.env.VERCEL);
     const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 
     const openaiResponse = await fetch(OPENAI_URL, {
@@ -134,7 +136,7 @@ export default async function handler(request, response) {
         nextAction: openaiResponse.status === 429
           ? 'Check OpenAI Platform billing/credits/rate limits, then retry.'
           : 'Check the Vercel OPENAI_API_KEY value and optional OPENAI_MODEL setting.',
-        diagnostics: { hasOpenAIKey: true, openaiStatus: openaiResponse.status, version: '0.1.3' },
+        diagnostics: { hasOpenAIKey: true, openaiStatus: openaiResponse.status, version: GENESIS_VERSION },
       });
     }
 
@@ -148,7 +150,7 @@ export default async function handler(request, response) {
       latencyMs: Date.now() - startedAt,
       reply: reply || 'Core AI returned no message.',
       usage: data.usage || null,
-      diagnostics: { hasOpenAIKey: true, version: '0.1.3' },
+      diagnostics: { hasOpenAIKey: true, version: GENESIS_VERSION },
     });
   } catch (error) {
     return response.status(500).json({
@@ -158,7 +160,7 @@ export default async function handler(request, response) {
       code: 'CORE_API_ERROR',
       error: error.message || 'Core API error.',
       nextAction: 'Redeploy and check Vercel Function logs for /api/chat.',
-      diagnostics: { hasOpenAIKey: true, version: '0.1.3' },
+      diagnostics: { hasOpenAIKey: true, version: GENESIS_VERSION },
     });
   }
 }

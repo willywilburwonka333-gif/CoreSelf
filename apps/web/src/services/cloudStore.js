@@ -25,7 +25,7 @@ export async function saveKeyToCloud(key, value) {
     key,
     value,
     updatedAt: serverTimestamp(),
-    version: 'Genesis 0.1.2',
+    version: 'Genesis 0.2.0',
   }, { merge: true });
   return { ok: true };
 }

@@ -29,7 +29,7 @@ export default function AuthPanel() {
         <div>
           <p className="eyebrow">CLOUD BRAIN ACCESS</p>
           <h1>Core Self</h1>
-          <p>Genesis 0.1.2 protects Dylan Core with Firebase Auth, user-scoped Firestore, approval gates, and a security audit trail.</p>
+          <p>Genesis 0.2.0 protects Dylan Core with Firebase Auth, user-scoped Firestore, approval gates, and a security audit trail.</p>
           <div className="briefing">
             <h3>Backend active</h3>
             <p>Firebase project: <strong>{firebaseProjectId}</strong></p>

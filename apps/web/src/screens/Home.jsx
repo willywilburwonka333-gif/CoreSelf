@@ -8,7 +8,7 @@ export default function Home({ mode }) {
     <section className="screen">
       <div className="hero">
         <div>
-          <p className="eyebrow">CORE SELF / GENESIS 0.1.2</p>
+          <p className="eyebrow">CORE SELF / GENESIS 0.2.0</p>
           <h1>Dylan Core</h1>
           <p>{constitution.primeDirective}</p>
         </div>
