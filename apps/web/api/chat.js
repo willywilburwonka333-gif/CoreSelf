@@ -1,6 +1,6 @@
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
 const OPENAI_RESPONSES_URL = 'https://api.openai.com/v1/responses';
-const GENESIS_VERSION = '0.7.1';
+const GENESIS_VERSION = '1.0.0';
 
 const DYLAN_SEED_MEMORY = [
   'Dylan Corr is building Core Self / Dylan Core as a persistent digital second self and personal AI operating system.',
@@ -9,7 +9,7 @@ const DYLAN_SEED_MEMORY = [
   'Dylan prefers direct, practical, build-first answers. Do not waste time with generic onboarding or corporate filler.',
   'Dylan has repeatedly chosen an implementation workflow: latest ZIP or single-file TXT replacements, then npm build, Vercel deploy, git commit, git push.',
   'Dylan expects Core Self to help with code, debugging, exact commands, changed file lists, build/deploy steps, commit/push commands, project planning, prompts, business strategy, and memory/goal tracking.',
-  'Core Self must eventually support memory, projects, goals, plans, live internet, model routing, vision, files, reminders, calendar, email, GitHub, Firebase, Vercel, and action tools.',
+  'Core Self must become Dylan’s main AI operating system with ChatGPT-like brain power plus specialised creation, coding, deployment, business, book, image, video, music, file, web, GitHub, Vercel, Firebase, Gmail, Calendar and Drive tools through safe server-side routes.',
 ];
 
 const DYLAN_PROJECT_SEEDS = [
@@ -83,7 +83,7 @@ Permanent behaviour rules:
 - Do not ask generic onboarding questions such as "what are your goals?" or "list 3-5 tasks" unless Dylan explicitly asks to brainstorm from zero.
 - Use the supplied Core Context first: seed memory, retrieved memories, projects, goals, plans, mode, and recent conversation.
 - Start with the useful answer. Keep it tight, direct, and mobile-friendly.
-- If Dylan says "next", treat it as meaning he has completed the previous replacement/build/deploy/commit step and wants the next build step.
+- If Dylan says "next", treat it as meaning he has completed the previous replacement/build/deploy/commit step and wants the next build step. Do not reset, do not re-explain already completed setup, and do not go in circles.
 - If context is missing, say exactly what is missing and what to do next.
 - Never say "I can't build code directly" as a dead-end. Instead say what you can do: write code, produce replacement files, explain commands, debug errors, review screenshots, plan builds, guide deploys, and prepare exact implementation steps.
 - Be honest about tool limits: you cannot personally click buttons, spend money, access private services, or deploy unless a tool route supplies that access. But you can still help Dylan execute those actions safely.
@@ -159,6 +159,15 @@ ${goals}
 
 Planning context from app:
 ${plans}
+
+Tool registry from app:
+${safeList(body.tools, (tool, index) => `${index + 1}. ${tool.name || tool.id} [${tool.category || 'Tool'} / ${tool.status || 'Unknown'} / ${tool.permission || 'Unknown'}] — ${tool.capability || ''}`)}
+
+Tool readiness:
+${body.toolReadiness ? `${body.toolReadiness.executable || 0} executable / ${body.toolReadiness.needsSetup || 0} need setup / ${body.toolReadiness.locked || 0} locked. ${body.toolReadiness.summary || ''}` : 'No tool readiness supplied.'}
+
+Capability map:
+${safeList(body.capabilityMap, (capability, index) => `${index + 1}. ${capability.name} [${capability.category} / ${capability.phase}] — ${capability.status}. ${capability.purpose}`)}
 
 Runtime flags:
 ${flags}

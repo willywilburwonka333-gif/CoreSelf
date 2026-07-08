@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { load } from '../services/localStore';
 import { loadToolRegistry, saveToolRegistry, buildToolReadiness, createToolExecution } from '../services/toolRegistry';
 import { buildStabilityReport, buildSafeExecutionRules } from '../services/stabilityEngine';
+import { AI_OS_CAPABILITIES, buildCapabilitySummary } from '../services/capabilityMatrix';
 
 export default function Tools() {
   const [tools, setTools] = useState(loadToolRegistry());
@@ -18,6 +19,7 @@ export default function Tools() {
   const readiness = useMemo(() => buildToolReadiness(tools), [tools]);
   const stability = useMemo(() => buildStabilityReport({ memories, projects, goals, suggestions, activityLog, messages, queue, tools }), [memories, projects, goals, suggestions, activityLog, messages, queue, tools]);
   const rules = useMemo(() => buildSafeExecutionRules(stability), [stability]);
+  const capabilitySummary = useMemo(() => buildCapabilitySummary(AI_OS_CAPABILITIES), []);
 
   function updateTool(tool, changes) {
     const next = tools.map((item) => item.id === tool.id ? { ...item, ...changes } : item);
@@ -34,7 +36,7 @@ export default function Tools() {
     <section className="screen">
       <div className="talkHeader">
         <div>
-          <p className="eyebrow">TOOLS / GENESIS 0.9.2</p>
+          <p className="eyebrow">TOOLS / GENESIS 1.0</p>
           <h2>Tool Registry</h2>
         </div>
       </div>
@@ -56,6 +58,30 @@ export default function Tools() {
         <h3>Stability Gate</h3>
         <p><strong>{stability.status}</strong> — {stability.score}%</p>
         {stability.blockers.length ? <ul>{stability.blockers.map((item) => <li key={item}>{item}</li>)}</ul> : <p className="muted">No major tool blockers detected.</p>}
+      </div>
+
+
+      <div className="briefing">
+        <h3>AI OS Capability Map</h3>
+        <p><strong>{capabilitySummary.activeNow}/{capabilitySummary.total}</strong> capability groups are usable or structurally prepared now. {capabilitySummary.needsExternalSetup} still need external API/OAuth/server-worker setup.</p>
+        <p className="muted">Next build: {capabilitySummary.nextBuild}</p>
+      </div>
+
+      <div className="list">
+        {AI_OS_CAPABILITIES.map((capability) => (
+          <article key={capability.id}>
+            <div className="itemTopline">
+              <strong>{capability.name}</strong>
+              <small>{capability.category} • {capability.phase}</small>
+            </div>
+            <p>{capability.purpose}</p>
+            <p><strong>Status:</strong> {capability.status}</p>
+            <details>
+              <summary>Setup steps</summary>
+              <ul>{capability.setup.map((step) => <li key={step}>{step}</li>)}</ul>
+            </details>
+          </article>
+        ))}
       </div>
 
       <div className="list">

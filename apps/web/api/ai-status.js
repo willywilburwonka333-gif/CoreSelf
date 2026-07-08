@@ -4,6 +4,11 @@ export default async function handler(request, response) {
   const hasOpenAIKey = Boolean(process.env.OPENAI_API_KEY);
   const model = process.env.OPENAI_MODEL || 'standard-core';
   const deepModel = process.env.OPENAI_DEEP_MODEL || model;
+  const webModel = process.env.OPENAI_WEB_MODEL || model;
+  const imageReady = Boolean(process.env.OPENAI_IMAGE_MODEL || process.env.IMAGE_API_KEY);
+  const githubReady = Boolean(process.env.GITHUB_TOKEN);
+  const vercelReady = Boolean(process.env.VERCEL_TOKEN);
+  const googleReady = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
 
   return response.status(200).json({
     ok: true,
@@ -11,7 +16,7 @@ export default async function handler(request, response) {
     provider: hasOpenAIKey ? 'core-provider' : 'local-fallback',
     model: hasOpenAIKey ? 'hidden-standard-core' : 'none',
     deepModel: hasOpenAIKey ? 'hidden-deep-core' : 'none',
-    version: 'Genesis 0.4.1',
+    version: 'Genesis 1.0.0',
     nextAction: hasOpenAIKey
       ? 'Send a Dylan Core message to test identity, memory context, and routing.'
       : 'Add OPENAI_API_KEY in Vercel and redeploy production.',
@@ -19,6 +24,11 @@ export default async function handler(request, response) {
       hasOpenAIKey,
       standardConfigured: Boolean(model),
       deepConfigured: Boolean(deepModel),
+      webConfigured: Boolean(webModel),
+      imageReady,
+      githubReady,
+      vercelReady,
+      googleReady,
     },
   });
 }

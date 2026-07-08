@@ -1,4 +1,6 @@
 import { coreReply } from './coreReply';
+import { loadToolRegistry, buildToolReadiness } from './toolRegistry';
+import { buildCapabilityContext } from './capabilityMatrix';
 import { retrieveRelevantMemories } from './memoryRetrieval';
 import { load, save } from './localStore';
 import { coreSeedMemories } from '../data/coreSeeds';
@@ -187,12 +189,17 @@ function routeProfileFor(input, deepThink) {
 
 function buildContext({ input, mode, projects, goals, plans, messages, relevantMemories, deepThink }) {
   const routeProfile = routeProfileFor(input, deepThink);
+  const tools = loadToolRegistry();
+  const toolReadiness = buildToolReadiness(tools);
   return {
     input,
     mode,
     deepThink: Boolean(deepThink),
     routeProfile,
     preparedActions: buildPreparedActions(input, routeProfile),
+    tools: tools.map((tool) => ({ id: tool.id, name: tool.name, category: tool.category, status: tool.status, permission: tool.permission, capability: tool.capability, risk: tool.risk })),
+    toolReadiness,
+    capabilityMap: buildCapabilityContext(),
     deepRecommended: wantsDeepReasoning(input) || wantsCodingHelp(input),
     codingRequest: wantsCodingHelp(input),
     internetNeeded: wantsLiveInternet(input),
