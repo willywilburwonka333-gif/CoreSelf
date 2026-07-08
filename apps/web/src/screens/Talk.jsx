@@ -5,6 +5,7 @@ import { routeCoreRequest, seedCoreSelfData } from '../services/aiRouter';
 import { logActivity } from '../services/activityLog';
 import { acceptSuggestion, suggestMemoryFromMessage } from '../services/memorySuggestions';
 import PresenceBanner from '../components/PresenceBanner';
+import { generateImageFromPrompt, buildImagePromptFromCreatorPlan } from '../services/imageGenerationClient';
 
 function statusLabel(meta) {
   if (!meta) return 'Dylan Core ready';
@@ -35,6 +36,7 @@ export default function Talk({ mode }) {
   const [conversationId, setConversationId] = useState(load(CURRENT_CONVERSATION_KEY, null));
   const [cloudState, setCloudState] = useState('Preparing cloud memory...');
   const [seedState, setSeedState] = useState(load('coreSeedState', null));
+  const [imageStatus, setImageStatus] = useState('');
   const chatEndRef = useRef(null);
 
 
@@ -112,6 +114,7 @@ export default function Talk({ mode }) {
         orchestratorPlan: routed.orchestratorPlan || null,
         researchPlan: routed.researchPlan || null,
         developerPlan: routed.developerPlan || null,
+        creatorPlan: routed.creatorPlan || null,
         toolRuntime: routed.toolReadiness?.runtime || routed.toolRuntime || null,
         deepThink,
         routeProfile: routed.routeProfile,
@@ -157,6 +160,41 @@ export default function Talk({ mode }) {
       save('messages', next);
     } finally {
       setIsSending(false);
+    }
+  }
+
+
+  async function runImageGeneration(promptOverride) {
+    const prompt = buildImagePromptFromCreatorPlan(lastMeta?.creatorPlan, promptOverride || input || lastMeta?.creatorPlan?.imageGeneration?.prompt || '');
+    if (!prompt) return;
+    setImageStatus('Generating image through guarded server route...');
+    try {
+      const result = await generateImageFromPrompt({ prompt, size: lastMeta?.creatorPlan?.imageGeneration?.size || '1024x1024', quality: lastMeta?.creatorPlan?.imageGeneration?.quality || 'auto' });
+      if (!result.ok) {
+        setImageStatus(result.nextAction || result.error || 'Image generation failed safely.');
+        logActivity({ engine: 'Image Generation Route', action: 'Image generation blocked/failed', detail: result.error || 'Unknown error', level: 'Warning' });
+        return;
+      }
+      const imageMessage = buildMessage({
+        from: 'core',
+        text: `Image generated. Prompt: ${result.prompt}`,
+        meta: {
+          source: 'image-generation-route',
+          generatedImage: result.image,
+          imageModel: result.model,
+          imageSize: result.size,
+          imageQuality: result.quality,
+          at: result.createdAt,
+        },
+      });
+      const next = [...messages, imageMessage];
+      setMessages(next);
+      save('messages', next);
+      if (conversationId) saveConversationMessage(conversationId, imageMessage).catch(() => null);
+      setImageStatus('Image generated and added to chat.');
+      logActivity({ engine: 'Image Generation Route', action: 'Generated image', detail: result.size || 'image' });
+    } catch (error) {
+      setImageStatus(error.message || 'Image generation failed safely.');
     }
   }
 
@@ -217,6 +255,8 @@ export default function Talk({ mode }) {
         {lastMeta?.orchestratorPlan && <small>Orchestrator: {lastMeta.orchestratorPlan.label} • {lastMeta.orchestratorPlan.answerStyle}</small>}
         {lastMeta?.researchPlan && lastMeta.internetNeeded && <small>Research: {lastMeta.researchPlan.fitLabel} • compares against Core Self stack</small>}
         {lastMeta?.developerPlan?.isDeveloperRequest && <small>Developer: {lastMeta.developerPlan.requestType} • {lastMeta.developerPlan.project}</small>}
+        {lastMeta?.creatorPlan?.imageGeneration?.ready && <small>Image Route: ready • /api/create-image</small>}
+        {imageStatus && <small>{imageStatus}</small>}
         {lastMeta?.toolRuntime && <small>Runtime: {lastMeta.toolRuntime.runnable} runnable • {lastMeta.toolRuntime.blocked} gated</small>}
         {latestPreparedActions.length > 0 && <small>Action Engine prepared {latestPreparedActions.length} action(s).</small>}
       </div>
@@ -227,6 +267,7 @@ export default function Talk({ mode }) {
         <button type="button" onClick={() => { setDeepThink(true); send('Deep Think: what is the strongest next architecture move for Core Self?'); }}>Deep Plan</button>
         <button type="button" onClick={() => send('Search the internet for the latest useful AI tools for building Core Self cheaply, compare them against our actual stack, tell me what to use now, what to skip, and cite sources.')}>Web Scan</button>
         <button type="button" onClick={() => send('Create an action plan for the next Core Self build.')}>Action Plan</button>
+        <button type="button" onClick={() => send('Create an image of Core Self as a futuristic personal AI operating system command centre.')}>Image Test</button>
         <button type="button" onClick={() => { const seeded = seedCoreSelfData(); setSeedState(seeded); save('coreSeedState', seeded); }}>Reseed Core</button>
       </div>
       <div className="chat">
@@ -248,6 +289,12 @@ export default function Talk({ mode }) {
                     <span>{source.url}</span>
                   </a>
                 ))}
+              </div>
+            )}
+            {m.meta?.generatedImage && (
+              <div className="sourceCards">
+                <img src={m.meta.generatedImage} alt="Generated by Dylan Core" style={{ width: '100%', borderRadius: 16 }} />
+                <small>{m.meta.imageModel || 'image route'} • {m.meta.imageSize || 'default size'}</small>
               </div>
             )}
             {m.meta?.preparedActions?.length > 0 && (
@@ -274,6 +321,18 @@ export default function Talk({ mode }) {
         />
         <button onClick={() => send()} disabled={isSending}>{isSending ? 'Thinking' : 'Send'}</button>
       </div>
+
+      {lastMeta?.creatorPlan?.imageGeneration?.ready && (
+        <div className="briefing actionNotice">
+          <h3>Image Creator Route</h3>
+          <p>{lastMeta.creatorPlan.imageGeneration.safety}</p>
+          <small>{lastMeta.creatorPlan.imageGeneration.route} • {lastMeta.creatorPlan.imageGeneration.size} • {lastMeta.creatorPlan.imageGeneration.quality}</small>
+          <button type="button" disabled={isSending || imageStatus.startsWith('Generating')} onClick={() => runImageGeneration()}>
+            {imageStatus.startsWith('Generating') ? 'Generating...' : 'Generate Image'}
+          </button>
+        </div>
+      )}
+
       {actionQueue.length > 0 && (
         <div className="briefing actionNotice">
           <h3>Action Queue</h3>

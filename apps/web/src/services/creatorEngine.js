@@ -4,8 +4,9 @@ const CREATOR_WORKFLOWS = [
     label: 'Image / Thumbnail',
     regex: /\b(image|picture|photo|thumbnail|cover art|poster|logo|banner|mockup|visual|artwork)\b/i,
     output: 'ready-to-use image prompt plus composition notes',
-    providers: ['OpenAI image generation route later', 'external image tool manually for now'],
-    needsExternalApi: true,
+    providers: ['OpenAI /api/create-image route', 'external image tool manually if server route is unavailable'],
+    needsExternalApi: false,
+    executionRoute: '/api/create-image',
   },
   {
     id: 'video',
@@ -68,6 +69,35 @@ export function detectCreatorWorkflows(input = '') {
   return [];
 }
 
+
+function buildImagePrompt(input = '', projects = [], goals = [], memories = []) {
+  const projectContext = projects
+    .slice(0, 4)
+    .map((project) => project.name || project.title)
+    .filter(Boolean)
+    .join(' • ');
+  const goalContext = goals
+    .slice(0, 3)
+    .map((goal) => goal.title)
+    .filter(Boolean)
+    .join(' • ');
+  const memoryContext = memories
+    .slice(0, 4)
+    .map((memory) => memory.title || memory.content)
+    .filter(Boolean)
+    .join(' • ');
+
+  return [
+    `Create a high-quality production image for this request: ${String(input || '').trim()}`,
+    'Style: cinematic, polished, high-detail, modern AI operating system aesthetic unless the request specifies a different style.',
+    'Composition: clear subject, strong focal point, professional lighting, usable as an app/promo/social asset.',
+    projectContext ? `Relevant Core Self projects: ${projectContext}.` : '',
+    goalContext ? `Relevant goals: ${goalContext}.` : '',
+    memoryContext ? `Relevant memory context: ${memoryContext}.` : '',
+    'Avoid unreadable text, distorted UI, extra fingers, messy logos, or copyrighted characters unless the user explicitly provides owned material.',
+  ].filter(Boolean).join(' ');
+}
+
 export function buildCreatorPlan({ input = '', projects = [], goals = [], memories = [] } = {}) {
   const workflows = detectCreatorWorkflows(input);
   const primary = workflows[0] || null;
@@ -97,7 +127,17 @@ export function buildCreatorPlan({ input = '', projects = [], goals = [], memori
     needsExternalApi,
     currentExecutionMode: needsExternalApi
       ? 'Prompt-and-production-plan now. Direct generation waits for provider API/tool setup.'
-      : 'Can produce usable text/plans now using the current AI backend.',
+      : (workflows.some((workflow) => workflow.id === 'image')
+        ? 'Image prompts can now be sent to the guarded /api/create-image route after deployment.'
+        : 'Can produce usable text/plans now using the current AI backend.'),
+    imageGeneration: workflows.some((workflow) => workflow.id === 'image') ? {
+      ready: true,
+      route: '/api/create-image',
+      prompt: buildImagePrompt(input, projects, goals, memories),
+      size: '1024x1024',
+      quality: 'auto',
+      safety: 'Server-side OpenAI key only. User prompt is sent to /api/create-image after button approval.',
+    } : null,
     answerContract: workflows.length ? [
       'Identify the creator workflow first: image, video, music, book, marketing, business document or code/product.',
       'Use Dylan’s existing projects, lore, app brands and saved context instead of generic examples.',

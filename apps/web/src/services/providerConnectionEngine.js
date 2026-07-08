@@ -38,14 +38,14 @@ const PROVIDERS = [
     category: 'Creator',
     env: ['OPENAI_API_KEY'],
     optionalEnv: ['OPENAI_IMAGE_MODEL', 'IMAGE_API_KEY'],
-    statusWhenReady: 'Provider available',
-    purpose: 'Future direct image generation for thumbnails, posters, covers, app art and concepts.',
+    statusWhenReady: 'Route ready',
+    purpose: 'Direct guarded image generation for thumbnails, posters, covers, app art and concepts.',
     setup: [
-      'Use OpenAI image generation first to avoid extra accounts.',
-      'Optional: add OPENAI_IMAGE_MODEL once the image route is built.',
-      'Build /api/create-image before exposing generation buttons.',
+      'Use the existing OPENAI_API_KEY already stored server-side in Vercel.',
+      'Optional: add OPENAI_IMAGE_MODEL if you want to override the default image model.',
+      'Use the deployed /api/create-image route from Talk after approval.',
     ],
-    nextAction: 'Add a guarded server route before letting Dylan generate images directly.',
+    nextAction: 'Test with a simple image request in Talk, then save successful prompts as creator templates.',
     risk: 'Medium',
   },
   {
@@ -186,16 +186,16 @@ export function buildClientProviderMap() {
     id: provider.id,
     name: provider.name,
     category: provider.category,
-    status: provider.id === 'openai-core' || provider.id === 'openai-web' ? 'Server checked' : 'Needs setup check',
+    status: provider.id === 'openai-core' || provider.id === 'openai-web' ? 'Server checked' : (provider.id === 'openai-image' ? 'Route built' : 'Needs setup check'),
     risk: provider.risk,
     purpose: provider.purpose,
     setup: provider.setup,
-    nextAction: provider.nextAction,
+    nextAction: provider.id === 'openai-image' ? 'Image generation route is built. Test from Talk after deployment.' : provider.nextAction,
   }));
 }
 
 export function summarizeProviderStatus(providers = []) {
-  const connected = providers.filter((item) => item.ready || ['Connected', 'Provider available', 'Token present', 'OAuth configured', 'Partially configured'].includes(item.status));
+  const connected = providers.filter((item) => item.ready || ['Connected', 'Provider available', 'Route ready', 'Route built', 'Token present', 'OAuth configured', 'Partially configured'].includes(item.status));
   const highRiskMissing = providers.filter((item) => item.risk === 'High' && !item.ready);
   const creatorMissing = providers.filter((item) => item.category === 'Creator' && !item.ready);
   return {
@@ -206,6 +206,6 @@ export function summarizeProviderStatus(providers = []) {
     creatorMissing: creatorMissing.length,
     mode: connected.length >= 2 ? 'Provider layer mapped' : 'Provider layer pending',
     nextProvider: providers.find((item) => !item.ready)?.name || 'No missing provider detected',
-    recommendation: 'Keep OpenAI + web stable first. Add image generation route next. Delay Gmail/Calendar/GitHub write access until approval gates are proven.',
+    recommendation: 'Keep OpenAI + web stable. Image generation route is the first direct creator execution layer. Delay Gmail/Calendar/GitHub write access until approval gates are proven.',
   };
 }

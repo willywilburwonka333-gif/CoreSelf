@@ -1,7 +1,7 @@
 import { buildProviderStatusFromEnv, summarizeProviderStatus } from '../src/services/providerConnectionEngine.js';
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
 const OPENAI_RESPONSES_URL = 'https://api.openai.com/v1/responses';
-const GENESIS_VERSION = 'milestone-6-provider-layer';
+const GENESIS_VERSION = 'milestone-7-image-creator-route';
 
 const DYLAN_SEED_MEMORY = [
   'Dylan Corr is building Core Self / Dylan Core as a persistent digital second self and personal AI operating system.',
@@ -120,7 +120,8 @@ Creator Platform behaviour:
 - For creative requests, first identify the lane: image, video, music, book, marketing, business document, or code/product.
 - Do not just give vague ideas. Produce the usable text, production prompt, scene list, lyrics, chapter plan, marketing copy, or document structure.
 - Use Dylan's real projects: Core Self, THE SYSTEM, Dungeon Protocol, Reality Project/HSET, music/marketing and family/lore where relevant.
-- Clearly separate what Core Self can create now from what requires a future external API/provider such as image, video, voice or music generation.
+- Image generation now has a guarded server route at /api/create-image when OPENAI_API_KEY is configured. Still explain that Dylan must press/approve generation in the UI; do not claim an image was generated unless the route result is present.
+- Clearly separate what Core Self can create now from what still requires a future external API/provider such as video, voice or music generation.
 - When the request spans multiple media, give the production order so Dylan knows which asset to create first.
 
 Coding/project behaviour:
@@ -219,7 +220,8 @@ Workflows:
 ${safeList(body.creatorPlan.workflows, (workflow, index) => `${index + 1}. ${workflow.label} — ${workflow.output}. Providers: ${(workflow.providers || []).join(' / ')}`)}
 Answer contract:
 ${safeList(body.creatorPlan.answerContract, (rule, index) => `${index + 1}. ${rule}`)}
-Related projects: ${(body.creatorPlan.relatedProjects || []).join(' • ') || 'None matched.'}` : 'No creator plan supplied.'}
+Related projects: ${(body.creatorPlan.relatedProjects || []).join(' • ') || 'None matched.'}
+Image generation: ${body.creatorPlan.imageGeneration ? `${body.creatorPlan.imageGeneration.ready ? 'ready' : 'not ready'} via ${body.creatorPlan.imageGeneration.route || 'no route'} • size ${body.creatorPlan.imageGeneration.size || 'default'} • quality ${body.creatorPlan.imageGeneration.quality || 'default'}` : 'not requested'}` : 'No creator plan supplied.'}
 
 Developer plan:
 ${body.developerPlan ? `Request type: ${body.developerPlan.requestType}
