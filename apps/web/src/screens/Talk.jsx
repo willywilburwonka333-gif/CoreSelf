@@ -111,6 +111,8 @@ export default function Talk({ mode }) {
         preparedActions: routed.preparedActions || [],
         orchestratorPlan: routed.orchestratorPlan || null,
         researchPlan: routed.researchPlan || null,
+        developerPlan: routed.developerPlan || null,
+        toolRuntime: routed.toolReadiness?.runtime || routed.toolRuntime || null,
         deepThink,
         routeProfile: routed.routeProfile,
         deepRecommended: routed.deepRecommended,
@@ -214,6 +216,8 @@ export default function Talk({ mode }) {
         {lastMeta?.routeProfile && <small>Route: {lastMeta.routeProfile}</small>}
         {lastMeta?.orchestratorPlan && <small>Orchestrator: {lastMeta.orchestratorPlan.label} • {lastMeta.orchestratorPlan.answerStyle}</small>}
         {lastMeta?.researchPlan && lastMeta.internetNeeded && <small>Research: {lastMeta.researchPlan.fitLabel} • compares against Core Self stack</small>}
+        {lastMeta?.developerPlan?.isDeveloperRequest && <small>Developer: {lastMeta.developerPlan.requestType} • {lastMeta.developerPlan.project}</small>}
+        {lastMeta?.toolRuntime && <small>Runtime: {lastMeta.toolRuntime.runnable} runnable • {lastMeta.toolRuntime.blocked} gated</small>}
         {latestPreparedActions.length > 0 && <small>Action Engine prepared {latestPreparedActions.length} action(s).</small>}
       </div>
       <div className="quickChips" aria-label="Quick actions">
@@ -229,7 +233,7 @@ export default function Talk({ mode }) {
         {messages.map((m, i) => (
           <div key={i} className={'bubble ' + m.from}>
             <span>{m.text}</span>
-            {m.meta && <small>{statusLabel(m.meta)} • {contextLine(m.meta)}{m.meta.deepThink ? ' • Deep Think' : ''}{m.meta.orchestratorPlan ? ` • ${m.meta.orchestratorPlan.label}` : ''}</small>}
+            {m.meta && <small>{statusLabel(m.meta)} • {contextLine(m.meta)}{m.meta.deepThink ? ' • Deep Think' : ''}{m.meta.orchestratorPlan ? ` • ${m.meta.orchestratorPlan.label}` : ''}{m.meta.developerPlan?.isDeveloperRequest ? ` • ${m.meta.developerPlan.requestType}` : ''}</small>}
             {m.meta?.sources?.length > 0 && (
               <div className="sourceCards">
                 {m.meta.sources.slice(0, 4).map((source, sourceIndex) => (

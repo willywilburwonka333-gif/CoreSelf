@@ -67,8 +67,8 @@ function buildAnswerContract(intent, input = '') {
       'Give exact terminal commands.',
       'Say what changed and what to test.',
       'Do not reset the workflow or ask for already provided setup.',
-      'Separate existing replacement files from new files to create.',
-      'Do not claim build/check/deploy success unless confirmed by a tool/runtime result.',
+      'For new files, provide exact names and folders before the TXT content.',
+      "Respect Dylan's individual TXT replacement workflow.",
     ];
   }
 
@@ -112,7 +112,7 @@ export function buildOrchestratorPlan({ input = '', mode = 'standard', tools = [
   const blockedTools = selectedTools.filter((tool) => !tool.executable);
 
   const plan = {
-    version: 'milestone-4-developer-platform',
+    version: 'milestone-5-tool-runtime',
     intent: detected.intent,
     label: detected.label,
     confidence: detected.confidence,

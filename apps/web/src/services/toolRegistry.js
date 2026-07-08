@@ -1,5 +1,6 @@
 import { load, save } from './localStore';
 import { logActivity } from './activityLog';
+import { buildRuntimeSnapshot, executeToolRuntime } from './toolRuntimeEngine';
 
 export const defaultTools = [
   { id: 'memory-recall', aliases: ['memory'], name: 'Memory Recall', category: 'Internal', status: 'Ready', permission: 'Allowed', capability: 'Search confirmed memories and context before answering.', risk: 'Low' },
@@ -17,10 +18,10 @@ export const defaultTools = [
   { id: 'marketing-writer', aliases: ['tiktok', 'caption', 'launch', 'ad'], name: 'Marketing Writer', category: 'Creator', status: 'Ready', permission: 'Allowed', capability: 'Create hooks, captions, launch posts, app store replies, content calendars and campaign plans.', risk: 'Low' },
   { id: 'business-builder', aliases: ['business', 'income'], name: 'Business Builder', category: 'Business', status: 'Ready', permission: 'Allowed', capability: 'Use current AI brain and memory to produce plans, pitches, forecasts and income strategy.', risk: 'Medium' },
   { id: 'web-research', aliases: ['web'], name: 'Web Research', category: 'External', status: 'Ready', permission: 'Allowed', capability: 'Research current public information through the configured OpenAI web route when available.', risk: 'Medium' },
-  { id: 'developer-build-assistant', aliases: ['code', 'files', 'zip'], name: 'Developer Build Assistant', category: 'Developer', status: 'Ready', permission: 'Allowed', capability: 'Guide ZIP inspection, changed-file planning, replacement files, build/debug/deploy commands and commit workflow. Real file mutation still needs a backend worker.', risk: 'Medium' },
-  { id: 'bug-triage', aliases: ['bug', 'crash', 'error', 'debug'], name: 'Bug Triage', category: 'Developer', status: 'Ready', permission: 'Allowed', capability: 'Diagnose screenshots, console errors and build failures into the next exact file or command fix.', risk: 'Low' },
-  { id: 'release-command-helper', aliases: ['commands', 'build', 'deploy', 'commit'], name: 'Release Command Helper', category: 'Developer', status: 'Ready', permission: 'Allowed', capability: 'Produce the exact npm build/check, Vercel, git commit and push command sequence for Core Self releases.', risk: 'Low' },
-  { id: 'replacement-file-workflow', aliases: ['txt', 'single file', 'replacement files'], name: 'Replacement File Workflow', category: 'Developer', status: 'Ready', permission: 'Allowed', capability: 'Keep Dylan on the single TXT replacement workflow with exact paths, filenames and new-vs-existing separation.', risk: 'Low' },
+  { id: 'developer-build-assistant', aliases: ['code', 'files', 'zip'], name: 'Developer Build Assistant', category: 'Developer', status: 'Ready', permission: 'Allowed', capability: 'Guide ZIP inspection, replacement files, build/debug/deploy commands and release workflows. Real server-side file mutation comes later.', risk: 'Medium' },
+  { id: 'bug-triage', aliases: ['triage', 'terminal error', 'screenshot bug'], name: 'Bug Triage', category: 'Developer', status: 'Ready', permission: 'Allowed', capability: 'Classify screenshots, console/build errors and regressions into likely failing layers with the next file/command to check.', risk: 'Low' },
+  { id: 'release-command-helper', aliases: ['commands', 'build commands', 'deploy commands'], name: 'Release Command Helper', category: 'Developer', status: 'Ready', permission: 'Allowed', capability: 'Produce exact npm build/check, Vercel, git commit and push command sequences for Core Self workflows.', risk: 'Low' },
+  { id: 'replacement-file-workflow', aliases: ['txt replacements', 'single file replacements', 'changed files'], name: 'Replacement File Workflow', category: 'Developer', status: 'Ready', permission: 'Allowed', capability: 'Enforce individual TXT file replacements, exact destination names, and changed-files-only handoff discipline.', risk: 'Low' },
   { id: 'github-vercel-firebase', aliases: ['github', 'vercel', 'firebase'], name: 'GitHub / Vercel / Firebase Ops', category: 'Developer', status: 'Needs setup', permission: 'Ask first', capability: 'Read repos/deployments/Firebase status later. Write actions require tokens and approval gates.', risk: 'High' },
   { id: 'calendar', aliases: ['google-calendar'], name: 'Calendar', category: 'External', status: 'Needs setup', permission: 'Ask first', capability: 'Read or create scheduled items once connected.', risk: 'Medium' },
   { id: 'email', aliases: ['gmail'], name: 'Email', category: 'External', status: 'Locked', permission: 'Blocked', capability: 'Draft or inspect email only after explicit setup.', risk: 'High' },
@@ -46,6 +47,7 @@ export function buildToolReadiness(tools = loadToolRegistry()) {
   const needsSetup = tools.filter((tool) => tool.status === 'Needs setup');
   const locked = tools.filter((tool) => tool.status === 'Locked' || tool.permission === 'Blocked');
   const planning = tools.filter((tool) => tool.status === 'Planning');
+  const runtime = buildRuntimeSnapshot(tools);
   return {
     total: tools.length,
     ready: ready.length,
@@ -54,29 +56,19 @@ export function buildToolReadiness(tools = loadToolRegistry()) {
     needsSetup: needsSetup.length,
     locked: locked.length,
     planning: planning.length,
-    mode: executable.length >= 7 ? 'Orchestrated internal tools online' : 'Tool foundation only',
-    summary: executable.length >= 7
-      ? `${executable.length} tool(s) are safe to use internally. External write tools still require setup and approval.`
-      : 'Tool registry exists, but execution must stay guarded until setup and approval are complete.',
+    runtime,
+    mode: runtime.runnable >= 12 ? 'Tool Runtime active' : (executable.length >= 7 ? 'Orchestrated internal tools online' : 'Tool foundation only'),
+    summary: runtime.runnable >= 12
+      ? `${runtime.runnable} safe internal tool(s) can run now. External write tools still require server routes and approval.`
+      : (executable.length >= 7
+        ? `${executable.length} tool(s) are safe to use internally. External write tools still require setup and approval.`
+        : 'Tool registry exists, but execution must stay guarded until setup and approval are complete.'),
   };
 }
 
 export function createToolExecution(tool, input = {}) {
-  const execution = {
-    id: crypto.randomUUID(),
-    toolId: tool.id,
-    toolName: tool.name,
-    status: tool.status === 'Ready' && tool.permission === 'Allowed' ? 'Completed' : 'Blocked',
-    requestedAt: new Date().toISOString(),
-    finishedAt: new Date().toISOString(),
-    input,
-    result: tool.status === 'Ready' && tool.permission === 'Allowed'
-      ? `${tool.name} checked. This is an internal/orchestrated foundation action, not an unapproved external write call.`
-      : `${tool.name} cannot run yet. Status: ${tool.status}. Permission: ${tool.permission}.`,
-  };
-  const history = load('toolExecutionLog', []);
-  save('toolExecutionLog', [execution, ...history].slice(0, 100));
-  logActivity({ engine: 'Tool Registry', action: execution.status === 'Completed' ? 'Tool execution recorded' : 'Tool execution blocked', detail: `${tool.name}: ${execution.status}`, level: execution.status === 'Completed' ? 'Info' : 'Warning' });
+  const execution = executeToolRuntime(tool, input);
+  logActivity({ engine: 'Tool Registry', action: execution.status === 'Completed' ? 'Tool runtime recorded' : 'Tool runtime blocked', detail: `${tool.name}: ${execution.status}`, level: execution.status === 'Completed' ? 'Info' : 'Warning' });
   return execution;
 }
 

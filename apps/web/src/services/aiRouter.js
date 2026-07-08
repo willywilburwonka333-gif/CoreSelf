@@ -200,7 +200,7 @@ function buildContext({ input, mode, projects, goals, plans, messages, relevantM
   const researchPlan = buildResearchPlan({ input });
   const knowledgeGraph = buildKnowledgeGraph({ memories: relevantMemories, projects, goals, plans });
   const creatorPlan = buildCreatorPlan({ input, projects, goals, memories: relevantMemories });
-  const developerPlan = buildDeveloperPlan({ input, projects, goals, tools });
+  const developerPlan = buildDeveloperPlan({ input, projects, memories: relevantMemories });
   const preparedActions = [
     ...buildPreparedActions(input, routeProfile),
     ...(creatorPlan.isCreatorRequest ? creatorPlan.nextActions.map((action) => ({ ...action, status: 'prepared', type: 'creator_workflow', source: 'Creator Platform' })) : []),
@@ -229,7 +229,7 @@ function buildContext({ input, mode, projects, goals, plans, messages, relevantM
     tools: tools.map((tool) => ({ id: tool.id, name: tool.name, category: tool.category, status: tool.status, permission: tool.permission, capability: tool.capability, risk: tool.risk, aliases: tool.aliases || [] })),
     toolReadiness,
     capabilityMap: buildCapabilityContext(),
-    deepRecommended: wantsDeepReasoning(input) || wantsCodingHelp(input) || orchestratorPlan.intent === 'research_compare',
+    deepRecommended: wantsDeepReasoning(input) || wantsCodingHelp(input) || developerPlan.isDeveloperRequest || orchestratorPlan.intent === 'research_compare',
     codingRequest: wantsCodingHelp(input),
     internetNeeded: wantsLiveInternet(input) || orchestratorPlan.shouldUseWeb,
     relevantMemories: relevantMemories.map((memory) => ({
@@ -326,15 +326,16 @@ export async function routeCoreRequest({ input, mode, memories = [], projects = 
       orchestratorPlan: result.orchestratorPlan || context.orchestratorPlan,
       researchPlan: result.researchPlan || context.researchPlan,
       knowledgeGraph: context.knowledgeGraph,
-      creatorPlan: context.creatorPlan,
+      creatorPlan: result.creatorPlan || context.creatorPlan,
       developerPlan: result.developerPlan || context.developerPlan,
+      toolRuntime: result.toolRuntime || context.toolReadiness?.runtime || null,
       deepRecommended: Boolean(result.diagnostics?.deepRecommended || wantsDeepReasoning(input) || wantsCodingHelp(input)),
       latencyMs: result.latencyMs || null,
       error: result.internetError || null,
       internetNeeded: Boolean(result.internetNeeded || context.internetNeeded),
       internetUsed: Boolean(result.internetUsed),
       sources: Array.isArray(result.sources) ? result.sources : [],
-      codingRequest: Boolean(result.codingRequest || context.codingRequest),
+      codingRequest: Boolean(result.codingRequest || context.codingRequest || context.developerPlan?.isDeveloperRequest),
       contextUsed: {
         memories: mergedMemories.length,
         relevantMemories: relevantMemories.length,
@@ -373,7 +374,8 @@ What to check:
       knowledgeGraph: context.knowledgeGraph,
       creatorPlan: context.creatorPlan,
       developerPlan: context.developerPlan,
-      deepRecommended: wantsDeepReasoning(input) || wantsCodingHelp(input) || context.orchestratorPlan?.intent === 'research_compare',
+      toolRuntime: context.toolReadiness?.runtime || null,
+      deepRecommended: wantsDeepReasoning(input) || wantsCodingHelp(input) || context.developerPlan?.isDeveloperRequest || context.orchestratorPlan?.intent === 'research_compare',
       latencyMs: null,
       error: error.message,
       internetNeeded: wantsLiveInternet(input),
