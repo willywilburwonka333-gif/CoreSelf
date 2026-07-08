@@ -1,5 +1,6 @@
 const INTENT_RULES = [
   { intent: 'build_code', label: 'Developer build', regex: /\b(code|coding|build|fix|debug|bug|zip|replacement|file|deploy|vercel|firebase|github|commit|push|npm|react|vite|api|javascript|jsx|css|html|typescript|node|terminal|command)\b/i, tools: ['memory-recall', 'planning-engine', 'developer-build-assistant', 'bug-triage', 'release-command-helper', 'replacement-file-workflow', 'github-vercel-firebase'], answer: 'implementation' },
+  { intent: 'provider_setup', label: 'Provider/API setup', regex: /\b(api key|api keys|provider|providers|connect|connector|integration|integrations|oauth|token|tokens|openai|image api|video api|music api|gmail|calendar|drive|github token|vercel token|firebase admin)\b/i, tools: ['memory-recall', 'provider-status-map', 'planning-engine', 'github-vercel-firebase'], answer: 'provider-setup' },
   { intent: 'research_compare', label: 'Research and compare', regex: /\b(search|internet|web|latest|current|look up|compare|sources|cite|verify|research|best|cheap|tool|tools|api|provider)\b/i, tools: ['memory-recall', 'web-research', 'research-comparator', 'action-queue'], answer: 'research-decision' },
   { intent: 'create_asset', label: 'Creator workflow', regex: /\b(image|picture|photo|video|film clip|song|music|book|chapter|cover|thumbnail|tiktok|post|marketing|prompt|voice|audio|lyrics|poster|logo|trailer|reel|caption|ad|ebook|lore bible|app store|google play)\b/i, tools: ['memory-recall', 'creator-suite', 'planning-engine', 'action-queue'], answer: 'creator-production' },
   { intent: 'business_money', label: 'Business/income', regex: /\b(business|income|money|grant|iba|forecast|loan|pitch|sales|launch|monetise|monetize|product|pricing|customers|market)\b/i, tools: ['memory-recall', 'business-builder', 'planning-engine', 'web-research'], answer: 'business-plan' },
@@ -50,6 +51,17 @@ function mapToolStatus(toolIds = [], tools = []) {
 }
 
 function buildAnswerContract(intent, input = '') {
+  if (intent.intent === 'provider_setup') {
+    return [
+      'Check the provider/status map first.',
+      'Separate already configured services from missing services.',
+      'Give exact Vercel environment variable names and setup order.',
+      'Do not ask Dylan to re-add keys that already exist.',
+      'High-risk providers must stay gated behind server routes and approval.',
+      'End with the next safest provider to connect.',
+    ];
+  }
+
   if (intent.intent === 'research_compare') {
     return [
       'State the practical answer first.',
@@ -112,7 +124,7 @@ export function buildOrchestratorPlan({ input = '', mode = 'standard', tools = [
   const blockedTools = selectedTools.filter((tool) => !tool.executable);
 
   const plan = {
-    version: 'milestone-5-tool-runtime',
+    version: 'milestone-6-provider-layer',
     intent: detected.intent,
     label: detected.label,
     confidence: detected.confidence,
@@ -126,8 +138,8 @@ export function buildOrchestratorPlan({ input = '', mode = 'standard', tools = [
     answerContract: buildAnswerContract(detected, input),
     shouldUseMemory: true,
     shouldUseWeb: detected.intent === 'research_compare',
-    shouldCreateAction: ['build_code', 'research_compare', 'business_money', 'personal_memory'].includes(detected.intent),
-    shouldCompareToCoreStack: ['research_compare', 'build_code', 'business_money'].includes(detected.intent),
+    shouldCreateAction: ['build_code', 'research_compare', 'business_money', 'personal_memory', 'provider_setup'].includes(detected.intent),
+    shouldCompareToCoreStack: ['research_compare', 'build_code', 'business_money', 'provider_setup'].includes(detected.intent),
     completionRule: 'Finish with a recommendation, next action, and whether this should be saved as memory/task/project when relevant.',
   };
 

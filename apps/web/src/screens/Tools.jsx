@@ -3,6 +3,7 @@ import { load } from '../services/localStore';
 import { loadToolRegistry, saveToolRegistry, buildToolReadiness, createToolExecution } from '../services/toolRegistry';
 import { buildStabilityReport, buildSafeExecutionRules } from '../services/stabilityEngine';
 import { AI_OS_CAPABILITIES, buildCapabilitySummary } from '../services/capabilityMatrix';
+import { buildClientProviderMap, summarizeProviderStatus } from '../services/providerConnectionEngine';
 
 export default function Tools() {
   const [tools, setTools] = useState(loadToolRegistry());
@@ -20,6 +21,8 @@ export default function Tools() {
   const stability = useMemo(() => buildStabilityReport({ memories, projects, goals, suggestions, activityLog, messages, queue, tools }), [memories, projects, goals, suggestions, activityLog, messages, queue, tools]);
   const rules = useMemo(() => buildSafeExecutionRules(stability), [stability]);
   const capabilitySummary = useMemo(() => buildCapabilitySummary(AI_OS_CAPABILITIES), []);
+  const providerMap = useMemo(() => buildClientProviderMap(), []);
+  const providerSummary = useMemo(() => summarizeProviderStatus(providerMap), [providerMap]);
 
   function updateTool(tool, changes) {
     const next = tools.map((item) => item.id === tool.id ? { ...item, ...changes } : item);
@@ -36,7 +39,7 @@ export default function Tools() {
     <section className="screen">
       <div className="talkHeader">
         <div>
-          <p className="eyebrow">TOOLS / MILESTONE 2</p>
+          <p className="eyebrow">TOOLS / MILESTONE 6</p>
           <h2>Tool Registry</h2>
         </div>
       </div>
@@ -65,6 +68,30 @@ export default function Tools() {
         <h3>AI OS Capability Map</h3>
         <p><strong>{capabilitySummary.activeNow}/{capabilitySummary.total}</strong> capability groups are usable or structurally prepared now. {capabilitySummary.needsExternalSetup} still need external API/OAuth/server-worker setup.</p>
         <p className="muted">Next build: {capabilitySummary.nextBuild}</p>
+      </div>
+
+
+      <div className="briefing">
+        <h3>Provider Connection Layer</h3>
+        <p><strong>{providerSummary.mode}</strong> — {providerSummary.connected}/{providerSummary.total} provider groups mapped. {providerSummary.recommendation}</p>
+        <p className="muted">Next provider focus: {providerSummary.nextProvider}</p>
+      </div>
+
+      <div className="list">
+        {providerMap.map((provider) => (
+          <article key={provider.id}>
+            <div className="itemTopline">
+              <strong>{provider.name}</strong>
+              <small>{provider.category} • {provider.status} • {provider.risk} risk</small>
+            </div>
+            <p>{provider.purpose}</p>
+            <p><strong>Next:</strong> {provider.nextAction}</p>
+            <details>
+              <summary>Setup steps</summary>
+              <ul>{provider.setup.map((step) => <li key={step}>{step}</li>)}</ul>
+            </details>
+          </article>
+        ))}
       </div>
 
       <div className="list">

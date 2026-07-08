@@ -6,6 +6,7 @@ import { buildResearchPlan } from './researchEngine';
 import { buildKnowledgeGraph } from './knowledgeGraph';
 import { buildCreatorPlan } from './creatorEngine';
 import { buildDeveloperPlan } from './developerEngine';
+import { buildClientProviderMap, summarizeProviderStatus } from './providerConnectionEngine';
 import { retrieveRelevantMemories } from './memoryRetrieval';
 import { load, save } from './localStore';
 import { coreSeedMemories } from '../data/coreSeeds';
@@ -201,6 +202,8 @@ function buildContext({ input, mode, projects, goals, plans, messages, relevantM
   const knowledgeGraph = buildKnowledgeGraph({ memories: relevantMemories, projects, goals, plans });
   const creatorPlan = buildCreatorPlan({ input, projects, goals, memories: relevantMemories });
   const developerPlan = buildDeveloperPlan({ input, projects, memories: relevantMemories });
+  const providerMap = buildClientProviderMap();
+  const providerSummary = summarizeProviderStatus(providerMap);
   const preparedActions = [
     ...buildPreparedActions(input, routeProfile),
     ...(creatorPlan.isCreatorRequest ? creatorPlan.nextActions.map((action) => ({ ...action, status: 'prepared', type: 'creator_workflow', source: 'Creator Platform' })) : []),
@@ -229,6 +232,8 @@ function buildContext({ input, mode, projects, goals, plans, messages, relevantM
     tools: tools.map((tool) => ({ id: tool.id, name: tool.name, category: tool.category, status: tool.status, permission: tool.permission, capability: tool.capability, risk: tool.risk, aliases: tool.aliases || [] })),
     toolReadiness,
     capabilityMap: buildCapabilityContext(),
+    providerMap,
+    providerSummary,
     deepRecommended: wantsDeepReasoning(input) || wantsCodingHelp(input) || developerPlan.isDeveloperRequest || orchestratorPlan.intent === 'research_compare',
     codingRequest: wantsCodingHelp(input),
     internetNeeded: wantsLiveInternet(input) || orchestratorPlan.shouldUseWeb,
@@ -329,6 +334,8 @@ export async function routeCoreRequest({ input, mode, memories = [], projects = 
       creatorPlan: result.creatorPlan || context.creatorPlan,
       developerPlan: result.developerPlan || context.developerPlan,
       toolRuntime: result.toolRuntime || context.toolReadiness?.runtime || null,
+      providerMap: result.providerMap || context.providerMap,
+      providerSummary: result.providerSummary || context.providerSummary,
       deepRecommended: Boolean(result.diagnostics?.deepRecommended || wantsDeepReasoning(input) || wantsCodingHelp(input)),
       latencyMs: result.latencyMs || null,
       error: result.internetError || null,
@@ -375,6 +382,8 @@ What to check:
       creatorPlan: context.creatorPlan,
       developerPlan: context.developerPlan,
       toolRuntime: context.toolReadiness?.runtime || null,
+      providerMap: context.providerMap,
+      providerSummary: context.providerSummary,
       deepRecommended: wantsDeepReasoning(input) || wantsCodingHelp(input) || context.developerPlan?.isDeveloperRequest || context.orchestratorPlan?.intent === 'research_compare',
       latencyMs: null,
       error: error.message,

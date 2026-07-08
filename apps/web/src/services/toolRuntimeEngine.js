@@ -20,6 +20,7 @@ const SAFE_INTERNAL_TOOLS = new Set([
   'bug-triage',
   'release-command-helper',
   'replacement-file-workflow',
+  'provider-status-map',
 ]);
 
 const EXTERNAL_WRITE_CATEGORIES = new Set(['Email', 'Calendar', 'External Write', 'Deployment']);

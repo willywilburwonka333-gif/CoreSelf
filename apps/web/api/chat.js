@@ -1,6 +1,7 @@
+import { buildProviderStatusFromEnv, summarizeProviderStatus } from '../src/services/providerConnectionEngine.js';
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
 const OPENAI_RESPONSES_URL = 'https://api.openai.com/v1/responses';
-const GENESIS_VERSION = 'milestone-5-tool-runtime';
+const GENESIS_VERSION = 'milestone-6-provider-layer';
 
 const DYLAN_SEED_MEMORY = [
   'Dylan Corr is building Core Self / Dylan Core as a persistent digital second self and personal AI operating system.',
@@ -244,6 +245,13 @@ ${safeList(body.knowledgeGraph.highestPriority, (node, index) => `${index + 1}. 
 Capability map:
 ${safeList(body.capabilityMap, (capability, index) => `${index + 1}. ${capability.name} [${capability.category} / ${capability.phase}] — ${capability.status}. ${capability.purpose}`)}
 
+
+Provider connection map:
+${body.providerMap ? safeList(body.providerMap, (provider, index) => `${index + 1}. ${provider.name} [${provider.category} / ${provider.status}] — ${provider.purpose}. Next: ${provider.nextAction}`) : 'No provider map supplied.'}
+
+Provider summary:
+${body.providerSummary ? `${body.providerSummary.mode}: ${body.providerSummary.connected || 0}/${body.providerSummary.total || 0} connected/mapped. Next provider: ${body.providerSummary.nextProvider}. Recommendation: ${body.providerSummary.recommendation}` : 'No provider summary supplied.'}
+
 Runtime flags:
 ${flags}
 
@@ -448,6 +456,10 @@ export default async function handler(request, response) {
   try {
     const body = request.body || {};
     const route = chooseModel(body);
+    const providerMap = buildProviderStatusFromEnv(process.env);
+    const providerSummary = summarizeProviderStatus(providerMap);
+    body.providerMap = body.providerMap || providerMap.map((provider) => ({ id: provider.id, name: provider.name, category: provider.category, status: provider.status, ready: provider.ready, risk: provider.risk, purpose: provider.purpose, nextAction: provider.nextAction }));
+    body.providerSummary = body.providerSummary || providerSummary;
     const needsInternet = route.internet;
     const model = route.selected;
 
@@ -493,8 +505,10 @@ export default async function handler(request, response) {
       creatorPlan: body.creatorPlan || null,
       developerPlan: body.developerPlan || null,
       toolRuntime: body.toolReadiness?.runtime || null,
+      providerMap: body.providerMap || [],
+      providerSummary: body.providerSummary || null,
       codingRequest: wantsCodingHelp(body.input),
-      diagnostics: { hasOpenAIKey: true, version: GENESIS_VERSION, selectedModel, routeProfile: body.orchestratorPlan?.intent || route.profile, deepRecommended: route.deepRecommended, codingRequest: route.coding || Boolean(body.developerPlan?.isDeveloperRequest), orchestrator: body.orchestratorPlan?.label || null, developer: body.developerPlan?.requestType || null, runtimeRunnable: body.toolReadiness?.runtime?.runnable || 0 },
+      diagnostics: { hasOpenAIKey: true, version: GENESIS_VERSION, providerLayer: providerSummary.mode, selectedModel, routeProfile: body.orchestratorPlan?.intent || route.profile, deepRecommended: route.deepRecommended, codingRequest: route.coding || Boolean(body.developerPlan?.isDeveloperRequest), orchestrator: body.orchestratorPlan?.label || null, developer: body.developerPlan?.requestType || null, runtimeRunnable: body.toolReadiness?.runtime?.runnable || 0 },
     });
   } catch (error) {
     const status = error.status || 500;
