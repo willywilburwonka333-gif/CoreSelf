@@ -7,6 +7,7 @@ import { defaultProjects, defaultGoals } from '../data/defaults';
 import { buildDailyReflection, buildTodayContext } from '../services/livingMemoryEngine';
 import { buildMorningPriorityStack } from '../services/proactiveEngine';
 import { buildReasoningSnapshot } from '../services/reasoningEngine';
+import { buildAssistantBehaviourProfile, buildSelfReviewChecklist } from '../services/assistantBehaviourEngine';
 
 export default function Home({ mode }) {
   const memories = load('memories', []);
@@ -19,6 +20,8 @@ export default function Home({ mode }) {
   const queue = load('actionQueue', []);
   const priorityStack = buildMorningPriorityStack({ memories, projects, goals, plans, suggestions, activityLog, messages, queue });
   const reasoning = buildReasoningSnapshot({ memories, projects, goals, plans, suggestions, activityLog, messages, queue });
+  const behaviour = buildAssistantBehaviourProfile({ memories, projects, goals, plans, suggestions, activityLog, messages, queue });
+  const selfReview = buildSelfReviewChecklist(behaviour);
   const today = buildTodayContext({ memories, projects, goals, plans, suggestions, activityLog });
   const reflection = buildDailyReflection({ memories, projects, goals, plans, suggestions, activityLog });
 
@@ -26,7 +29,7 @@ export default function Home({ mode }) {
     <section className="screen">
       <div className="hero">
         <div>
-          <p className="eyebrow">CORE SELF / GENESIS 0.7.4</p>
+          <p className="eyebrow">CORE SELF / GENESIS 0.8.1</p>
           <h1>Dylan Core</h1>
           <p>{constitution.primeDirective}</p>
           <p className="muted">{reflection.greeting} {reflection.summary}</p>
@@ -83,6 +86,16 @@ export default function Home({ mode }) {
         <p><strong>Strongest Move:</strong> {reasoning.strongestMove}</p>
         <p><strong>Strategic Themes:</strong> {reasoning.themes.join(' • ')}</p>
         <small>Memory depth: {reasoning.memoryDepth} • Open queue: {reasoning.activeQueueCount}</small>
+      </div>
+
+
+      <div className="briefing livingBrief">
+        <h3>Companion Loop</h3>
+        <p><strong>{behaviour.mode}</strong> — {behaviour.behaviourSummary}</p>
+        <ul>
+          {selfReview.map((item) => <li key={item}>{item}</li>)}
+        </ul>
+        <small>Behaviour score: {behaviour.completionScore}%</small>
       </div>
 
       <ProgressTracker />

@@ -3,6 +3,7 @@ import { load, save } from '../services/localStore';
 import { defaultGoals, defaultProjects } from '../data/defaults';
 import { logActivity } from '../services/activityLog';
 import { buildProactiveSuggestions, buildMorningPriorityStack } from '../services/proactiveEngine';
+import { buildAssistantBehaviourProfile } from '../services/assistantBehaviourEngine';
 
 export default function Actions() {
   const [queue, setQueue] = useState(load('actionQueue', []));
@@ -18,6 +19,7 @@ export default function Actions() {
 
   const proactive = useMemo(() => buildProactiveSuggestions({ memories, projects, goals, plans, suggestions, activityLog, messages, queue }), [memories, projects, goals, plans, suggestions, activityLog, messages, queue]);
   const morningStack = useMemo(() => buildMorningPriorityStack({ memories, projects, goals, plans, suggestions, activityLog, messages, queue }), [memories, projects, goals, plans, suggestions, activityLog, messages, queue]);
+  const behaviour = useMemo(() => buildAssistantBehaviourProfile({ memories, projects, goals, plans, suggestions, activityLog, messages, queue }), [memories, projects, goals, plans, suggestions, activityLog, messages, queue]);
 
   function updateQueue(next) {
     setQueue(next);
@@ -74,7 +76,7 @@ export default function Actions() {
     <section className="screen">
       <div className="talkHeader">
         <div>
-          <p className="eyebrow">ACTION ENGINE / GENESIS 0.7.3</p>
+          <p className="eyebrow">ACTION ENGINE / GENESIS 0.8.1</p>
           <h2>Proactive Action Queue</h2>
         </div>
         <button className="deepToggle" type="button" onClick={clearDone}>Clear Done</button>
@@ -98,6 +100,15 @@ export default function Actions() {
             <small>{item.priority}</small>
           </div>
         )) : <p className="muted">No proactive priority stack yet. Add goals, projects, memories, or pending suggestions.</p>}
+      </div>
+
+
+      <div className="briefing">
+        <h3>Companion Loop Guardrails</h3>
+        <p>{behaviour.behaviourSummary}</p>
+        <ul>
+          {behaviour.blindSpots.map((spot) => <li key={spot}>{spot}</li>)}
+        </ul>
       </div>
 
       <div className="briefing">

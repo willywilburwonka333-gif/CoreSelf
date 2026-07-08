@@ -3,6 +3,7 @@ import { load } from '../services/localStore';
 import { defaultGoals, defaultProjects, defaultLifeGraphNodes } from '../data/defaults';
 import { buildPlanningBriefing } from '../services/planningEngine';
 import { buildReasoningSnapshot, detectMemoryContradictions } from '../services/reasoningEngine';
+import { buildAssistantBehaviourProfile } from '../services/assistantBehaviourEngine';
 
 export default function Planning() {
   const memories = load('memories', []);
@@ -17,11 +18,12 @@ export default function Planning() {
   const briefing = useMemo(() => buildPlanningBriefing({ memories, projects, goals, lifeGraphNodes }), [memories, projects, goals, lifeGraphNodes]);
   const reasoning = useMemo(() => buildReasoningSnapshot({ memories, projects, goals, suggestions, activityLog, messages, queue, lifeGraphNodes }), [memories, projects, goals, suggestions, activityLog, messages, queue, lifeGraphNodes]);
   const contradictions = useMemo(() => detectMemoryContradictions(memories), [memories]);
+  const behaviour = useMemo(() => buildAssistantBehaviourProfile({ memories, projects, goals, suggestions, activityLog, messages, queue, lifeGraphNodes }), [memories, projects, goals, suggestions, activityLog, messages, queue, lifeGraphNodes]);
 
   return (
     <section className="screen">
       <h2>Planning Engine</h2>
-      <p className="muted">Genesis planning now combines goals, projects, memories, queue state, and risk checks into a long-term reasoning snapshot.</p>
+      <p className="muted">Genesis planning now combines goals, projects, memories, queue state, risk checks, and the Companion Loop behaviour profile.</p>
 
 
       <div className="briefing">
@@ -47,6 +49,18 @@ export default function Planning() {
             <p><strong>Next:</strong> {project.nextStep}</p>
           </div>
         )) : <p className="muted">No ranked projects yet.</p>}
+      </div>
+
+
+      <div className="briefing">
+        <h3>Companion Loop Planning Rules</h3>
+        <p><strong>{behaviour.mode}</strong> — Behaviour score: {behaviour.completionScore}%</p>
+        {behaviour.nextResponseRules.map((rule) => (
+          <div className="miniActionCard" key={rule}>
+            <strong>Rule</strong>
+            <p>{rule}</p>
+          </div>
+        ))}
       </div>
 
       <div className="briefing">

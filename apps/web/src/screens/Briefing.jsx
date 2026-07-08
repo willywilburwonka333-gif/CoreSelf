@@ -4,6 +4,7 @@ import { buildPlanningBriefing } from '../services/planningEngine';
 import { buildDailyReflection, buildMemoryTimeline } from '../services/livingMemoryEngine';
 import { buildMorningPriorityStack } from '../services/proactiveEngine';
 import { buildReasoningSnapshot, detectMemoryContradictions } from '../services/reasoningEngine';
+import { buildAssistantBehaviourProfile, buildSelfReviewChecklist } from '../services/assistantBehaviourEngine';
 
 export default function Briefing() {
   const memories = load('memories', []);
@@ -21,6 +22,8 @@ export default function Briefing() {
   const timeline = buildMemoryTimeline({ memories, messages, activityLog: logs, suggestions }, 6);
   const priorityStack = buildMorningPriorityStack({ memories, projects, goals, suggestions, activityLog: logs, messages, queue });
   const reasoning = buildReasoningSnapshot({ memories, projects, goals, suggestions, activityLog: logs, messages, queue, lifeGraphNodes: nodes });
+  const behaviour = buildAssistantBehaviourProfile({ memories, projects, goals, suggestions, activityLog: logs, messages, queue, lifeGraphNodes: nodes });
+  const selfReview = buildSelfReviewChecklist(behaviour);
   const contradictions = detectMemoryContradictions(memories);
 
   return (
@@ -74,6 +77,22 @@ export default function Briefing() {
             <small>{item.priority}</small>
           </div>
         )) : <p className="muted">No proactive priorities yet.</p>}
+      </div>
+
+
+      <div className="briefing">
+        <h3>Assistant Behaviour Self-Check</h3>
+        <p><strong>{behaviour.mode}</strong> — Score: {behaviour.completionScore}%</p>
+        <ul>
+          {selfReview.map((item) => <li key={item}>{item}</li>)}
+        </ul>
+      </div>
+
+      <div className="briefing">
+        <h3>Response Rules</h3>
+        <ul>
+          {behaviour.nextResponseRules.map((rule) => <li key={rule}>{rule}</li>)}
+        </ul>
       </div>
 
       <div className="briefing">
