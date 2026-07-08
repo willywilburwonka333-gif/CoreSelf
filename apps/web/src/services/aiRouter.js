@@ -4,6 +4,7 @@ import { buildCapabilityContext } from './capabilityMatrix';
 import { buildOrchestratorPlan } from './orchestratorEngine';
 import { buildResearchPlan } from './researchEngine';
 import { buildKnowledgeGraph } from './knowledgeGraph';
+import { buildCreatorPlan } from './creatorEngine';
 import { retrieveRelevantMemories } from './memoryRetrieval';
 import { load, save } from './localStore';
 import { coreSeedMemories } from '../data/coreSeeds';
@@ -197,8 +198,10 @@ function buildContext({ input, mode, projects, goals, plans, messages, relevantM
   const orchestratorPlan = buildOrchestratorPlan({ input, mode, tools, deepThink });
   const researchPlan = buildResearchPlan({ input });
   const knowledgeGraph = buildKnowledgeGraph({ memories: relevantMemories, projects, goals, plans });
+  const creatorPlan = buildCreatorPlan({ input, projects, goals, memories: relevantMemories });
   const preparedActions = [
     ...buildPreparedActions(input, routeProfile),
+    ...(creatorPlan.isCreatorRequest ? creatorPlan.nextActions.map((action) => ({ ...action, status: 'prepared', type: 'creator_workflow', source: 'Creator Platform' })) : []),
     ...(orchestratorPlan.shouldCreateAction ? [{
       id: `orchestrator-${Date.now()}`,
       status: 'prepared',
@@ -217,6 +220,7 @@ function buildContext({ input, mode, projects, goals, plans, messages, relevantM
     orchestratorPlan,
     researchPlan,
     knowledgeGraph,
+    creatorPlan,
     preparedActions,
     tools: tools.map((tool) => ({ id: tool.id, name: tool.name, category: tool.category, status: tool.status, permission: tool.permission, capability: tool.capability, risk: tool.risk, aliases: tool.aliases || [] })),
     toolReadiness,
@@ -318,6 +322,7 @@ export async function routeCoreRequest({ input, mode, memories = [], projects = 
       orchestratorPlan: result.orchestratorPlan || context.orchestratorPlan,
       researchPlan: result.researchPlan || context.researchPlan,
       knowledgeGraph: context.knowledgeGraph,
+      creatorPlan: result.creatorPlan || context.creatorPlan,
       deepRecommended: Boolean(result.diagnostics?.deepRecommended || wantsDeepReasoning(input) || wantsCodingHelp(input)),
       latencyMs: result.latencyMs || null,
       error: result.internetError || null,
@@ -361,6 +366,7 @@ What to check:
       orchestratorPlan: context.orchestratorPlan,
       researchPlan: context.researchPlan,
       knowledgeGraph: context.knowledgeGraph,
+      creatorPlan: result.creatorPlan || context.creatorPlan,
       deepRecommended: wantsDeepReasoning(input) || wantsCodingHelp(input) || context.orchestratorPlan?.intent === 'research_compare',
       latencyMs: null,
       error: error.message,

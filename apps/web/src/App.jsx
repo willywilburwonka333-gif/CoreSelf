@@ -87,7 +87,7 @@ export default function App() {
           <Brain />
           <div>
             <strong>CORE SELF</strong>
-            <span>Dylan Core Milestone 2 • AI Orchestrator</span>
+            <span>Dylan Core Milestone 3 • Creator Platform</span>
           </div>
         </div>
         <div className="statusCluster"><span className="online">Core Online</span><button className="iconButton" onClick={() => signOutCore()} title="Sign out"><LogOut size={16} /></button></div>

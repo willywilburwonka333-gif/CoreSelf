@@ -1,6 +1,6 @@
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
 const OPENAI_RESPONSES_URL = 'https://api.openai.com/v1/responses';
-const GENESIS_VERSION = '1.1.0';
+const GENESIS_VERSION = 'milestone-3-creator-platform';
 
 const DYLAN_SEED_MEMORY = [
   'Dylan Corr is building Core Self / Dylan Core as a persistent digital second self and personal AI operating system.',
@@ -101,6 +101,13 @@ Orchestrator behaviour:
 - End research answers with a recommendation and implementation order, not just a list.
 - For any request that could become a task/memory/project, prepare the next action clearly.
 
+Creator Platform behaviour:
+- For creative requests, first identify the lane: image, video, music, book, marketing, business document, or code/product.
+- Do not just give vague ideas. Produce the usable text, production prompt, scene list, lyrics, chapter plan, marketing copy, or document structure.
+- Use Dylan's real projects: Core Self, THE SYSTEM, Dungeon Protocol, Reality Project/HSET, music/marketing and family/lore where relevant.
+- Clearly separate what Core Self can create now from what requires a future external API/provider such as image, video, voice or music generation.
+- When the request spans multiple media, give the production order so Dylan knows which asset to create first.
+
 Coding/project behaviour:
 - Dylan often wants minimal friction. Prefer direct file names, exact commands, what changed, and clear next action.
 - For Core Self coding releases, always include: files changed, commands, what changed, progress estimate, and next milestone.
@@ -189,6 +196,15 @@ Core stack: ${(body.researchPlan.stack || []).join(' • ')}
 Rules:
 ${safeList(body.researchPlan.comparisonRules, (rule, index) => `${index + 1}. ${rule}`)}
 Caution flags: ${(body.researchPlan.flags || []).join(' | ') || 'None detected before web scan.'}` : 'No research plan supplied.'}
+
+Creator plan:
+${body.creatorPlan ? `Workflow: ${body.creatorPlan.primaryLabel || body.creatorPlan.primaryWorkflow}
+Mode: ${body.creatorPlan.currentExecutionMode || 'Not set'}
+Workflows:
+${safeList(body.creatorPlan.workflows, (workflow, index) => `${index + 1}. ${workflow.label} — ${workflow.output}. Providers: ${(workflow.providers || []).join(' / ')}`)}
+Answer contract:
+${safeList(body.creatorPlan.answerContract, (rule, index) => `${index + 1}. ${rule}`)}
+Related projects: ${(body.creatorPlan.relatedProjects || []).join(' • ') || 'None matched.'}` : 'No creator plan supplied.'}
 
 Knowledge graph:
 ${body.knowledgeGraph ? `${body.knowledgeGraph.summary}
@@ -444,6 +460,7 @@ export default async function handler(request, response) {
       preparedActions: body.preparedActions || [],
       orchestratorPlan: body.orchestratorPlan || null,
       researchPlan: body.researchPlan || null,
+      creatorPlan: body.creatorPlan || null,
       codingRequest: wantsCodingHelp(body.input),
       diagnostics: { hasOpenAIKey: true, version: GENESIS_VERSION, selectedModel, routeProfile: body.orchestratorPlan?.intent || route.profile, deepRecommended: route.deepRecommended, codingRequest: route.coding, orchestrator: body.orchestratorPlan?.label || null },
     });

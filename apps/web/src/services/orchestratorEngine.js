@@ -1,7 +1,7 @@
 const INTENT_RULES = [
   { intent: 'build_code', label: 'Developer build', regex: /\b(code|coding|build|fix|debug|bug|zip|replacement|file|deploy|vercel|firebase|github|commit|push|npm|react|vite|api|javascript|jsx|css|html|typescript|node|terminal|command)\b/i, tools: ['memory-recall', 'planning-engine', 'developer-build-assistant', 'github-vercel-firebase'], answer: 'implementation' },
   { intent: 'research_compare', label: 'Research and compare', regex: /\b(search|internet|web|latest|current|look up|compare|sources|cite|verify|research|best|cheap|tool|tools|api|provider)\b/i, tools: ['memory-recall', 'web-research', 'research-comparator', 'action-queue'], answer: 'research-decision' },
-  { intent: 'create_asset', label: 'Creator workflow', regex: /\b(image|picture|photo|video|film clip|song|music|book|chapter|cover|thumbnail|tiktok|post|marketing|prompt|voice|audio|lyrics)\b/i, tools: ['memory-recall', 'creator-suite', 'planning-engine', 'action-queue'], answer: 'creator-plan' },
+  { intent: 'create_asset', label: 'Creator workflow', regex: /\b(image|picture|photo|video|film clip|song|music|book|chapter|cover|thumbnail|tiktok|post|marketing|prompt|voice|audio|lyrics|poster|logo|trailer|reel|caption|ad|ebook|lore bible|app store|google play)\b/i, tools: ['memory-recall', 'creator-suite', 'planning-engine', 'action-queue'], answer: 'creator-production' },
   { intent: 'business_money', label: 'Business/income', regex: /\b(business|income|money|grant|iba|forecast|loan|pitch|sales|launch|monetise|monetize|product|pricing|customers|market)\b/i, tools: ['memory-recall', 'business-builder', 'planning-engine', 'web-research'], answer: 'business-plan' },
   { intent: 'personal_memory', label: 'Memory update', regex: /\b(remember|save this|memory|goal|plan|project|task|todo|remind|reminder|schedule|habit)\b/i, tools: ['memory-recall', 'memory-compression', 'action-queue', 'planning-engine'], answer: 'memory-action' },
 ];
@@ -72,10 +72,11 @@ function buildAnswerContract(intent, input = '') {
 
   if (intent.intent === 'create_asset') {
     return [
-      'Decide whether this is text, image, video, music, book, or marketing work.',
-      'Use Dylan\'s existing projects and brand direction.',
-      'Give a ready-to-use output or a tight production prompt.',
-      'Add the next production step only if useful.',
+      'Identify the creator lane first: image, video, music, book, marketing, business document, or product/code.',
+      'Use Dylan\'s existing projects, lore, brand direction, family context, app launch status and saved memory.',
+      'Give the finished usable output when possible; otherwise give a tight production prompt with settings, structure and next steps.',
+      'Separate what Core Self can produce now from what needs an external generator/API later.',
+      'End with the next production action, not a vague suggestion.',
     ];
   }
 
