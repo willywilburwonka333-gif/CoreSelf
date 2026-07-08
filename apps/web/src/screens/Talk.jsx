@@ -109,6 +109,8 @@ export default function Talk({ mode }) {
         internetUsed: routed.internetUsed,
         sources: routed.sources || [],
         preparedActions: routed.preparedActions || [],
+        orchestratorPlan: routed.orchestratorPlan || null,
+        researchPlan: routed.researchPlan || null,
         deepThink,
         routeProfile: routed.routeProfile,
         deepRecommended: routed.deepRecommended,
@@ -210,6 +212,8 @@ export default function Talk({ mode }) {
         {lastMeta?.internetNeeded && !lastMeta?.internetUsed && <small>Internet Scan requested but answered safely without live results.</small>}
         {lastMeta?.deepRecommended && !lastMeta?.deepThink && <small>Router note: Deep Think may improve this kind of request.</small>}
         {lastMeta?.routeProfile && <small>Route: {lastMeta.routeProfile}</small>}
+        {lastMeta?.orchestratorPlan && <small>Orchestrator: {lastMeta.orchestratorPlan.label} • {lastMeta.orchestratorPlan.answerStyle}</small>}
+        {lastMeta?.researchPlan && lastMeta.internetNeeded && <small>Research: {lastMeta.researchPlan.fitLabel} • compares against Core Self stack</small>}
         {latestPreparedActions.length > 0 && <small>Action Engine prepared {latestPreparedActions.length} action(s).</small>}
       </div>
       <div className="quickChips" aria-label="Quick actions">
@@ -217,7 +221,7 @@ export default function Talk({ mode }) {
         <button type="button" onClick={() => send('What context are you using right now?')}>Context</button>
         <button type="button" onClick={() => send('Summarise the current Core Self build status.')}>Status</button>
         <button type="button" onClick={() => { setDeepThink(true); send('Deep Think: what is the strongest next architecture move for Core Self?'); }}>Deep Plan</button>
-        <button type="button" onClick={() => send('Search the internet for the latest useful AI tools for building Core Self cheaply and cite sources.')}>Web Scan</button>
+        <button type="button" onClick={() => send('Search the internet for the latest useful AI tools for building Core Self cheaply, compare them against our actual stack, tell me what to use now, what to skip, and cite sources.')}>Web Scan</button>
         <button type="button" onClick={() => send('Create an action plan for the next Core Self build.')}>Action Plan</button>
         <button type="button" onClick={() => { const seeded = seedCoreSelfData(); setSeedState(seeded); save('coreSeedState', seeded); }}>Reseed Core</button>
       </div>
@@ -225,7 +229,7 @@ export default function Talk({ mode }) {
         {messages.map((m, i) => (
           <div key={i} className={'bubble ' + m.from}>
             <span>{m.text}</span>
-            {m.meta && <small>{statusLabel(m.meta)} • {contextLine(m.meta)}{m.meta.deepThink ? ' • Deep Think' : ''}</small>}
+            {m.meta && <small>{statusLabel(m.meta)} • {contextLine(m.meta)}{m.meta.deepThink ? ' • Deep Think' : ''}{m.meta.orchestratorPlan ? ` • ${m.meta.orchestratorPlan.label}` : ''}</small>}
             {m.meta?.sources?.length > 0 && (
               <div className="sourceCards">
                 {m.meta.sources.slice(0, 4).map((source, sourceIndex) => (

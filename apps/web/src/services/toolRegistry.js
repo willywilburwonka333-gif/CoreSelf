@@ -2,26 +2,21 @@ import { load, save } from './localStore';
 import { logActivity } from './activityLog';
 
 export const defaultTools = [
-  { id: 'memory-recall', name: 'Memory Recall', category: 'Internal', status: 'Ready', permission: 'Allowed', capability: 'Search confirmed memories and context.', risk: 'Low' },
-  { id: 'memory-compression', name: 'Memory Compression', category: 'Internal', status: 'Ready', permission: 'Allowed', capability: 'Summarise and prioritise memory context.', risk: 'Low' },
-  { id: 'action-queue', name: 'Action Queue', category: 'Internal', status: 'Ready', permission: 'Allowed', capability: 'Create, start, complete, and log actions.', risk: 'Low' },
-  { id: 'planning-engine', name: 'Planning Engine', category: 'Internal', status: 'Ready', permission: 'Allowed', capability: 'Build daily, weekly, and project plans.', risk: 'Low' },
-  { id: 'openai-brain', name: 'OpenAI Brain', category: 'AI Core', status: 'Ready', permission: 'Allowed', capability: 'Route chat, reasoning, planning, coding and creator requests through the server-side AI route.', risk: 'Medium' },
-  { id: 'web-research', name: 'Live Web Research', category: 'AI Core', status: 'Needs setup', permission: 'Ask first', capability: 'Research current public information through the configured AI web-search route.', risk: 'Medium' },
-  { id: 'vision', name: 'Vision / Image Understanding', category: 'Creator', status: 'Needs setup', permission: 'Ask first', capability: 'Understand uploaded screenshots, images, app bugs, store screenshots and visual assets once upload/vision route is added.', risk: 'Medium' },
-  { id: 'image-generation', name: 'Image Generation', category: 'Creator', status: 'Needs setup', permission: 'Ask first', capability: 'Create launch art, thumbnails, promotional pictures, concept art and store assets through a server-side image route.', risk: 'Medium' },
-  { id: 'video-generation', name: 'Video Generation', category: 'Creator', status: 'Needs setup', permission: 'Ask first', capability: 'Create or orchestrate short clips, trailers, film clips and social video workflows through an external provider.', risk: 'High' },
-  { id: 'music-audio', name: 'Music / Audio Workflow', category: 'Creator', status: 'Needs setup', permission: 'Ask first', capability: 'Write songs, prompts, voiceover scripts, soundtrack plans and later connect to audio providers.', risk: 'Medium' },
-  { id: 'book-writer', name: 'Book / Document Builder', category: 'Business', status: 'Ready', permission: 'Allowed', capability: 'Plan and draft books, pitch docs, business plans, grants, launch copy and long-form content.', risk: 'Low' },
-  { id: 'business-builder', name: 'Business / Income Builder', category: 'Business', status: 'Ready', permission: 'Allowed', capability: 'Create offers, funnels, product plans, IBA/grant docs, forecasts, monetisation maps and content calendars.', risk: 'Medium' },
-  { id: 'developer-assistant', name: 'Developer Build Assistant', category: 'Developer', status: 'Needs setup', permission: 'Ask first', capability: 'Inspect ZIPs, modify files, generate replacement packs, debug builds and prepare deploy commands once a backend worker is added.', risk: 'High' },
-  { id: 'github', name: 'GitHub', category: 'Developer', status: 'Needs setup', permission: 'Ask first', capability: 'Read repos, inspect diffs, prepare commits and later create pull requests after token/OAuth setup.', risk: 'High' },
-  { id: 'vercel', name: 'Vercel', category: 'Developer', status: 'Needs setup', permission: 'Ask first', capability: 'Check deployments, environment status and release failures after token setup.', risk: 'High' },
-  { id: 'firebase', name: 'Firebase', category: 'Developer', status: 'Needs setup', permission: 'Ask first', capability: 'Inspect Auth/Firestore/rules/deploy state after Firebase Admin setup.', risk: 'High' },
-  { id: 'files', name: 'Files / Documents', category: 'External', status: 'Needs setup', permission: 'Ask first', capability: 'Read uploaded documents, PDFs, ZIPs, spreadsheets and project files when a server-side file route is added.', risk: 'Medium' },
-  { id: 'calendar', name: 'Calendar', category: 'External', status: 'Needs setup', permission: 'Ask first', capability: 'Read or create scheduled items once Google OAuth is connected.', risk: 'Medium' },
-  { id: 'email', name: 'Email', category: 'External', status: 'Locked', permission: 'Blocked', capability: 'Draft, inspect or send email only after explicit Google OAuth setup and approval gates.', risk: 'High' },
-  { id: 'drive', name: 'Google Drive', category: 'External', status: 'Needs setup', permission: 'Ask first', capability: 'Search, read and organise user Drive files after Google OAuth setup.', risk: 'High' },
+  { id: 'memory-recall', aliases: ['memory'], name: 'Memory Recall', category: 'Internal', status: 'Ready', permission: 'Allowed', capability: 'Search confirmed memories and context before answering.', risk: 'Low' },
+  { id: 'memory-compression', aliases: ['context'], name: 'Memory Compression', category: 'Internal', status: 'Ready', permission: 'Allowed', capability: 'Summarise and prioritise memory context.', risk: 'Low' },
+  { id: 'knowledge-graph', aliases: ['graph'], name: 'Knowledge Graph', category: 'Internal', status: 'Ready', permission: 'Allowed', capability: 'Link projects, goals, plans and memories into one context map.', risk: 'Low' },
+  { id: 'ai-orchestrator', aliases: ['orchestrator'], name: 'AI Orchestrator', category: 'Internal', status: 'Ready', permission: 'Allowed', capability: 'Detect intent, select tools, choose answer style and prepare next actions.', risk: 'Low' },
+  { id: 'research-comparator', aliases: ['research'], name: 'Research Comparator', category: 'Internal', status: 'Ready', permission: 'Allowed', capability: 'Rank web/research results against Dylan’s real Core Self stack instead of dumping lists.', risk: 'Low' },
+  { id: 'action-queue', aliases: ['actions'], name: 'Action Queue', category: 'Internal', status: 'Ready', permission: 'Allowed', capability: 'Create, start, complete, and log actions.', risk: 'Low' },
+  { id: 'planning-engine', aliases: ['planner'], name: 'Planning Engine', category: 'Internal', status: 'Ready', permission: 'Allowed', capability: 'Build daily, weekly, and project plans.', risk: 'Low' },
+  { id: 'creator-suite', aliases: ['creator', 'images', 'video', 'music', 'books'], name: 'Creator Suite Router', category: 'Creator', status: 'Planning', permission: 'Ask first', capability: 'Route image, video, music, book and marketing requests to the right future provider/workflow.', risk: 'Medium' },
+  { id: 'business-builder', aliases: ['business', 'income'], name: 'Business Builder', category: 'Business', status: 'Ready', permission: 'Allowed', capability: 'Use current AI brain and memory to produce plans, pitches, forecasts and income strategy.', risk: 'Medium' },
+  { id: 'web-research', aliases: ['web'], name: 'Web Research', category: 'External', status: 'Ready', permission: 'Allowed', capability: 'Research current public information through the configured OpenAI web route when available.', risk: 'Medium' },
+  { id: 'developer-build-assistant', aliases: ['code', 'files', 'zip'], name: 'Developer Build Assistant', category: 'Developer', status: 'Planning', permission: 'Ask first', capability: 'Guide ZIP inspection, replacement files, build/debug/deploy commands. Real file mutation needs backend worker.', risk: 'Medium' },
+  { id: 'github-vercel-firebase', aliases: ['github', 'vercel', 'firebase'], name: 'GitHub / Vercel / Firebase Ops', category: 'Developer', status: 'Needs setup', permission: 'Ask first', capability: 'Read repos/deployments/Firebase status later. Write actions require tokens and approval gates.', risk: 'High' },
+  { id: 'calendar', aliases: ['google-calendar'], name: 'Calendar', category: 'External', status: 'Needs setup', permission: 'Ask first', capability: 'Read or create scheduled items once connected.', risk: 'Medium' },
+  { id: 'email', aliases: ['gmail'], name: 'Email', category: 'External', status: 'Locked', permission: 'Blocked', capability: 'Draft or inspect email only after explicit setup.', risk: 'High' },
+  { id: 'drive', aliases: ['google-drive'], name: 'Drive / Files', category: 'External', status: 'Needs setup', permission: 'Ask first', capability: 'Read uploaded documents and future Drive files when connected.', risk: 'Medium' },
 ];
 
 export function loadToolRegistry() {
@@ -42,6 +37,7 @@ export function buildToolReadiness(tools = loadToolRegistry()) {
   const executable = tools.filter((tool) => tool.status === 'Ready' && tool.permission === 'Allowed');
   const needsSetup = tools.filter((tool) => tool.status === 'Needs setup');
   const locked = tools.filter((tool) => tool.status === 'Locked' || tool.permission === 'Blocked');
+  const planning = tools.filter((tool) => tool.status === 'Planning');
   return {
     total: tools.length,
     ready: ready.length,
@@ -49,9 +45,10 @@ export function buildToolReadiness(tools = loadToolRegistry()) {
     executable: executable.length,
     needsSetup: needsSetup.length,
     locked: locked.length,
-    mode: executable.length >= 4 ? 'Internal tools online' : 'Tool foundation only',
-    summary: executable.length >= 4
-      ? `${executable.length} internal tool(s) are safe to use. External tools still require setup and approval.`
+    planning: planning.length,
+    mode: executable.length >= 7 ? 'Orchestrated internal tools online' : 'Tool foundation only',
+    summary: executable.length >= 7
+      ? `${executable.length} tool(s) are safe to use internally. External write tools still require setup and approval.`
       : 'Tool registry exists, but execution must stay guarded until setup and approval are complete.',
   };
 }
@@ -66,7 +63,7 @@ export function createToolExecution(tool, input = {}) {
     finishedAt: new Date().toISOString(),
     input,
     result: tool.status === 'Ready' && tool.permission === 'Allowed'
-      ? `${tool.name} checked. This is an internal foundation action, not an external API call.`
+      ? `${tool.name} checked. This is an internal/orchestrated foundation action, not an unapproved external write call.`
       : `${tool.name} cannot run yet. Status: ${tool.status}. Permission: ${tool.permission}.`,
   };
   const history = load('toolExecutionLog', []);

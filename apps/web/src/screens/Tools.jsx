@@ -36,7 +36,7 @@ export default function Tools() {
     <section className="screen">
       <div className="talkHeader">
         <div>
-          <p className="eyebrow">TOOLS / GENESIS 1.0</p>
+          <p className="eyebrow">TOOLS / MILESTONE 2</p>
           <h2>Tool Registry</h2>
         </div>
       </div>

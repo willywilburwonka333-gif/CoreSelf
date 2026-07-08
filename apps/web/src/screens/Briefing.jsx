@@ -58,7 +58,7 @@ export default function Briefing() {
       </div>
 
       <div className="briefing">
-        <h3>Genesis 1.0 AI Command Core</h3>
+        <h3>Milestone 2 AI Orchestrator</h3>
         <p><strong>{toolReadiness.mode}</strong> — {toolReadiness.summary}</p>
         <p><strong>Stability:</strong> {stability.status} • {stability.score}%</p>
         <ul>

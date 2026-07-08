@@ -1,6 +1,9 @@
 import { coreReply } from './coreReply';
 import { loadToolRegistry, buildToolReadiness } from './toolRegistry';
 import { buildCapabilityContext } from './capabilityMatrix';
+import { buildOrchestratorPlan } from './orchestratorEngine';
+import { buildResearchPlan } from './researchEngine';
+import { buildKnowledgeGraph } from './knowledgeGraph';
 import { retrieveRelevantMemories } from './memoryRetrieval';
 import { load, save } from './localStore';
 import { coreSeedMemories } from '../data/coreSeeds';
@@ -38,7 +41,7 @@ const SEED_MEMORIES = [
     type: 'Architecture',
     level: 'Permanent',
     importance: 'Critical',
-    content: 'Dylan Core should become a personal AI OS with memory, projects, goals, plans, live internet, Deep Think, model routing, vision/files, action queue, reminders, calendar, email, GitHub, Firebase, Vercel and notifications.',
+    content: 'Dylan Core should become a personal AI OS with memory, projects, goals, plans, live internet, Deep Think, model routing, vision/files, action queue, reminders, calendar, email, GitHub, Firebase, Vercel, notifications, creator tools, developer tools, business tools, and a real AI Orchestrator that chooses the right path automatically.',
     lesson: 'Build useful engines, not just chat polish.',
     futureAction: 'Keep stacking shippable Genesis releases toward action-capable second-self behaviour.',
     relationshipTags: ['roadmap', 'AI OS', 'engines'],
@@ -94,7 +97,7 @@ const SEED_PLANS = [
     title: 'Core Self Genesis roadmap',
     status: 'Active',
     summary: '0.7.0 focuses on Dylan Core intelligence: seed context, action queue, better routing, internet status and mobile usability.',
-    nextAction: 'Test Dylan Core with code help, latest web search, action queue and memory questions.',
+    nextAction: 'Test Dylan Core with code help, latest web search, action queue, memory questions, orchestrator routing and research comparison.',
   },
 ];
 
@@ -191,18 +194,36 @@ function buildContext({ input, mode, projects, goals, plans, messages, relevantM
   const routeProfile = routeProfileFor(input, deepThink);
   const tools = loadToolRegistry();
   const toolReadiness = buildToolReadiness(tools);
+  const orchestratorPlan = buildOrchestratorPlan({ input, mode, tools, deepThink });
+  const researchPlan = buildResearchPlan({ input });
+  const knowledgeGraph = buildKnowledgeGraph({ memories: relevantMemories, projects, goals, plans });
+  const preparedActions = [
+    ...buildPreparedActions(input, routeProfile),
+    ...(orchestratorPlan.shouldCreateAction ? [{
+      id: `orchestrator-${Date.now()}`,
+      status: 'prepared',
+      type: 'orchestrator_next_step',
+      title: `${orchestratorPlan.label} next step`,
+      detail: input,
+      nextStep: orchestratorPlan.completionRule,
+    }] : []),
+  ].slice(0, 4);
+
   return {
     input,
     mode,
     deepThink: Boolean(deepThink),
     routeProfile,
-    preparedActions: buildPreparedActions(input, routeProfile),
-    tools: tools.map((tool) => ({ id: tool.id, name: tool.name, category: tool.category, status: tool.status, permission: tool.permission, capability: tool.capability, risk: tool.risk })),
+    orchestratorPlan,
+    researchPlan,
+    knowledgeGraph,
+    preparedActions,
+    tools: tools.map((tool) => ({ id: tool.id, name: tool.name, category: tool.category, status: tool.status, permission: tool.permission, capability: tool.capability, risk: tool.risk, aliases: tool.aliases || [] })),
     toolReadiness,
     capabilityMap: buildCapabilityContext(),
-    deepRecommended: wantsDeepReasoning(input) || wantsCodingHelp(input),
+    deepRecommended: wantsDeepReasoning(input) || wantsCodingHelp(input) || orchestratorPlan.intent === 'research_compare',
     codingRequest: wantsCodingHelp(input),
-    internetNeeded: wantsLiveInternet(input),
+    internetNeeded: wantsLiveInternet(input) || orchestratorPlan.shouldUseWeb,
     relevantMemories: relevantMemories.map((memory) => ({
       title: memory.title,
       type: memory.type,
@@ -292,8 +313,11 @@ export async function routeCoreRequest({ input, mode, memories = [], projects = 
       confidence: result.confidence || 0.88,
       reply: result.reply,
       source: result.source || 'dylan-core-engine',
-      routeProfile: result.diagnostics?.routeProfile || routeProfileFor(input, deepThink),
+      routeProfile: result.diagnostics?.routeProfile || context.orchestratorPlan?.intent || routeProfileFor(input, deepThink),
       preparedActions: result.preparedActions || context.preparedActions || [],
+      orchestratorPlan: result.orchestratorPlan || context.orchestratorPlan,
+      researchPlan: result.researchPlan || context.researchPlan,
+      knowledgeGraph: context.knowledgeGraph,
       deepRecommended: Boolean(result.diagnostics?.deepRecommended || wantsDeepReasoning(input) || wantsCodingHelp(input)),
       latencyMs: result.latencyMs || null,
       error: result.internetError || null,
@@ -334,7 +358,10 @@ What to check:
       source: 'local-fallback',
       routeProfile: routeProfileFor(input, deepThink),
       preparedActions: context.preparedActions || [],
-      deepRecommended: wantsDeepReasoning(input) || wantsCodingHelp(input),
+      orchestratorPlan: context.orchestratorPlan,
+      researchPlan: context.researchPlan,
+      knowledgeGraph: context.knowledgeGraph,
+      deepRecommended: wantsDeepReasoning(input) || wantsCodingHelp(input) || context.orchestratorPlan?.intent === 'research_compare',
       latencyMs: null,
       error: error.message,
       internetNeeded: wantsLiveInternet(input),
