@@ -1,5 +1,5 @@
 const INTENT_RULES = [
-  { intent: 'build_code', label: 'Developer build', regex: /\b(code|coding|build|fix|debug|bug|zip|replacement|file|deploy|vercel|firebase|github|commit|push|npm|react|vite|api|javascript|jsx|css|html|typescript|node|terminal|command)\b/i, tools: ['memory-recall', 'planning-engine', 'developer-build-assistant', 'github-vercel-firebase'], answer: 'implementation' },
+  { intent: 'build_code', label: 'Developer build', regex: /\b(code|coding|build|fix|debug|bug|zip|replacement|file|deploy|vercel|firebase|github|commit|push|npm|react|vite|api|javascript|jsx|css|html|typescript|node|terminal|command)\b/i, tools: ['memory-recall', 'planning-engine', 'developer-build-assistant', 'bug-triage', 'release-command-helper', 'replacement-file-workflow', 'github-vercel-firebase'], answer: 'implementation' },
   { intent: 'research_compare', label: 'Research and compare', regex: /\b(search|internet|web|latest|current|look up|compare|sources|cite|verify|research|best|cheap|tool|tools|api|provider)\b/i, tools: ['memory-recall', 'web-research', 'research-comparator', 'action-queue'], answer: 'research-decision' },
   { intent: 'create_asset', label: 'Creator workflow', regex: /\b(image|picture|photo|video|film clip|song|music|book|chapter|cover|thumbnail|tiktok|post|marketing|prompt|voice|audio|lyrics|poster|logo|trailer|reel|caption|ad|ebook|lore bible|app store|google play)\b/i, tools: ['memory-recall', 'creator-suite', 'planning-engine', 'action-queue'], answer: 'creator-production' },
   { intent: 'business_money', label: 'Business/income', regex: /\b(business|income|money|grant|iba|forecast|loan|pitch|sales|launch|monetise|monetize|product|pricing|customers|market)\b/i, tools: ['memory-recall', 'business-builder', 'planning-engine', 'web-research'], answer: 'business-plan' },
@@ -67,6 +67,8 @@ function buildAnswerContract(intent, input = '') {
       'Give exact terminal commands.',
       'Say what changed and what to test.',
       'Do not reset the workflow or ask for already provided setup.',
+      'Separate existing replacement files from new files to create.',
+      'Do not claim build/check/deploy success unless confirmed by a tool/runtime result.',
     ];
   }
 
@@ -110,7 +112,7 @@ export function buildOrchestratorPlan({ input = '', mode = 'standard', tools = [
   const blockedTools = selectedTools.filter((tool) => !tool.executable);
 
   const plan = {
-    version: 'milestone-2-orchestrator',
+    version: 'milestone-4-developer-platform',
     intent: detected.intent,
     label: detected.label,
     confidence: detected.confidence,

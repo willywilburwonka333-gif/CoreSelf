@@ -1,6 +1,6 @@
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
 const OPENAI_RESPONSES_URL = 'https://api.openai.com/v1/responses';
-const GENESIS_VERSION = 'milestone-3-creator-platform';
+const GENESIS_VERSION = 'milestone-4-developer-platform';
 
 const DYLAN_SEED_MEMORY = [
   'Dylan Corr is building Core Self / Dylan Core as a persistent digital second self and personal AI operating system.',
@@ -108,13 +108,18 @@ Creator Platform behaviour:
 - Clearly separate what Core Self can create now from what requires a future external API/provider such as image, video, voice or music generation.
 - When the request spans multiple media, give the production order so Dylan knows which asset to create first.
 
-Coding/project behaviour:
+Developer Platform behaviour:
+- Treat coding, debugging, ZIP audits, screenshots, build errors, Vercel, Firebase, GitHub, npm, replacement files and deploy requests as Developer Platform work.
+- First classify the workflow: ZIP/repo audit, bug/crash triage, feature build, deploy/release ops, or single-file replacement workflow.
 - Dylan often wants minimal friction. Prefer direct file names, exact commands, what changed, and clear next action.
 - For Core Self coding releases, always include: files changed, commands, what changed, progress estimate, and next milestone.
 - When a build/test error is shown, diagnose from the error first, then give the next command or file fix.
 - When asked to build features, group compatible changes into safe stacks.
 - When asked for replacements, provide only changed files and do not invent unrelated changes.
-- Track the release mindset: small, shippable Genesis versions.
+- Track the release mindset: small, shippable stacks.
+- Separate existing files to replace from new files to create.
+- Provide exact new filenames when a new file is required.
+- Do not claim a file was inspected, a build passed, or a deployment completed unless supplied runtime/tool evidence confirms it.
 
 Action Engine behaviour:
 - When Dylan asks for reminders, tasks, goals, project updates, code plans, or next steps, prepare the action clearly but do not claim it has been executed unless the app/tool confirms it.
@@ -205,6 +210,17 @@ ${safeList(body.creatorPlan.workflows, (workflow, index) => `${index + 1}. ${wor
 Answer contract:
 ${safeList(body.creatorPlan.answerContract, (rule, index) => `${index + 1}. ${rule}`)}
 Related projects: ${(body.creatorPlan.relatedProjects || []).join(' • ') || 'None matched.'}` : 'No creator plan supplied.'}
+
+Developer plan:
+${body.developerPlan ? `Workflow: ${body.developerPlan.primaryLabel || body.developerPlan.primaryWorkflow}
+Summary: ${body.developerPlan.summary}
+Known stack:
+${safeList(body.developerPlan.knownStack, (item, index) => `${index + 1}. ${item}`)}
+Rules:
+${safeList(body.developerPlan.rules, (rule, index) => `${index + 1}. ${rule}`)}
+Answer contract:
+${safeList(body.developerPlan.answerContract, (rule, index) => `${index + 1}. ${rule}`)}
+Related projects: ${(body.developerPlan.relatedProjects || []).join(' • ') || 'None matched.'}` : 'No developer plan supplied.'}
 
 Knowledge graph:
 ${body.knowledgeGraph ? `${body.knowledgeGraph.summary}
@@ -461,8 +477,9 @@ export default async function handler(request, response) {
       orchestratorPlan: body.orchestratorPlan || null,
       researchPlan: body.researchPlan || null,
       creatorPlan: body.creatorPlan || null,
+      developerPlan: body.developerPlan || null,
       codingRequest: wantsCodingHelp(body.input),
-      diagnostics: { hasOpenAIKey: true, version: GENESIS_VERSION, selectedModel, routeProfile: body.orchestratorPlan?.intent || route.profile, deepRecommended: route.deepRecommended, codingRequest: route.coding, orchestrator: body.orchestratorPlan?.label || null },
+      diagnostics: { hasOpenAIKey: true, version: GENESIS_VERSION, selectedModel, routeProfile: body.orchestratorPlan?.intent || route.profile, deepRecommended: route.deepRecommended, codingRequest: route.coding, orchestrator: body.orchestratorPlan?.label || null, developer: body.developerPlan?.primaryLabel || null },
     });
   } catch (error) {
     const status = error.status || 500;
