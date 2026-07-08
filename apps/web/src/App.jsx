@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Activity as ActivityIcon, Brain, Home as HomeIcon, MessageCircle, Database, Network, Sun, Shield, FolderKanban, Target, Cpu, Settings as SettingsIcon, ListChecks, LogOut, ShieldCheck, MoreHorizontal, CheckSquare } from 'lucide-react';
+import { Activity as ActivityIcon, Brain, Home as HomeIcon, MessageCircle, Database, Network, Sun, Shield, FolderKanban, Target, Cpu, Settings as SettingsIcon, ListChecks, LogOut, ShieldCheck, MoreHorizontal, CheckSquare, Wrench } from 'lucide-react';
 import ModeBar from './components/ModeBar';
 import Home from './screens/Home';
 import Talk from './screens/Talk';
@@ -13,6 +13,7 @@ import Planning from './screens/Planning';
 import Engines from './screens/Engines';
 import Activity from './screens/Activity';
 import Actions from './screens/Actions';
+import Tools from './screens/Tools';
 import Settings from './screens/Settings';
 import Security from './screens/Security';
 import AuthPanel from './components/AuthPanel';
@@ -31,6 +32,7 @@ const moreTabs = [
   ['graph', 'Graph', Network],
   ['planning', 'Plan', ListChecks],
   ['engines', 'Engines', Cpu],
+  ['tools', 'Tools', Wrench],
   ['activity', 'Log', ActivityIcon],
   ['briefing', 'Briefing', Sun],
   ['settings', 'Settings', SettingsIcon],
@@ -65,6 +67,7 @@ export default function App() {
     tab === 'goals' ? <Goals /> :
     tab === 'planning' ? <Planning /> :
     tab === 'actions' ? <Actions /> :
+    tab === 'tools' ? <Tools /> :
     tab === 'engines' ? <Engines /> :
     tab === 'activity' ? <Activity /> :
     tab === 'briefing' ? <Briefing /> :
@@ -84,7 +87,7 @@ export default function App() {
           <Brain />
           <div>
             <strong>CORE SELF</strong>
-            <span>Dylan Core Genesis 0.8.1 • Companion Loop</span>
+            <span>Dylan Core Genesis 0.9.2 • Tool Layer</span>
           </div>
         </div>
         <div className="statusCluster"><span className="online">Core Online</span><button className="iconButton" onClick={() => signOutCore()} title="Sign out"><LogOut size={16} /></button></div>

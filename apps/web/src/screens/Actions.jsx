@@ -4,6 +4,8 @@ import { defaultGoals, defaultProjects } from '../data/defaults';
 import { logActivity } from '../services/activityLog';
 import { buildProactiveSuggestions, buildMorningPriorityStack } from '../services/proactiveEngine';
 import { buildAssistantBehaviourProfile } from '../services/assistantBehaviourEngine';
+import { buildCompressedMemoryIndex, buildMemoryCompressionActions } from '../services/memoryCompressionEngine';
+import { loadToolRegistry, buildToolActions, buildToolReadiness } from '../services/toolRegistry';
 
 export default function Actions() {
   const [queue, setQueue] = useState(load('actionQueue', []));
@@ -16,10 +18,15 @@ export default function Actions() {
   const suggestions = load('memorySuggestions', []);
   const activityLog = load('activityLog', []);
   const messages = load('messages', []);
+  const tools = loadToolRegistry();
 
   const proactive = useMemo(() => buildProactiveSuggestions({ memories, projects, goals, plans, suggestions, activityLog, messages, queue }), [memories, projects, goals, plans, suggestions, activityLog, messages, queue]);
   const morningStack = useMemo(() => buildMorningPriorityStack({ memories, projects, goals, plans, suggestions, activityLog, messages, queue }), [memories, projects, goals, plans, suggestions, activityLog, messages, queue]);
   const behaviour = useMemo(() => buildAssistantBehaviourProfile({ memories, projects, goals, plans, suggestions, activityLog, messages, queue }), [memories, projects, goals, plans, suggestions, activityLog, messages, queue]);
+  const compression = useMemo(() => buildCompressedMemoryIndex({ memories, suggestions, messages, activityLog, queue }), [memories, suggestions, messages, activityLog, queue]);
+  const compressionActions = useMemo(() => buildMemoryCompressionActions(compression), [compression]);
+  const toolActions = useMemo(() => buildToolActions(tools), [tools]);
+  const toolReadiness = useMemo(() => buildToolReadiness(tools), [tools]);
 
   function updateQueue(next) {
     setQueue(next);
@@ -76,7 +83,7 @@ export default function Actions() {
     <section className="screen">
       <div className="talkHeader">
         <div>
-          <p className="eyebrow">ACTION ENGINE / GENESIS 0.8.1</p>
+          <p className="eyebrow">ACTION ENGINE / GENESIS 0.9.2</p>
           <h2>Proactive Action Queue</h2>
         </div>
         <button className="deepToggle" type="button" onClick={clearDone}>Clear Done</button>
@@ -109,6 +116,30 @@ export default function Actions() {
         <ul>
           {behaviour.blindSpots.map((spot) => <li key={spot}>{spot}</li>)}
         </ul>
+      </div>
+
+      <div className="briefing">
+        <h3>Tool Actions</h3>
+        <p>{toolReadiness.summary}</p>
+        {toolActions.slice(0, 5).map((action) => (
+          <div className="miniActionCard" key={action.id}>
+            <div className="itemTopline"><strong>{action.title}</strong><small>{action.priority}</small></div>
+            <p>{action.detail}</p>
+            <p><strong>Next:</strong> {action.nextStep}</p>
+            <button type="button" onClick={() => queueAction(action)}>Add to Queue</button>
+          </div>
+        ))}
+      </div>
+
+      <div className="briefing">
+        <h3>Memory Compression Actions</h3>
+        {compressionActions.length ? compressionActions.map((action) => (
+          <div className="miniActionCard" key={action.title}>
+            <strong>{action.title}</strong>
+            <p>{action.detail}</p>
+            <button type="button" onClick={() => queueAction({ ...action, id: `compression-${action.title}`, type: 'Memory Compression', nextStep: action.detail, source: 'Memory Compression' })}>Add to Queue</button>
+          </div>
+        )) : <p className="muted">No compression action needed right now.</p>}
       </div>
 
       <div className="briefing">

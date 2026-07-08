@@ -4,6 +4,9 @@ import { defaultGoals, defaultProjects, defaultLifeGraphNodes } from '../data/de
 import { buildPlanningBriefing } from '../services/planningEngine';
 import { buildReasoningSnapshot, detectMemoryContradictions } from '../services/reasoningEngine';
 import { buildAssistantBehaviourProfile } from '../services/assistantBehaviourEngine';
+import { buildCompressedMemoryIndex } from '../services/memoryCompressionEngine';
+import { loadToolRegistry, buildToolReadiness } from '../services/toolRegistry';
+import { buildStabilityReport } from '../services/stabilityEngine';
 
 export default function Planning() {
   const memories = load('memories', []);
@@ -14,17 +17,29 @@ export default function Planning() {
   const activityLog = load('activityLog', []);
   const messages = load('messages', []);
   const queue = load('actionQueue', []);
+  const tools = loadToolRegistry();
 
   const briefing = useMemo(() => buildPlanningBriefing({ memories, projects, goals, lifeGraphNodes }), [memories, projects, goals, lifeGraphNodes]);
   const reasoning = useMemo(() => buildReasoningSnapshot({ memories, projects, goals, suggestions, activityLog, messages, queue, lifeGraphNodes }), [memories, projects, goals, suggestions, activityLog, messages, queue, lifeGraphNodes]);
   const contradictions = useMemo(() => detectMemoryContradictions(memories), [memories]);
   const behaviour = useMemo(() => buildAssistantBehaviourProfile({ memories, projects, goals, suggestions, activityLog, messages, queue, lifeGraphNodes }), [memories, projects, goals, suggestions, activityLog, messages, queue, lifeGraphNodes]);
+  const compression = useMemo(() => buildCompressedMemoryIndex({ memories, suggestions, messages, activityLog, queue }), [memories, suggestions, messages, activityLog, queue]);
+  const toolReadiness = useMemo(() => buildToolReadiness(tools), [tools]);
+  const stability = useMemo(() => buildStabilityReport({ memories, projects, goals, suggestions, activityLog, messages, queue, tools }), [memories, projects, goals, suggestions, activityLog, messages, queue, tools]);
 
   return (
     <section className="screen">
       <h2>Planning Engine</h2>
       <p className="muted">Genesis planning now combines goals, projects, memories, queue state, risk checks, and the Companion Loop behaviour profile.</p>
 
+
+      <div className="briefing">
+        <h3>0.9 Agent Readiness</h3>
+        <p><strong>Tools:</strong> {toolReadiness.mode}</p>
+        <p><strong>Memory:</strong> {compression.summary}</p>
+        <p><strong>Stability:</strong> {stability.status} • {stability.score}%</p>
+        <small>Executable tools: {toolReadiness.executable} • Context budget: {compression.contextBudget}% • Blockers: {stability.blockers.length}</small>
+      </div>
 
       <div className="briefing">
         <h3>Long-Term Reasoning Snapshot</h3>

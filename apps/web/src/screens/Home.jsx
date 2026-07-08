@@ -8,6 +8,9 @@ import { buildDailyReflection, buildTodayContext } from '../services/livingMemor
 import { buildMorningPriorityStack } from '../services/proactiveEngine';
 import { buildReasoningSnapshot } from '../services/reasoningEngine';
 import { buildAssistantBehaviourProfile, buildSelfReviewChecklist } from '../services/assistantBehaviourEngine';
+import { buildCompressedMemoryIndex } from '../services/memoryCompressionEngine';
+import { loadToolRegistry, buildToolReadiness } from '../services/toolRegistry';
+import { buildStabilityReport } from '../services/stabilityEngine';
 
 export default function Home({ mode }) {
   const memories = load('memories', []);
@@ -18,18 +21,22 @@ export default function Home({ mode }) {
   const activityLog = load('activityLog', []);
   const messages = load('messages', []);
   const queue = load('actionQueue', []);
+  const tools = loadToolRegistry();
   const priorityStack = buildMorningPriorityStack({ memories, projects, goals, plans, suggestions, activityLog, messages, queue });
   const reasoning = buildReasoningSnapshot({ memories, projects, goals, plans, suggestions, activityLog, messages, queue });
   const behaviour = buildAssistantBehaviourProfile({ memories, projects, goals, plans, suggestions, activityLog, messages, queue });
   const selfReview = buildSelfReviewChecklist(behaviour);
   const today = buildTodayContext({ memories, projects, goals, plans, suggestions, activityLog });
   const reflection = buildDailyReflection({ memories, projects, goals, plans, suggestions, activityLog });
+  const compression = buildCompressedMemoryIndex({ memories, suggestions, messages, activityLog, queue });
+  const toolReadiness = buildToolReadiness(tools);
+  const stability = buildStabilityReport({ memories, projects, goals, suggestions, activityLog, messages, queue, tools });
 
   return (
     <section className="screen">
       <div className="hero">
         <div>
-          <p className="eyebrow">CORE SELF / GENESIS 0.8.1</p>
+          <p className="eyebrow">CORE SELF / GENESIS 0.9.2</p>
           <h1>Dylan Core</h1>
           <p>{constitution.primeDirective}</p>
           <p className="muted">{reflection.greeting} {reflection.summary}</p>
@@ -96,6 +103,20 @@ export default function Home({ mode }) {
           {selfReview.map((item) => <li key={item}>{item}</li>)}
         </ul>
         <small>Behaviour score: {behaviour.completionScore}%</small>
+      </div>
+
+
+      <div className="briefing livingBrief">
+        <h3>Tool + Stability Gate</h3>
+        <p><strong>{toolReadiness.mode}</strong> — {toolReadiness.summary}</p>
+        <p><strong>Stability:</strong> {stability.status} • {stability.score}%</p>
+        <small>Executable tools: {toolReadiness.executable} • Needs setup: {toolReadiness.needsSetup} • Open queue: {stability.openQueueCount}</small>
+      </div>
+
+      <div className="briefing livingBrief">
+        <h3>Memory Compression</h3>
+        <p>{compression.summary}</p>
+        <small>Context budget: {compression.contextBudget}% • Permanent: {compression.permanentCount} • Active: {compression.activeCount} • Archive-ready: {compression.archiveReadyCount}</small>
       </div>
 
       <ProgressTracker />

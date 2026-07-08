@@ -5,6 +5,9 @@ import { buildDailyReflection, buildMemoryTimeline } from '../services/livingMem
 import { buildMorningPriorityStack } from '../services/proactiveEngine';
 import { buildReasoningSnapshot, detectMemoryContradictions } from '../services/reasoningEngine';
 import { buildAssistantBehaviourProfile, buildSelfReviewChecklist } from '../services/assistantBehaviourEngine';
+import { buildCompressedMemoryIndex, buildMemoryCompressionActions } from '../services/memoryCompressionEngine';
+import { loadToolRegistry, buildToolReadiness } from '../services/toolRegistry';
+import { buildStabilityReport, buildSafeExecutionRules } from '../services/stabilityEngine';
 
 export default function Briefing() {
   const memories = load('memories', []);
@@ -15,6 +18,7 @@ export default function Briefing() {
   const suggestions = load('memorySuggestions', []);
   const messages = load('messages', []);
   const queue = load('actionQueue', []);
+  const tools = loadToolRegistry();
   const briefing = buildPlanningBriefing({ memories, projects, goals, lifeGraphNodes: nodes });
   const criticalMemories = memories.filter((m) => m.importance === 'Critical' || m.level === 'Permanent');
   const pendingSuggestions = suggestions.filter((item) => item.status === 'Pending');
@@ -25,6 +29,11 @@ export default function Briefing() {
   const behaviour = buildAssistantBehaviourProfile({ memories, projects, goals, suggestions, activityLog: logs, messages, queue, lifeGraphNodes: nodes });
   const selfReview = buildSelfReviewChecklist(behaviour);
   const contradictions = detectMemoryContradictions(memories);
+  const compression = buildCompressedMemoryIndex({ memories, suggestions, messages, activityLog: logs, queue });
+  const compressionActions = buildMemoryCompressionActions(compression);
+  const toolReadiness = buildToolReadiness(tools);
+  const stability = buildStabilityReport({ memories, projects, goals, suggestions, activityLog: logs, messages, queue, tools });
+  const executionRules = buildSafeExecutionRules(stability);
 
   return (
     <section className="screen">
@@ -48,7 +57,27 @@ export default function Briefing() {
         </ul>
       </div>
 
+      <div className="briefing">
+        <h3>Genesis 0.9.2 Tool Layer</h3>
+        <p><strong>{toolReadiness.mode}</strong> — {toolReadiness.summary}</p>
+        <p><strong>Stability:</strong> {stability.status} • {stability.score}%</p>
+        <ul>
+          {executionRules.map((rule) => <li key={rule}>{rule}</li>)}
+        </ul>
+      </div>
 
+      <div className="briefing">
+        <h3>Memory Compression Layer</h3>
+        <p>{compression.summary}</p>
+        <p className="muted">Context budget: {compression.contextBudget}% • Permanent: {compression.permanentCount} • Active: {compression.activeCount} • Archive-ready: {compression.archiveReadyCount}</p>
+        {compressionActions.length ? compressionActions.map((item) => (
+          <div className="miniActionCard" key={item.title}>
+            <strong>{item.title}</strong>
+            <p>{item.detail}</p>
+            <small>{item.priority}</small>
+          </div>
+        )) : <p className="muted">No compression actions needed right now.</p>}
+      </div>
 
       <div className="briefing">
         <h3>Reasoning Layer</h3>
