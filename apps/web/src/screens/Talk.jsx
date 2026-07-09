@@ -5,7 +5,9 @@ import { routeCoreRequest, seedCoreSelfData } from '../services/aiRouter';
 import { logActivity } from '../services/activityLog';
 import { acceptSuggestion, suggestMemoryFromMessage } from '../services/memorySuggestions';
 import PresenceBanner from '../components/PresenceBanner';
-import { generateImageFromPrompt, buildImagePromptFromCreatorPlan } from '../services/imageGenerationClient';
+import { prepareFileAttachments } from '../services/fileIntakeEngine';
+import { analyseAttachments, summarizeFileAnalysisResults } from '../services/fileAnalysisClient';
+import { buildImagePromptFromCreatorPlan, generateImageFromPrompt } from '../services/imageGenerationClient';
 
 function statusLabel(meta) {
   if (!meta) return 'Dylan Core ready';
@@ -15,6 +17,16 @@ function statusLabel(meta) {
   if (meta.source === 'real-ai-brain') return 'Dylan Core Engine online';
   if (meta.source === 'cloud-memory') return 'Cloud memory active';
   return 'Safe fallback mode';
+}
+
+
+function shouldAutoGenerateImage(input = '', creatorPlan = {}) {
+  if (!creatorPlan?.imageGeneration?.ready) return false;
+  const text = String(input || '').toLowerCase();
+  const directCreate = /(make|create|generate|draw|design|render|produce|build)/.test(text);
+  const imageTarget = /(image|picture|photo|thumbnail|cover|cover art|poster|logo|banner|mockup|visual|artwork|wallpaper|icon|graphic)/.test(text);
+  const analysisOnly = /(analyse|analyze|inspect|read|identify|what is|what's|describe|explain|look at)/.test(text);
+  return directCreate && imageTarget && !analysisOnly;
 }
 
 function contextLine(meta) {
@@ -36,8 +48,11 @@ export default function Talk({ mode }) {
   const [conversationId, setConversationId] = useState(load(CURRENT_CONVERSATION_KEY, null));
   const [cloudState, setCloudState] = useState('Preparing cloud memory...');
   const [seedState, setSeedState] = useState(load('coreSeedState', null));
-  const [imageStatus, setImageStatus] = useState('');
+  const [attachments, setAttachments] = useState([]);
+  const [attachmentError, setAttachmentError] = useState('');
+  const [fileAnalysisStatus, setFileAnalysisStatus] = useState('');
   const chatEndRef = useRef(null);
+  const fileInputRef = useRef(null);
 
 
   useEffect(() => {
@@ -79,15 +94,55 @@ export default function Talk({ mode }) {
     [suggestions]
   );
 
-  async function send(overrideInput) {
-    const clean = (overrideInput ?? input).trim();
-    if (!clean || isSending) return;
+  function stripPreview(file) {
+    if (!file) return file;
+    const { previewUrl, routeDataUrl, ...safeFile } = file;
+    return safeFile;
+  }
 
-    const userMessage = buildMessage({ from: 'dylan', text: clean });
+  function stripPreviewOnly(file) {
+    if (!file) return file;
+    const { previewUrl, ...safeFile } = file;
+    return safeFile;
+  }
+
+  async function handleFilesSelected(event) {
+    const files = Array.from(event.target.files || []);
+    if (!files.length) return;
+    setAttachmentError('');
+    const prepared = await prepareFileAttachments(files);
+    if (!prepared.ok) {
+      setAttachmentError(prepared.reason || 'File intake failed safely.');
+      event.target.value = '';
+      return;
+    }
+    setAttachments((current) => [...current, ...prepared.attachments].slice(0, 8));
+    logActivity({ engine: 'File Intake', action: 'Attached files', detail: `${prepared.attachments.length} file(s) staged for Dylan Core.` });
+    event.target.value = '';
+  }
+
+  function removeAttachment(id) {
+    setAttachments((current) => current.filter((file) => file.id !== id));
+  }
+
+  async function send(overrideInput) {
+    const analysisAttachments = attachments.map(stripPreviewOnly);
+    const activeAttachments = attachments.map(stripPreview);
+    const clean = (overrideInput ?? input).trim() || (activeAttachments.length ? 'Analyse the attached file(s).' : '');
+    if ((!clean && !activeAttachments.length) || isSending) return;
+
+    setFileAnalysisStatus(activeAttachments.length ? 'Analysing attached file(s) through server routes...' : '');
+    const fileAnalysisResults = activeAttachments.length ? await analyseAttachments(analysisAttachments) : null;
+    const fileAnalysisSummary = fileAnalysisResults ? summarizeFileAnalysisResults(fileAnalysisResults) : '';
+    setFileAnalysisStatus(fileAnalysisSummary ? 'File analyzer routes completed.' : '');
+
+    const userMessage = buildMessage({ from: 'dylan', text: clean, attachments: activeAttachments, fileAnalysisSummary });
     const optimistic = [...messages, userMessage];
     setMessages(optimistic);
     save('messages', optimistic);
     setInput('');
+    setAttachments([]);
+    setAttachmentError('');
     setIsSending(true);
     if (conversationId) saveConversationMessage(conversationId, userMessage).catch(() => null);
 
@@ -96,7 +151,18 @@ export default function Talk({ mode }) {
       const projects = load('projects', []);
       const goals = load('goals', []);
       const plans = load('plans', []);
-      const routed = await routeCoreRequest({ input: clean, mode, memories, projects, goals, plans, messages: optimistic, deepThink });
+      const routed = await routeCoreRequest({ input: clean, mode, memories, projects, goals, plans, messages: optimistic, deepThink, attachments: activeAttachments, fileAnalysisResults, fileAnalysisSummary });
+      let imageGenerationResult = null;
+      if (shouldAutoGenerateImage(clean, routed.creatorPlan)) {
+        setFileAnalysisStatus('Creating image through /api/create-image...');
+        const imagePrompt = buildImagePromptFromCreatorPlan(routed.creatorPlan, clean);
+        imageGenerationResult = await generateImageFromPrompt({
+          prompt: imagePrompt,
+          size: routed.creatorPlan?.imageGeneration?.size || '1024x1024',
+          quality: routed.creatorPlan?.imageGeneration?.quality || 'auto',
+        });
+        setFileAnalysisStatus(imageGenerationResult?.ok ? 'Image created.' : 'Image route failed safely.');
+      }
       const suggestion = suggestMemoryFromMessage(clean, suggestions);
 
       const meta = {
@@ -114,8 +180,12 @@ export default function Talk({ mode }) {
         orchestratorPlan: routed.orchestratorPlan || null,
         researchPlan: routed.researchPlan || null,
         developerPlan: routed.developerPlan || null,
-        creatorPlan: routed.creatorPlan || null,
         toolRuntime: routed.toolReadiness?.runtime || routed.toolRuntime || null,
+        fileIntakePlan: routed.fileIntakePlan || null,
+        attachments: activeAttachments,
+        fileAnalysisResults,
+        fileAnalysisSummary,
+        imageGenerationResult,
         deepThink,
         routeProfile: routed.routeProfile,
         deepRecommended: routed.deepRecommended,
@@ -160,41 +230,6 @@ export default function Talk({ mode }) {
       save('messages', next);
     } finally {
       setIsSending(false);
-    }
-  }
-
-
-  async function runImageGeneration(promptOverride) {
-    const prompt = buildImagePromptFromCreatorPlan(lastMeta?.creatorPlan, promptOverride || input || lastMeta?.creatorPlan?.imageGeneration?.prompt || '');
-    if (!prompt) return;
-    setImageStatus('Generating image through guarded server route...');
-    try {
-      const result = await generateImageFromPrompt({ prompt, size: lastMeta?.creatorPlan?.imageGeneration?.size || '1024x1024', quality: lastMeta?.creatorPlan?.imageGeneration?.quality || 'auto' });
-      if (!result.ok) {
-        setImageStatus(result.nextAction || result.error || 'Image generation failed safely.');
-        logActivity({ engine: 'Image Generation Route', action: 'Image generation blocked/failed', detail: result.error || 'Unknown error', level: 'Warning' });
-        return;
-      }
-      const imageMessage = buildMessage({
-        from: 'core',
-        text: `Image generated. Prompt: ${result.prompt}`,
-        meta: {
-          source: 'image-generation-route',
-          generatedImage: result.image,
-          imageModel: result.model,
-          imageSize: result.size,
-          imageQuality: result.quality,
-          at: result.createdAt,
-        },
-      });
-      const next = [...messages, imageMessage];
-      setMessages(next);
-      save('messages', next);
-      if (conversationId) saveConversationMessage(conversationId, imageMessage).catch(() => null);
-      setImageStatus('Image generated and added to chat.');
-      logActivity({ engine: 'Image Generation Route', action: 'Generated image', detail: result.size || 'image' });
-    } catch (error) {
-      setImageStatus(error.message || 'Image generation failed safely.');
     }
   }
 
@@ -255,9 +290,10 @@ export default function Talk({ mode }) {
         {lastMeta?.orchestratorPlan && <small>Orchestrator: {lastMeta.orchestratorPlan.label} • {lastMeta.orchestratorPlan.answerStyle}</small>}
         {lastMeta?.researchPlan && lastMeta.internetNeeded && <small>Research: {lastMeta.researchPlan.fitLabel} • compares against Core Self stack</small>}
         {lastMeta?.developerPlan?.isDeveloperRequest && <small>Developer: {lastMeta.developerPlan.requestType} • {lastMeta.developerPlan.project}</small>}
-        {lastMeta?.creatorPlan?.imageGeneration?.ready && <small>Image Route: ready • /api/create-image</small>}
-        {imageStatus && <small>{imageStatus}</small>}
         {lastMeta?.toolRuntime && <small>Runtime: {lastMeta.toolRuntime.runnable} runnable • {lastMeta.toolRuntime.blocked} gated</small>}
+        {lastMeta?.fileIntakePlan?.active && <small>File Intake: {lastMeta.fileIntakePlan.summary}</small>}
+        {lastMeta?.fileAnalysisSummary && <small>Analyzer Routes: {lastMeta.fileAnalysisSummary.split('\n')[0]}</small>}
+        {fileAnalysisStatus && <small>{fileAnalysisStatus}</small>}
         {latestPreparedActions.length > 0 && <small>Action Engine prepared {latestPreparedActions.length} action(s).</small>}
       </div>
       <div className="quickChips" aria-label="Quick actions">
@@ -267,7 +303,6 @@ export default function Talk({ mode }) {
         <button type="button" onClick={() => { setDeepThink(true); send('Deep Think: what is the strongest next architecture move for Core Self?'); }}>Deep Plan</button>
         <button type="button" onClick={() => send('Search the internet for the latest useful AI tools for building Core Self cheaply, compare them against our actual stack, tell me what to use now, what to skip, and cite sources.')}>Web Scan</button>
         <button type="button" onClick={() => send('Create an action plan for the next Core Self build.')}>Action Plan</button>
-        <button type="button" onClick={() => send('Create an image of Core Self as a futuristic personal AI operating system command centre.')}>Image Test</button>
         <button type="button" onClick={() => { const seeded = seedCoreSelfData(); setSeedState(seeded); save('coreSeedState', seeded); }}>Reseed Core</button>
       </div>
       <div className="chat">
@@ -291,10 +326,22 @@ export default function Talk({ mode }) {
                 ))}
               </div>
             )}
-            {m.meta?.generatedImage && (
-              <div className="sourceCards">
-                <img src={m.meta.generatedImage} alt="Generated by Dylan Core" style={{ width: '100%', borderRadius: 16 }} />
-                <small>{m.meta.imageModel || 'image route'} • {m.meta.imageSize || 'default size'}</small>
+            {m.attachments?.length > 0 && (
+              <div className="attachmentCards">
+                {m.attachments.map((file) => (
+                  <div className="attachmentCard" key={file.id || file.name}>
+                    <strong>{file.name}</strong>
+                    <span>{file.kind || 'file'} • {file.sizeLabel || 'attached'}</span>
+                    <small>{file.intakeNote || 'Attached to this message.'}</small>
+                    {m.fileAnalysisSummary && <small>{m.fileAnalysisSummary.split('\n')[0]}</small>}
+                  </div>
+                ))}
+              </div>
+            )}
+            {m.meta?.imageGenerationResult?.ok && (
+              <div className="generatedImageCard">
+                <img src={m.meta.imageGenerationResult.image} alt="Generated Core Self visual" />
+                <small>{m.meta.imageGenerationResult.size || '1024x1024'} • {m.meta.imageGenerationResult.quality || 'auto'} quality</small>
               </div>
             )}
             {m.meta?.preparedActions?.length > 0 && (
@@ -305,7 +352,24 @@ export default function Talk({ mode }) {
         {isSending && <div className="bubble core thinking">Dylan Core is thinking with identity, context, and router loaded...</div>}
         <div ref={chatEndRef} />
       </div>
-      <div className="inputRow">
+      <div className="inputRow fileInputRow">
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          className="hiddenFileInput"
+          accept="image/*,audio/*,video/*,.zip,.rar,.7z,.tar,.gz,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.md,.js,.jsx,.ts,.tsx,.json,.css,.html,.csv,.xml,.yml,.yaml,.log"
+          onChange={handleFilesSelected}
+        />
+        <button
+          type="button"
+          className="attachButton"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isSending}
+          title="Attach photos, music, videos, documents, ZIPs or code files"
+        >
+          + File
+        </button>
         <textarea
           value={input}
           disabled={isSending}
@@ -316,23 +380,26 @@ export default function Talk({ mode }) {
               send();
             }
           }}
-          placeholder="Ask Dylan Core..."
+          placeholder="Ask Dylan Core or attach files..."
           rows={2}
         />
-        <button onClick={() => send()} disabled={isSending}>{isSending ? 'Thinking' : 'Send'}</button>
+        <button onClick={() => send()} disabled={isSending || (!input.trim() && !attachments.length)}>{isSending ? 'Thinking' : 'Send'}</button>
       </div>
-
-      {lastMeta?.creatorPlan?.imageGeneration?.ready && (
-        <div className="briefing actionNotice">
-          <h3>Image Creator Route</h3>
-          <p>{lastMeta.creatorPlan.imageGeneration.safety}</p>
-          <small>{lastMeta.creatorPlan.imageGeneration.route} • {lastMeta.creatorPlan.imageGeneration.size} • {lastMeta.creatorPlan.imageGeneration.quality}</small>
-          <button type="button" disabled={isSending || imageStatus.startsWith('Generating')} onClick={() => runImageGeneration()}>
-            {imageStatus.startsWith('Generating') ? 'Generating...' : 'Generate Image'}
-          </button>
+      {attachmentError && <div className="attachmentError">{attachmentError}</div>}
+      {attachments.length > 0 && (
+        <div className="attachmentTray">
+          {attachments.map((file) => (
+            <div className="attachmentCard staged" key={file.id}>
+              {file.previewUrl && <img src={file.previewUrl} alt={file.name} />}
+              <strong>{file.name}</strong>
+              <span>{file.kind} • {file.sizeLabel}</span>
+              <small>{file.intakeNote}</small>
+              {file.routeReady && <small>Route ready</small>}
+              <button type="button" onClick={() => removeAttachment(file.id)}>Remove</button>
+            </div>
+          ))}
         </div>
       )}
-
       {actionQueue.length > 0 && (
         <div className="briefing actionNotice">
           <h3>Action Queue</h3>

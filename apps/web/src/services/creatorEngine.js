@@ -128,7 +128,7 @@ export function buildCreatorPlan({ input = '', projects = [], goals = [], memori
     currentExecutionMode: needsExternalApi
       ? 'Prompt-and-production-plan now. Direct generation waits for provider API/tool setup.'
       : (workflows.some((workflow) => workflow.id === 'image')
-        ? 'Image prompts can now be sent to the guarded /api/create-image route after deployment.'
+        ? 'Image requests now auto-run through /api/create-image from Talk when the user asks to make/create/generate a visual.'
         : 'Can produce usable text/plans now using the current AI backend.'),
     imageGeneration: workflows.some((workflow) => workflow.id === 'image') ? {
       ready: true,
@@ -136,7 +136,7 @@ export function buildCreatorPlan({ input = '', projects = [], goals = [], memori
       prompt: buildImagePrompt(input, projects, goals, memories),
       size: '1024x1024',
       quality: 'auto',
-      safety: 'Server-side OpenAI key only. User prompt is sent to /api/create-image after button approval.',
+      safety: 'Server-side OpenAI key only. Direct user image requests auto-run through /api/create-image from Talk. No extra approval button is required for image creation.',
     } : null,
     answerContract: workflows.length ? [
       'Identify the creator workflow first: image, video, music, book, marketing, business document or code/product.',

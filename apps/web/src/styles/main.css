@@ -1431,3 +1431,132 @@ button:disabled, input:disabled {
     grid-template-columns: 1fr;
   }
 }
+
+/* Milestone 8 — File Intake */
+.fileInputRow {
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.hiddenFileInput {
+  display: none;
+}
+
+.attachButton {
+  min-width: 64px;
+  border: 1px solid rgba(77, 212, 255, 0.35);
+  background: rgba(77, 212, 255, 0.11);
+  color: var(--text);
+  border-radius: 14px;
+  font-weight: 800;
+}
+
+.attachmentTray {
+  position: sticky;
+  bottom: 158px;
+  z-index: 15;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  margin-top: 8px;
+  border: 1px solid rgba(77, 212, 255, 0.22);
+  border-radius: 18px;
+  background: rgba(4, 8, 19, 0.94);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.28);
+}
+
+.attachmentCards {
+  display: grid;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.attachmentCard {
+  display: grid;
+  gap: 4px;
+  border: 1px solid rgba(77, 212, 255, 0.22);
+  border-radius: 13px;
+  padding: 8px 9px;
+  background: rgba(77, 212, 255, 0.07);
+  overflow: hidden;
+}
+
+.attachmentCard img {
+  width: 100%;
+  max-height: 150px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.attachmentCard strong {
+  font-size: 12px;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.attachmentCard span,
+.attachmentCard small {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.attachmentCard.staged button {
+  justify-self: start;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.06);
+  color: var(--muted);
+}
+
+.attachmentError {
+  position: sticky;
+  bottom: 148px;
+  z-index: 16;
+  margin-top: 8px;
+  padding: 9px 11px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 93, 93, 0.35);
+  background: rgba(255, 93, 93, 0.11);
+  color: #ffd0d0;
+  font-size: 12px;
+}
+
+@media (max-width: 720px) {
+  .fileInputRow {
+    grid-template-columns: 62px 1fr;
+  }
+
+  .fileInputRow textarea {
+    grid-column: 1 / -1;
+  }
+
+  .fileInputRow button:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .attachmentTray {
+    bottom: 180px;
+    max-height: 230px;
+    overflow-y: auto;
+  }
+}
+
+/* Milestone 8C — direct image generation result card */
+.generatedImageCard {
+  margin-top: 0.75rem;
+  display: grid;
+  gap: 0.45rem;
+  max-width: 420px;
+}
+
+.generatedImageCard img {
+  width: 100%;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.28);
+  object-fit: cover;
+}

@@ -43,7 +43,7 @@ const PROVIDERS = [
     setup: [
       'Use the existing OPENAI_API_KEY already stored server-side in Vercel.',
       'Optional: add OPENAI_IMAGE_MODEL if you want to override the default image model.',
-      'Use the deployed /api/create-image route from Talk after approval.',
+      'Use the deployed /api/create-image route from Talk. Direct image requests auto-generate without an extra approval button.',
     ],
     nextAction: 'Test with a simple image request in Talk, then save successful prompts as creator templates.',
     risk: 'Medium',
@@ -190,7 +190,7 @@ export function buildClientProviderMap() {
     risk: provider.risk,
     purpose: provider.purpose,
     setup: provider.setup,
-    nextAction: provider.id === 'openai-image' ? 'Image generation route is built. Test from Talk after deployment.' : provider.nextAction,
+    nextAction: provider.id === 'openai-image' ? 'Image generation route is built. Test a direct make/create image request from Talk after deployment.' : provider.nextAction,
   }));
 }
 
