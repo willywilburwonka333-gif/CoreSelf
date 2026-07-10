@@ -1,5 +1,6 @@
-const MAX_PREVIEW_BYTES = 6 * 1024 * 1024;
-const TEXT_EXTENSIONS = new Set(['txt', 'md', 'js', 'jsx', 'ts', 'tsx', 'json', 'css', 'html', 'csv', 'xml', 'yml', 'yaml', 'log']);
+const MAX_ROUTE_BYTES = 6 * 1024 * 1024;
+const MAX_TEXT_CHARS = 32000;
+const TEXT_EXTENSIONS = new Set(['txt', 'md', 'js', 'jsx', 'ts', 'tsx', 'json', 'css', 'html', 'csv', 'xml', 'yml', 'yaml', 'log', 'env', 'gitignore']);
 
 function extensionFor(file = {}) {
   const name = String(file.name || '');
@@ -39,10 +40,15 @@ function readAsDataUrl(file) {
 function readAsText(file) {
   return new Promise((resolve) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || '').slice(0, 12000));
+    reader.onload = () => resolve(String(reader.result || '').slice(0, MAX_TEXT_CHARS));
     reader.onerror = () => resolve('');
     reader.readAsText(file);
   });
+}
+
+function canRouteData(file = {}, kind = '') {
+  if ((file.size || 0) > MAX_ROUTE_BYTES) return false;
+  return ['image', 'pdf', 'archive', 'document'].includes(kind);
 }
 
 export async function prepareFileAttachments(files = []) {
@@ -50,9 +56,11 @@ export async function prepareFileAttachments(files = []) {
     const attachments = [];
     for (const file of files.slice(0, 8)) {
       const kind = kindFor(file);
+      const ext = extensionFor(file);
       const base = {
         id: crypto.randomUUID(),
         name: file.name,
+        extension: ext,
         type: file.type || 'application/octet-stream',
         size: file.size || 0,
         sizeLabel: sizeLabel(file.size || 0),
@@ -61,14 +69,27 @@ export async function prepareFileAttachments(files = []) {
         intakeNote: `${kind} attached and ready for Dylan Core.`,
       };
 
-      if (kind === 'image' && file.size <= MAX_PREVIEW_BYTES) {
-        const dataUrl = await readAsDataUrl(file);
-        attachments.push({ ...base, previewUrl: dataUrl, routeDataUrl: dataUrl });
-      } else if (kind === 'text') {
+      if (kind === 'text') {
         attachments.push({ ...base, textPreview: await readAsText(file) });
-      } else {
-        attachments.push(base);
+        continue;
       }
+
+      if (canRouteData(file, kind)) {
+        const dataUrl = await readAsDataUrl(file);
+        attachments.push({
+          ...base,
+          previewUrl: kind === 'image' ? dataUrl : undefined,
+          routeDataUrl: dataUrl,
+          routeReady: Boolean(dataUrl),
+        });
+        continue;
+      }
+
+      attachments.push({
+        ...base,
+        routeReady: false,
+        intakeNote: `${kind} attached. File is too large for browser-to-route analysis, but metadata is available.`,
+      });
     }
     return { ok: true, attachments };
   } catch (error) {

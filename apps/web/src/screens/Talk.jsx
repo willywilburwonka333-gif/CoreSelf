@@ -175,7 +175,7 @@ export default function Talk({ mode }) {
       let fileAnalysisSummary = '';
       if (activeAttachments.length) {
         setOperatorStatus('Analysing attachment...');
-        fileAnalysisResults = await analyseAttachments(analysisAttachments);
+        fileAnalysisResults = await analyseAttachments(analysisAttachments, clean);
         fileAnalysisSummary = fileAnalysisResults ? summarizeFileAnalysisResults(fileAnalysisResults) : '';
       }
 
@@ -301,7 +301,7 @@ export default function Talk({ mode }) {
               <div className="attachmentCard staged" key={file.id}>
                 {file.previewUrl && <img src={file.previewUrl} alt={file.name} />}
                 <strong>{file.name}</strong>
-                <span>{file.kind} • {file.sizeLabel}</span>
+                <span>{file.kind} • {file.sizeLabel}{file.routeReady === false ? ' • metadata only' : ''}</span>
                 <button type="button" onClick={() => removeAttachment(file.id)}>Remove</button>
               </div>
             ))}
