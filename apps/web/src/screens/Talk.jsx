@@ -19,6 +19,40 @@ function statusLabel(meta) {
 }
 
 
+function isDirectImageRequest(input = '') {
+  const text = String(input || '').toLowerCase();
+  const create = /\b(make|create|generate|draw|design|render|produce|build)\b/.test(text);
+  const target = /\b(image|picture|photo|thumbnail|cover|cover art|poster|logo|banner|mockup|visual|artwork|wallpaper|icon|graphic)\b/.test(text);
+  const edit = /\b(edit|change|remove|replace|upscale|enhance|fix|clean|restore)\b/.test(text);
+  const hasUploadContext = /\b(attached|uploaded|this image|this photo|the image|the photo)\b/.test(text);
+  const analysisOnly = /\b(analyse|analyze|inspect|read|identify|what is|what's|describe|explain|look at)\b/.test(text);
+  return Boolean(((create && target) || (edit && hasUploadContext)) && !analysisOnly);
+}
+
+function stripApprovalNoise(text = '') {
+  const source = String(text || '');
+  const blocked = [
+    /approve/i,
+    /approval/i,
+    /pending\s+approval/i,
+    /ui\s+once\s+it'?s\s+ready/i,
+    /please\s+hold\s+on/i,
+    /confirm\s+if\s+you'?d\s+like\s+to\s+proceed/i,
+    /let\s+me\s+know/i,
+    /image\s+generation\s+request/i,
+  ];
+  const lines = source
+    .split('\n')
+    .map((line) => line.trimEnd())
+    .filter((line) => line.trim() && !blocked.some((pattern) => pattern.test(line)));
+  return lines.join('\n').trim();
+}
+
+function shouldRequireHumanApproval(action = {}) {
+  const text = `${action.title || ''} ${action.detail || ''} ${action.nextStep || ''} ${action.type || ''}`.toLowerCase();
+  return /\b(send|email|message|sms|call|delete|remove permanently|overwrite|spend|pay|purchase|buy|deploy|push|commit|firebase|production|background|schedule|calendar|book|contact)\b/.test(text);
+}
+
 function shouldAutoGenerateImage(input = '', creatorPlan = {}) {
   const text = String(input || '').toLowerCase();
   const directCreate = /\b(make|create|generate|draw|design|render|produce|build)\b/.test(text);
@@ -150,17 +184,55 @@ export default function Talk({ mode }) {
       const projects = load('projects', []);
       const goals = load('goals', []);
       const plans = load('plans', []);
-      const routed = await routeCoreRequest({ input: clean, mode, memories, projects, goals, plans, messages: optimistic, deepThink, attachments: activeAttachments, fileAnalysisResults, fileAnalysisSummary });
+      const directImageRequest = isDirectImageRequest(clean);
+      let routed = null;
       let imageGenerationResult = null;
-      if (shouldAutoGenerateImage(clean, routed.creatorPlan)) {
+
+      if (directImageRequest) {
         setFileAnalysisStatus('Creating image...');
-        const imagePrompt = buildImagePromptFromCreatorPlan(routed.creatorPlan, clean);
+        const imagePrompt = activeAttachments.length
+          ? `${clean}\n\nAttached file context:\n${fileAnalysisSummary || activeAttachments.map((file) => `${file.name} (${file.kind || 'file'})`).join('\n')}`
+          : clean;
         imageGenerationResult = await generateImageFromPrompt({
           prompt: imagePrompt,
-          size: routed.creatorPlan?.imageGeneration?.size || '1024x1024',
-          quality: routed.creatorPlan?.imageGeneration?.quality || 'auto',
+          size: '1024x1024',
+          quality: 'auto',
         });
         setFileAnalysisStatus(imageGenerationResult?.ok ? 'Image created.' : 'Image route failed safely.');
+        routed = {
+          provider: imageGenerationResult?.provider || 'image-route',
+          model: imageGenerationResult?.model || 'gpt-image-1',
+          source: 'creator-direct-execution',
+          confidence: imageGenerationResult?.ok ? 0.98 : 0.4,
+          latencyMs: imageGenerationResult?.latencyMs || 0,
+          error: imageGenerationResult?.ok ? '' : imageGenerationResult?.reason,
+          contextUsed: { relevantMemories: memories.length, memories: memories.length, projects: projects.length, goals: goals.length, plans: plans.length },
+          internetNeeded: false,
+          internetUsed: false,
+          sources: [],
+          preparedActions: [],
+          orchestratorPlan: null,
+          researchPlan: null,
+          developerPlan: null,
+          toolReadiness: null,
+          fileIntakePlan: activeAttachments.length ? { active: true, summary: 'Attachment context included.' } : null,
+          creatorPlan: { primaryLabel: 'Direct image creation', imageGeneration: { ready: true, size: '1024x1024', quality: 'auto' } },
+          routeProfile: 'create_asset',
+          deepRecommended: false,
+          reply: imageGenerationResult?.ok ? 'Done — image created.' : `Image route failed safely. ${imageGenerationResult?.reason || 'Check OPENAI_API_KEY and /api/create-image.'}`,
+        };
+      } else {
+        routed = await routeCoreRequest({ input: clean, mode, memories, projects, goals, plans, messages: optimistic, deepThink, attachments: activeAttachments, fileAnalysisResults, fileAnalysisSummary });
+        if (shouldAutoGenerateImage(clean, routed.creatorPlan)) {
+          setFileAnalysisStatus('Creating image...');
+          const imagePrompt = buildImagePromptFromCreatorPlan(routed.creatorPlan, clean);
+          imageGenerationResult = await generateImageFromPrompt({
+            prompt: imagePrompt,
+            size: routed.creatorPlan?.imageGeneration?.size || '1024x1024',
+            quality: routed.creatorPlan?.imageGeneration?.quality || 'auto',
+          });
+          setFileAnalysisStatus(imageGenerationResult?.ok ? 'Image created.' : 'Image route failed safely.');
+        }
       }
       const suggestion = suggestMemoryFromMessage(clean, suggestions);
 
@@ -193,11 +265,7 @@ export default function Talk({ mode }) {
 
       const cleanReply = imageGenerationResult?.ok
         ? 'Done — image created.'
-        : String(routed.reply || '')
-            .replace(/.*approve.*image.*generation.*\n?/gim, '')
-            .replace(/.*approval.*image.*generation.*\n?/gim, '')
-            .replace(/.*press.*approve.*\n?/gim, '')
-            .trim();
+        : (stripApprovalNoise(routed.reply) || 'Done.');
 
       const coreText = suggestion
         ? `${cleanReply}\n\nCore Suggestion: this sounds worth saving to Memory.`
@@ -266,7 +334,7 @@ export default function Talk({ mode }) {
   }
 
   const latestPendingSuggestions = suggestions.filter((item) => item.status === 'Pending').slice(0, 3);
-  const latestPreparedActions = lastMeta?.preparedActions || [];
+  const latestPreparedActions = (lastMeta?.preparedActions || []).filter(shouldRequireHumanApproval);
 
   return (
     <section className="screen talkScreen dylanCoreExperience">
@@ -324,7 +392,7 @@ export default function Talk({ mode }) {
       <div className="chat cleanChat">
         {messages.map((m, i) => (
           <div key={i} className={'bubble ' + m.from}>
-            <span>{m.text}</span>
+            <span>{m.from === 'core' ? stripApprovalNoise(m.text) : m.text}</span>
             {developerMode && m.meta && <small>{statusLabel(m.meta)} • {contextLine(m.meta)}{m.meta.deepThink ? ' • Deep Think' : ''}{m.meta.orchestratorPlan ? ` • ${m.meta.orchestratorPlan.label}` : ''}{m.meta.developerPlan?.isDeveloperRequest ? ` • ${m.meta.developerPlan.requestType}` : ''}</small>}
             {m.meta?.sources?.length > 0 && (
               <div className="sourceCards">
