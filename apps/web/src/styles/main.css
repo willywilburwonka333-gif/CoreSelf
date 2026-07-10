@@ -1560,3 +1560,204 @@ button:disabled, input:disabled {
   box-shadow: 0 18px 60px rgba(0, 0, 0, 0.28);
   object-fit: cover;
 }
+
+/* Genesis 0.8 — Dylan Core Experience cleanup */
+.dylanCoreExperience {
+  padding-bottom: 128px;
+}
+
+.compactTalkHeader {
+  margin-top: 8px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.compactTalkHeader h2 {
+  margin: 4px 0 2px;
+}
+
+.readyLine {
+  display: block;
+  color: var(--green);
+  font-weight: 850;
+}
+
+.talkHeaderActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.devToggle,
+.deepToggle {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 10px 12px;
+  color: var(--muted);
+  background: rgba(11, 21, 41, 0.72);
+}
+
+.devToggle.active,
+.deepToggle.active {
+  color: #06101f;
+  background: linear-gradient(135deg, var(--mode), #dbeafe);
+}
+
+.cleanChips {
+  margin: 8px 0 10px;
+  padding-bottom: 2px;
+}
+
+.cleanChips button {
+  padding: 8px 12px;
+  font-size: 12px;
+}
+
+.cleanChat {
+  min-height: calc(100vh - 365px);
+  max-height: calc(100vh - 315px);
+  padding: 14px;
+  scroll-padding-bottom: 110px;
+}
+
+.cleanChat .bubble {
+  font-size: 15px;
+}
+
+.cleanChat .bubble.core {
+  max-width: 88%;
+}
+
+.cleanChat .bubble.dylan {
+  max-width: 78%;
+}
+
+.cleanComposer {
+  position: sticky;
+  bottom: 82px;
+  z-index: 50;
+  display: grid;
+  grid-template-columns: 48px 1fr 84px;
+  gap: 8px;
+  align-items: stretch;
+  margin-top: 10px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: rgba(4, 9, 20, 0.94);
+  backdrop-filter: blur(18px);
+}
+
+.cleanComposer .attachButton {
+  min-width: 0;
+  padding: 0;
+  font-size: 20px;
+  border-radius: 16px;
+  color: var(--text);
+  background: rgba(105, 177, 255, 0.13);
+  border: 1px solid var(--line);
+  box-shadow: none;
+}
+
+.cleanComposer textarea {
+  min-height: 48px;
+  max-height: 118px;
+  resize: none;
+}
+
+.cleanComposer button:last-child {
+  border-radius: 16px;
+}
+
+.compactAttachmentTray {
+  position: sticky;
+  bottom: 164px;
+  z-index: 49;
+  margin-top: 8px;
+}
+
+.compactAttachmentTray .attachmentCard {
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.compactAttachmentTray .attachmentCard img {
+  width: 42px;
+  height: 42px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.hiddenFileInput {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .dylanCoreExperience {
+    padding-bottom: 118px;
+  }
+
+  .compactTalkHeader {
+    margin-top: 4px;
+  }
+
+  .compactTalkHeader .eyebrow {
+    font-size: 10px;
+  }
+
+  .compactTalkHeader h2 {
+    font-size: 26px;
+  }
+
+  .talkHeaderActions {
+    gap: 6px;
+  }
+
+  .devToggle,
+  .deepToggle {
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+
+  .cleanChat {
+    min-height: calc(100vh - 330px);
+    max-height: calc(100vh - 275px);
+    padding: 10px;
+  }
+
+  .cleanChat .bubble {
+    max-width: 90%;
+    padding: 11px 12px;
+    font-size: 14px;
+  }
+
+  .cleanComposer {
+    position: fixed;
+    left: 9px;
+    right: 9px;
+    bottom: 72px;
+    width: auto;
+    grid-template-columns: 44px 1fr 72px;
+    padding: 7px;
+    border-radius: 20px;
+  }
+
+  .cleanComposer textarea {
+    min-height: 44px;
+    font-size: 14px;
+  }
+
+  .cleanChips button {
+    font-size: 11px;
+    padding: 7px 10px;
+  }
+
+  .aiStatusPanel {
+    max-height: 230px;
+    overflow-y: auto;
+  }
+}

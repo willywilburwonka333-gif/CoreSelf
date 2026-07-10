@@ -4,7 +4,6 @@ import { CURRENT_CONVERSATION_KEY, buildMessage, ensureConversation, loadLatestC
 import { routeCoreRequest, seedCoreSelfData } from '../services/aiRouter';
 import { logActivity } from '../services/activityLog';
 import { acceptSuggestion, suggestMemoryFromMessage } from '../services/memorySuggestions';
-import PresenceBanner from '../components/PresenceBanner';
 import { prepareFileAttachments } from '../services/fileIntakeEngine';
 import { analyseAttachments, summarizeFileAnalysisResults } from '../services/fileAnalysisClient';
 import { buildImagePromptFromCreatorPlan, generateImageFromPrompt } from '../services/imageGenerationClient';
@@ -21,12 +20,11 @@ function statusLabel(meta) {
 
 
 function shouldAutoGenerateImage(input = '', creatorPlan = {}) {
-  if (!creatorPlan?.imageGeneration?.ready) return false;
   const text = String(input || '').toLowerCase();
-  const directCreate = /(make|create|generate|draw|design|render|produce|build)/.test(text);
-  const imageTarget = /(image|picture|photo|thumbnail|cover|cover art|poster|logo|banner|mockup|visual|artwork|wallpaper|icon|graphic)/.test(text);
-  const analysisOnly = /(analyse|analyze|inspect|read|identify|what is|what's|describe|explain|look at)/.test(text);
-  return directCreate && imageTarget && !analysisOnly;
+  const directCreate = /\b(make|create|generate|draw|design|render|produce|build)\b/.test(text);
+  const imageTarget = /\b(image|picture|photo|thumbnail|cover|cover art|poster|logo|banner|mockup|visual|artwork|wallpaper|icon|graphic)\b/.test(text);
+  const analysisOnly = /\b(analyse|analyze|inspect|read|identify|what is|what's|describe|explain|look at)\b/.test(text);
+  return Boolean(directCreate && imageTarget && !analysisOnly && (creatorPlan?.imageGeneration?.ready || imageTarget));
 }
 
 function contextLine(meta) {
@@ -51,6 +49,7 @@ export default function Talk({ mode }) {
   const [attachments, setAttachments] = useState([]);
   const [attachmentError, setAttachmentError] = useState('');
   const [fileAnalysisStatus, setFileAnalysisStatus] = useState('');
+  const [developerMode, setDeveloperMode] = useState(load('developerMode', false));
   const chatEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -154,7 +153,7 @@ export default function Talk({ mode }) {
       const routed = await routeCoreRequest({ input: clean, mode, memories, projects, goals, plans, messages: optimistic, deepThink, attachments: activeAttachments, fileAnalysisResults, fileAnalysisSummary });
       let imageGenerationResult = null;
       if (shouldAutoGenerateImage(clean, routed.creatorPlan)) {
-        setFileAnalysisStatus('Creating image through /api/create-image...');
+        setFileAnalysisStatus('Creating image...');
         const imagePrompt = buildImagePromptFromCreatorPlan(routed.creatorPlan, clean);
         imageGenerationResult = await generateImageFromPrompt({
           prompt: imagePrompt,
@@ -192,9 +191,17 @@ export default function Talk({ mode }) {
         at: new Date().toISOString(),
       };
 
+      const cleanReply = imageGenerationResult?.ok
+        ? 'Done — image created.'
+        : String(routed.reply || '')
+            .replace(/.*approve.*image.*generation.*\n?/gim, '')
+            .replace(/.*approval.*image.*generation.*\n?/gim, '')
+            .replace(/.*press.*approve.*\n?/gim, '')
+            .trim();
+
       const coreText = suggestion
-        ? `${routed.reply}\n\nCore Suggestion: this sounds worth saving to Memory.`
-        : routed.reply;
+        ? `${cleanReply}\n\nCore Suggestion: this sounds worth saving to Memory.`
+        : cleanReply;
 
       const next = [
         ...optimistic,
@@ -262,64 +269,67 @@ export default function Talk({ mode }) {
   const latestPreparedActions = lastMeta?.preparedActions || [];
 
   return (
-    <section className="screen talkScreen">
-      <div className="talkHeader">
+    <section className="screen talkScreen dylanCoreExperience">
+      <div className="talkHeader compactTalkHeader">
         <div>
           <p className="eyebrow">DYLAN CORE</p>
           <h2>Talk</h2>
+          <small className="readyLine">Memory synced. Ready.</small>
         </div>
-        <button
-          className={`deepToggle ${deepThink ? 'active' : ''}`}
-          type="button"
-          onClick={() => setDeepThink((value) => !value)}
-        >
-          {deepThink ? 'Deep Think On' : 'Deep Think'}
-        </button>
+        <div className="talkHeaderActions">
+          <button
+            className={`deepToggle ${deepThink ? 'active' : ''}`}
+            type="button"
+            onClick={() => setDeepThink((value) => !value)}
+          >
+            {deepThink ? 'Deep Think On' : 'Deep Think'}
+          </button>
+          <button
+            className={`devToggle ${developerMode ? 'active' : ''}`}
+            type="button"
+            onClick={() => { const next = !developerMode; setDeveloperMode(next); save('developerMode', next); }}
+          >
+            Dev
+          </button>
+        </div>
       </div>
-      <PresenceBanner mode={mode} />
-      <div className={`aiStatusPanel ${lastMeta?.source === 'dylan-core-engine' || lastMeta?.source === 'real-ai-brain' ? 'connected' : 'fallback'}`}>
-        <span>{statusLabel(lastMeta)}</span>
-        <small>{cloudState}</small>
-        <small>{contextLine(lastMeta)}</small>
-        {seedState && <small>Seed pack: {seedState.memories} memories • {seedState.projects} projects • {seedState.goals} goals • {seedState.plans} plans.</small>}
-        {actionQueue.length > 0 && <small>Action Queue: {actionQueue.length} saved item(s).</small>}
-        {lastMeta?.internetUsed && <small>Internet Scan used{lastMeta?.sources?.length ? ` • ${lastMeta.sources.length} source(s)` : ''}</small>}
-        {lastMeta?.internetNeeded && !lastMeta?.internetUsed && <small>Internet Scan requested but answered safely without live results.</small>}
-        {lastMeta?.deepRecommended && !lastMeta?.deepThink && <small>Router note: Deep Think may improve this kind of request.</small>}
-        {lastMeta?.routeProfile && <small>Route: {lastMeta.routeProfile}</small>}
-        {lastMeta?.orchestratorPlan && <small>Orchestrator: {lastMeta.orchestratorPlan.label} • {lastMeta.orchestratorPlan.answerStyle}</small>}
-        {lastMeta?.researchPlan && lastMeta.internetNeeded && <small>Research: {lastMeta.researchPlan.fitLabel} • compares against Core Self stack</small>}
-        {lastMeta?.developerPlan?.isDeveloperRequest && <small>Developer: {lastMeta.developerPlan.requestType} • {lastMeta.developerPlan.project}</small>}
-        {lastMeta?.toolRuntime && <small>Runtime: {lastMeta.toolRuntime.runnable} runnable • {lastMeta.toolRuntime.blocked} gated</small>}
-        {lastMeta?.fileIntakePlan?.active && <small>File Intake: {lastMeta.fileIntakePlan.summary}</small>}
-        {lastMeta?.fileAnalysisSummary && <small>Analyzer Routes: {lastMeta.fileAnalysisSummary.split('\n')[0]}</small>}
-        {fileAnalysisStatus && <small>{fileAnalysisStatus}</small>}
-        {latestPreparedActions.length > 0 && <small>Action Engine prepared {latestPreparedActions.length} action(s).</small>}
+
+      {developerMode && (
+        <div className={`aiStatusPanel ${lastMeta?.source === 'dylan-core-engine' || lastMeta?.source === 'real-ai-brain' ? 'connected' : 'fallback'}`}>
+          <span>{statusLabel(lastMeta)}</span>
+          <small>{cloudState}</small>
+          <small>{contextLine(lastMeta)}</small>
+          {seedState && <small>Seed pack: {seedState.memories} memories • {seedState.projects} projects • {seedState.goals} goals • {seedState.plans} plans.</small>}
+          {actionQueue.length > 0 && <small>Action Queue: {actionQueue.length} saved item(s).</small>}
+          {lastMeta?.internetUsed && <small>Internet Scan used{lastMeta?.sources?.length ? ` • ${lastMeta.sources.length} source(s)` : ''}</small>}
+          {lastMeta?.deepRecommended && !lastMeta?.deepThink && <small>Router note: Deep Think may improve this kind of request.</small>}
+          {lastMeta?.routeProfile && <small>Route: {lastMeta.routeProfile}</small>}
+          {lastMeta?.orchestratorPlan && <small>Orchestrator: {lastMeta.orchestratorPlan.label} • {lastMeta.orchestratorPlan.answerStyle}</small>}
+          {lastMeta?.developerPlan?.isDeveloperRequest && <small>Developer: {lastMeta.developerPlan.requestType} • {lastMeta.developerPlan.project}</small>}
+          {lastMeta?.toolRuntime && <small>Runtime: {lastMeta.toolRuntime.runnable} runnable • {lastMeta.toolRuntime.blocked} gated</small>}
+          {lastMeta?.fileIntakePlan?.active && <small>File Intake: {lastMeta.fileIntakePlan.summary}</small>}
+          {lastMeta?.fileAnalysisSummary && <small>Analyzer Routes: {lastMeta.fileAnalysisSummary.split('\n')[0]}</small>}
+          {fileAnalysisStatus && <small>{fileAnalysisStatus}</small>}
+          {latestPreparedActions.length > 0 && <small>Action Engine prepared {latestPreparedActions.length} action(s).</small>}
+        </div>
+      )}
+
+      <div className="quickChips cleanChips" aria-label="Quick actions">
+        <button type="button" onClick={() => send('What is the next best step for Core Self right now?')}>Next</button>
+        <button type="button" onClick={() => send('Create an action plan for the next Core Self build.')}>Plan</button>
+        <button type="button" onClick={() => send('Search the internet for the latest useful AI tools for building Core Self cheaply, compare them against our actual stack, tell me what to use now, what to skip, and cite sources.')}>Web</button>
+        <button type="button" onClick={() => { const seeded = seedCoreSelfData(); setSeedState(seeded); save('coreSeedState', seeded); }}>Reseed</button>
       </div>
-      <div className="quickChips" aria-label="Quick actions">
-        <button type="button" onClick={() => send('What is the next best step for Core Self right now?')}>Next Step</button>
-        <button type="button" onClick={() => send('What context are you using right now?')}>Context</button>
-        <button type="button" onClick={() => send('Summarise the current Core Self build status.')}>Status</button>
-        <button type="button" onClick={() => { setDeepThink(true); send('Deep Think: what is the strongest next architecture move for Core Self?'); }}>Deep Plan</button>
-        <button type="button" onClick={() => send('Search the internet for the latest useful AI tools for building Core Self cheaply, compare them against our actual stack, tell me what to use now, what to skip, and cite sources.')}>Web Scan</button>
-        <button type="button" onClick={() => send('Create an action plan for the next Core Self build.')}>Action Plan</button>
-        <button type="button" onClick={() => { const seeded = seedCoreSelfData(); setSeedState(seeded); save('coreSeedState', seeded); }}>Reseed Core</button>
-      </div>
-      <div className="chat">
+
+      <div className="chat cleanChat">
         {messages.map((m, i) => (
           <div key={i} className={'bubble ' + m.from}>
             <span>{m.text}</span>
-            {m.meta && <small>{statusLabel(m.meta)} • {contextLine(m.meta)}{m.meta.deepThink ? ' • Deep Think' : ''}{m.meta.orchestratorPlan ? ` • ${m.meta.orchestratorPlan.label}` : ''}{m.meta.developerPlan?.isDeveloperRequest ? ` • ${m.meta.developerPlan.requestType}` : ''}</small>}
+            {developerMode && m.meta && <small>{statusLabel(m.meta)} • {contextLine(m.meta)}{m.meta.deepThink ? ' • Deep Think' : ''}{m.meta.orchestratorPlan ? ` • ${m.meta.orchestratorPlan.label}` : ''}{m.meta.developerPlan?.isDeveloperRequest ? ` • ${m.meta.developerPlan.requestType}` : ''}</small>}
             {m.meta?.sources?.length > 0 && (
               <div className="sourceCards">
                 {m.meta.sources.slice(0, 4).map((source, sourceIndex) => (
-                  <a
-                    key={source.url || source.title || sourceIndex}
-                    href={source.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="sourceCard"
-                  >
+                  <a key={source.url || source.title || sourceIndex} href={source.url} target="_blank" rel="noreferrer" className="sourceCard">
                     <strong>{sourceIndex + 1}. {source.title || 'Source'}</strong>
                     <span>{source.url}</span>
                   </a>
@@ -332,7 +342,7 @@ export default function Talk({ mode }) {
                   <div className="attachmentCard" key={file.id || file.name}>
                     <strong>{file.name}</strong>
                     <span>{file.kind || 'file'} • {file.sizeLabel || 'attached'}</span>
-                    <small>{file.intakeNote || 'Attached to this message.'}</small>
+                    {developerMode && <small>{file.intakeNote || 'Attached to this message.'}</small>}
                     {m.fileAnalysisSummary && <small>{m.fileAnalysisSummary.split('\n')[0]}</small>}
                   </div>
                 ))}
@@ -341,18 +351,19 @@ export default function Talk({ mode }) {
             {m.meta?.imageGenerationResult?.ok && (
               <div className="generatedImageCard">
                 <img src={m.meta.imageGenerationResult.image} alt="Generated Core Self visual" />
-                <small>{m.meta.imageGenerationResult.size || '1024x1024'} • {m.meta.imageGenerationResult.quality || 'auto'} quality</small>
+                {developerMode && <small>{m.meta.imageGenerationResult.size || '1024x1024'} • {m.meta.imageGenerationResult.quality || 'auto'} quality</small>}
               </div>
             )}
-            {m.meta?.preparedActions?.length > 0 && (
+            {developerMode && m.meta?.preparedActions?.length > 0 && (
               <small>Actions prepared: {m.meta.preparedActions.map((action) => action.title).join(' • ')}</small>
             )}
           </div>
         ))}
-        {isSending && <div className="bubble core thinking">Dylan Core is thinking with identity, context, and router loaded...</div>}
+        {isSending && <div className="bubble core thinking">Working...</div>}
         <div ref={chatEndRef} />
       </div>
-      <div className="inputRow fileInputRow">
+
+      <div className="inputRow fileInputRow cleanComposer">
         <input
           ref={fileInputRef}
           type="file"
@@ -361,46 +372,33 @@ export default function Talk({ mode }) {
           accept="image/*,audio/*,video/*,.zip,.rar,.7z,.tar,.gz,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.md,.js,.jsx,.ts,.tsx,.json,.css,.html,.csv,.xml,.yml,.yaml,.log"
           onChange={handleFilesSelected}
         />
-        <button
-          type="button"
-          className="attachButton"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isSending}
-          title="Attach photos, music, videos, documents, ZIPs or code files"
-        >
-          + File
-        </button>
+        <button type="button" className="attachButton" onClick={() => fileInputRef.current?.click()} disabled={isSending} title="Attach photo, image, PDF, ZIP, document, audio, video or code">📎</button>
         <textarea
           value={input}
           disabled={isSending}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              send();
-            }
-          }}
-          placeholder="Ask Dylan Core or attach files..."
-          rows={2}
+          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+          placeholder="Tell Dylan Core what to do..."
+          rows={1}
         />
-        <button onClick={() => send()} disabled={isSending || (!input.trim() && !attachments.length)}>{isSending ? 'Thinking' : 'Send'}</button>
+        <button onClick={() => send()} disabled={isSending || (!input.trim() && !attachments.length)}>{isSending ? '...' : 'Send'}</button>
       </div>
+
       {attachmentError && <div className="attachmentError">{attachmentError}</div>}
       {attachments.length > 0 && (
-        <div className="attachmentTray">
+        <div className="attachmentTray compactAttachmentTray">
           {attachments.map((file) => (
             <div className="attachmentCard staged" key={file.id}>
               {file.previewUrl && <img src={file.previewUrl} alt={file.name} />}
               <strong>{file.name}</strong>
               <span>{file.kind} • {file.sizeLabel}</span>
-              <small>{file.intakeNote}</small>
-              {file.routeReady && <small>Route ready</small>}
               <button type="button" onClick={() => removeAttachment(file.id)}>Remove</button>
             </div>
           ))}
         </div>
       )}
-      {actionQueue.length > 0 && (
+
+      {developerMode && actionQueue.length > 0 && (
         <div className="briefing actionNotice">
           <h3>Action Queue</h3>
           {actionQueue.slice(0, 5).map((action) => (
@@ -412,7 +410,7 @@ export default function Talk({ mode }) {
           ))}
         </div>
       )}
-      {latestPreparedActions.length > 0 && (
+      {developerMode && latestPreparedActions.length > 0 && (
         <div className="briefing actionNotice">
           <h3>Prepared Actions</h3>
           {latestPreparedActions.map((action) => (
@@ -424,7 +422,7 @@ export default function Talk({ mode }) {
           ))}
         </div>
       )}
-      {!!pendingSuggestions && (
+      {developerMode && !!pendingSuggestions && (
         <div className="briefing suggestionNotice">
           <h3>Pending Core Suggestions</h3>
           <p>{pendingSuggestions} memory suggestion(s) are waiting in Memory Vault.</p>
