@@ -3,26 +3,25 @@ import { load, save } from '../services/localStore';
 import { CURRENT_CONVERSATION_KEY, buildMessage, ensureConversation, loadLatestConversationMessages, saveConversationMessage } from '../services/conversationService';
 import { routeCoreRequest, seedCoreSelfData } from '../services/aiRouter';
 import { logActivity } from '../services/activityLog';
-import { acceptSuggestion, suggestMemoryFromMessage } from '../services/memorySuggestions';
 import { prepareFileAttachments } from '../services/fileIntakeEngine';
 import { analyseAttachments, summarizeFileAnalysisResults } from '../services/fileAnalysisClient';
-import { generateImageFromPrompt } from '../services/imageGenerationClient';
-import { isDirectImageCommand, requiresHumanApproval, stripApprovalNoise } from '../services/commandPolicy';
+import { buildImagePromptFromCreatorPlan, generateImageFromPrompt } from '../services/imageGenerationClient';
+import { classifyCommand, policySummary } from '../services/commandPolicy';
+import { addOperatorLog, loadOperatorLog } from '../services/operatorLog';
+import { cleanCoreReply } from '../services/responseCleaner';
 
 function statusLabel(meta) {
-  if (!meta) return 'Dylan Core ready';
-  if (meta.source === 'direct-image-command') return 'Image creator executed';
-  if (meta.source === 'dylan-core-internet-engine') return meta.deepThink ? 'Deep Internet Scan online' : 'Internet Scan online';
-  if (meta.deepThink) return 'Deep Think online';
-  if (meta.source === 'dylan-core-engine' || meta.source === 'real-ai-brain') return 'Dylan Core Engine online';
-  if (meta.source === 'cloud-memory') return 'Cloud memory active';
-  return 'Safe fallback mode';
+  if (!meta) return 'Ready';
+  if (meta.operatorPolicy?.mode === 'confirm') return 'Approval required';
+  if (meta.imageGenerationResult?.ok) return 'Image created';
+  if (meta.fileAnalysisSummary) return 'File analysed';
+  if (meta.internetUsed) return 'Web scan used';
+  if (meta.deepThink) return 'Deep Think used';
+  return 'Done';
 }
 
-function contextLine(meta) {
-  const used = meta?.contextUsed;
-  if (!used) return 'Memory, projects, goals and plans load before replies.';
-  return `Context: ${used.relevantMemories || 0}/${used.memories || 0} memories • ${used.projects || 0} projects • ${used.goals || 0} goals • ${used.plans || 0} plans.`;
+function isDirectImageCommand(input = '') {
+  return classifyCommand(input).intent === 'image_generate';
 }
 
 function stripPreview(file) {
@@ -37,41 +36,35 @@ function stripPreviewOnly(file) {
   return safeFile;
 }
 
-function normalizeMessage(message) {
-  if (!message?.text) return message;
-  return { ...message, text: stripApprovalNoise(message.text) || message.text };
-}
-
-function buildImagePrompt(input) {
-  const request = String(input || '').trim();
-  return `Create a polished production image for Dylan Core / Core Self from this direct user request. Do not add text unless requested. Request: ${request}`;
+function buildVisibleFileSummary(summary = '') {
+  if (!summary) return '';
+  const lines = String(summary).split('\n').filter(Boolean).slice(0, 8);
+  return lines.length ? `I analysed the attachment.\n\n${lines.join('\n')}` : 'I analysed the attachment.';
 }
 
 export default function Talk({ mode }) {
-  const [messages, setMessages] = useState(() => load('messages', [
+  const [messages, setMessages] = useState(load('messages', [
     { from: 'core', text: 'Dylan Core ready. Tell me what to do.' },
-  ]).map(normalizeMessage));
-  const [suggestions, setSuggestions] = useState(load('memorySuggestions', []));
+  ]));
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [deepThink, setDeepThink] = useState(false);
+  const [developerMode, setDeveloperMode] = useState(load('developerMode', false));
   const [lastMeta, setLastMeta] = useState(load('lastAiMeta', null));
-  const [actionQueue, setActionQueue] = useState(load('actionQueue', []));
   const [conversationId, setConversationId] = useState(load(CURRENT_CONVERSATION_KEY, null));
-  const [cloudState, setCloudState] = useState('Preparing memory...');
-  const [seedState, setSeedState] = useState(load('coreSeedState', null));
   const [attachments, setAttachments] = useState([]);
   const [attachmentError, setAttachmentError] = useState('');
-  const [workStatus, setWorkStatus] = useState('');
-  const [developerMode, setDeveloperMode] = useState(load('developerMode', false));
+  const [operatorStatus, setOperatorStatus] = useState('Ready.');
+  const [operatorLog, setOperatorLog] = useState(loadOperatorLog());
   const chatEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
+  const commandPolicy = useMemo(() => classifyCommand(input, { hasAttachments: attachments.length > 0 }), [input, attachments.length]);
+  const policy = useMemo(() => policySummary(), []);
+
   useEffect(() => {
     const seeded = seedCoreSelfData();
-    setSeedState(seeded);
-    save('coreSeedState', seeded);
-    logActivity({ engine: 'Dylan Core', action: 'Seed context checked', detail: `${seeded.memories} memories, ${seeded.projects} projects, ${seeded.goals} goals, ${seeded.plans} plans available.` });
+    logActivity({ engine: 'Dylan Core Seed Pack', action: 'Seed context checked', detail: `${seeded.memories} memories, ${seeded.projects} projects, ${seeded.goals} goals, ${seeded.plans} plans available.` });
   }, []);
 
   useEffect(() => {
@@ -85,16 +78,12 @@ export default function Talk({ mode }) {
         save(CURRENT_CONVERSATION_KEY, result.conversationId);
         const loaded = await loadLatestConversationMessages(result.conversationId, messages);
         if (alive && loaded.ok && loaded.messages?.length) {
-          const cleaned = loaded.messages.map(normalizeMessage);
-          setMessages(cleaned);
-          save('messages', cleaned);
+          setMessages(loaded.messages);
+          save('messages', loaded.messages);
         }
-        setCloudState('Memory synced');
-      } else {
-        setCloudState(result.reason || 'Memory offline');
       }
     }
-    startConversation().catch((error) => setCloudState(error.message || 'Memory failed safely'));
+    startConversation().catch(() => null);
     return () => { alive = false; };
   }, []);
 
@@ -102,8 +91,10 @@ export default function Talk({ mode }) {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [messages, isSending]);
 
-  const pendingSuggestions = useMemo(() => suggestions.filter((item) => item.status === 'Pending').length, [suggestions]);
-  const latestPreparedActions = developerMode ? (lastMeta?.preparedActions || []) : [];
+  function pushOperatorLog(entry) {
+    const nextLog = addOperatorLog(entry);
+    setOperatorLog(nextLog);
+  }
 
   async function handleFilesSelected(event) {
     const files = Array.from(event.target.files || []);
@@ -116,7 +107,8 @@ export default function Talk({ mode }) {
       return;
     }
     setAttachments((current) => [...current, ...prepared.attachments].slice(0, 8));
-    logActivity({ engine: 'File Intake', action: 'Attached files', detail: `${prepared.attachments.length} file(s) staged.` });
+    setOperatorStatus(`${prepared.attachments.length} attachment(s) ready.`);
+    logActivity({ engine: 'File Intake', action: 'Attached files', detail: `${prepared.attachments.length} file(s) staged for Dylan Core.` });
     event.target.value = '';
   }
 
@@ -124,37 +116,29 @@ export default function Talk({ mode }) {
     setAttachments((current) => current.filter((file) => file.id !== id));
   }
 
-  function saveMessages(next) {
-    const cleaned = next.map(normalizeMessage);
-    setMessages(cleaned);
-    save('messages', cleaned);
-    return cleaned;
-  }
-
-  async function runDirectImageCommand({ clean, optimistic, userMessage, activeAttachments, fileAnalysisResults, fileAnalysisSummary }) {
-    setWorkStatus('Creating image...');
-    const imageGenerationResult = await generateImageFromPrompt({ prompt: buildImagePrompt(clean), size: '1024x1024', quality: 'auto' });
+  async function executeDirectImage({ clean, optimistic, activeAttachments, fileAnalysisResults, fileAnalysisSummary }) {
+    setOperatorStatus('Creating image...');
+    const routed = await routeCoreRequest({ input: clean, mode, memories: load('memories', []), projects: load('projects', []), goals: load('goals', []), plans: load('plans', []), messages: optimistic, deepThink });
+    const imagePrompt = buildImagePromptFromCreatorPlan(routed.creatorPlan, clean);
+    const imageGenerationResult = await generateImageFromPrompt({
+      prompt: imagePrompt,
+      size: routed.creatorPlan?.imageGeneration?.size || '1024x1024',
+      quality: routed.creatorPlan?.imageGeneration?.quality || 'auto',
+    });
     const meta = {
-      source: 'direct-image-command',
-      imageGenerationResult,
+      ...routed,
+      operatorPolicy: classifyCommand(clean, { hasAttachments: activeAttachments.length > 0 }),
       attachments: activeAttachments,
       fileAnalysisResults,
       fileAnalysisSummary,
+      imageGenerationResult,
+      deepThink,
       at: new Date().toISOString(),
     };
-    const reply = imageGenerationResult?.ok
-      ? 'Done. Here is the image.'
-      : `I tried to create the image, but the image route failed: ${imageGenerationResult?.error || 'unknown error'}. ${imageGenerationResult?.nextAction || ''}`.trim();
-    const coreMessage = buildMessage({ from: 'core', text: reply, meta });
-    const next = saveMessages([...optimistic, coreMessage]);
-    setLastMeta(meta);
-    save('lastAiMeta', meta);
-    if (conversationId) {
-      saveConversationMessage(conversationId, userMessage).catch(() => null);
-      saveConversationMessage(conversationId, coreMessage).catch(() => null);
-    }
-    setWorkStatus(imageGenerationResult?.ok ? 'Image created.' : 'Image failed safely.');
-    return next;
+    const text = imageGenerationResult.ok
+      ? 'Done. Here’s the image.'
+      : `Image generation failed safely. ${imageGenerationResult.error || ''}\n\n${imageGenerationResult.nextAction || 'Check the image provider setup and retry.'}`.trim();
+    return { text, meta };
   }
 
   async function send(overrideInput) {
@@ -163,253 +147,204 @@ export default function Talk({ mode }) {
     const clean = (overrideInput ?? input).trim() || (activeAttachments.length ? 'Analyse the attached file(s).' : '');
     if ((!clean && !activeAttachments.length) || isSending) return;
 
-    setIsSending(true);
-    setWorkStatus(activeAttachments.length ? 'Reading attachment...' : 'Working...');
+    const operatorPolicy = classifyCommand(clean, { hasAttachments: activeAttachments.length > 0 });
+    const userMessage = buildMessage({ from: 'dylan', text: clean, attachments: activeAttachments });
+    const optimistic = [...messages, userMessage];
+    setMessages(optimistic);
+    save('messages', optimistic);
+    setInput('');
+    setAttachments([]);
     setAttachmentError('');
+    setIsSending(true);
+    setOperatorStatus(operatorPolicy.userVisible);
+    if (conversationId) saveConversationMessage(conversationId, userMessage).catch(() => null);
 
     try {
-      const fileAnalysisResults = activeAttachments.length ? await analyseAttachments(analysisAttachments) : null;
-      const fileAnalysisSummary = fileAnalysisResults ? summarizeFileAnalysisResults(fileAnalysisResults) : '';
-      const userMessage = buildMessage({ from: 'dylan', text: clean, attachments: activeAttachments, fileAnalysisSummary });
-      const optimistic = saveMessages([...messages, userMessage]);
-      setInput('');
-      setAttachments([]);
-
-      if (isDirectImageCommand(clean)) {
-        await runDirectImageCommand({ clean, optimistic, userMessage, activeAttachments, fileAnalysisResults, fileAnalysisSummary });
+      if (operatorPolicy.mode === 'confirm') {
+        const meta = { operatorPolicy, deepThink, at: new Date().toISOString(), attachments: activeAttachments };
+        const next = [...optimistic, buildMessage({ from: 'core', text: `${operatorPolicy.userVisible}\n\nReason: ${operatorPolicy.reason}\n\nReply "approve" with the exact action when you want me to proceed.`, meta })];
+        setMessages(next);
+        save('messages', next);
+        setLastMeta(meta);
+        save('lastAiMeta', meta);
+        pushOperatorLog({ title: operatorPolicy.label, intent: operatorPolicy.intent, status: 'waiting_for_approval', detail: clean });
         return;
       }
 
-      const memories = load('memories', []);
-      const projects = load('projects', []);
-      const goals = load('goals', []);
-      const plans = load('plans', []);
-      const routed = await routeCoreRequest({ input: clean, mode, memories, projects, goals, plans, messages: optimistic, deepThink, attachments: activeAttachments, fileAnalysisResults, fileAnalysisSummary });
-      const suggestion = suggestMemoryFromMessage(clean, suggestions);
-      const preparedActions = requiresHumanApproval(clean) ? (routed.preparedActions || []) : [];
-
-      const meta = {
-        provider: routed.provider,
-        model: routed.model,
-        source: routed.source,
-        confidence: routed.confidence,
-        latencyMs: routed.latencyMs,
-        error: routed.error,
-        contextUsed: routed.contextUsed,
-        internetNeeded: routed.internetNeeded,
-        internetUsed: routed.internetUsed,
-        sources: routed.sources || [],
-        preparedActions,
-        orchestratorPlan: routed.orchestratorPlan || null,
-        researchPlan: routed.researchPlan || null,
-        developerPlan: routed.developerPlan || null,
-        toolRuntime: routed.toolReadiness?.runtime || routed.toolRuntime || null,
-        fileIntakePlan: routed.fileIntakePlan || null,
-        attachments: activeAttachments,
-        fileAnalysisResults,
-        fileAnalysisSummary,
-        deepThink,
-        routeProfile: routed.routeProfile,
-        deepRecommended: routed.deepRecommended,
-        at: new Date().toISOString(),
-      };
-
-      const coreReply = stripApprovalNoise(routed.reply || '') || 'Done.';
-      const coreText = developerMode && suggestion ? `${coreReply}\n\nMemory suggestion available in Dev Mode.` : coreReply;
-      const coreMessage = buildMessage({ from: 'core', text: coreText, meta });
-      saveMessages([...optimistic, coreMessage]);
-      setLastMeta(meta);
-      save('lastAiMeta', meta);
-      if (conversationId) {
-        saveConversationMessage(conversationId, userMessage).catch(() => null);
-        saveConversationMessage(conversationId, coreMessage).catch(() => null);
+      let fileAnalysisResults = null;
+      let fileAnalysisSummary = '';
+      if (activeAttachments.length) {
+        setOperatorStatus('Analysing attachment...');
+        fileAnalysisResults = await analyseAttachments(analysisAttachments);
+        fileAnalysisSummary = fileAnalysisResults ? summarizeFileAnalysisResults(fileAnalysisResults) : '';
       }
-      if (suggestion) {
-        const nextSuggestions = [suggestion, ...suggestions].slice(0, 50);
-        setSuggestions(nextSuggestions);
-        save('memorySuggestions', nextSuggestions);
+
+      let result;
+      if (isDirectImageCommand(clean)) {
+        result = await executeDirectImage({ clean, optimistic, activeAttachments, fileAnalysisResults, fileAnalysisSummary });
+      } else {
+        const routed = await routeCoreRequest({
+          input: fileAnalysisSummary ? `${clean}\n\nAttached file analysis:\n${fileAnalysisSummary}` : clean,
+          mode,
+          memories: load('memories', []),
+          projects: load('projects', []),
+          goals: load('goals', []),
+          plans: load('plans', []),
+          messages: optimistic,
+          deepThink,
+        });
+        const cleaned = cleanCoreReply(routed.reply);
+        const fileText = buildVisibleFileSummary(fileAnalysisSummary);
+        const text = [fileText, cleaned || 'Done.'].filter(Boolean).join('\n\n');
+        result = {
+          text,
+          meta: {
+            ...routed,
+            operatorPolicy,
+            attachments: activeAttachments,
+            fileAnalysisResults,
+            fileAnalysisSummary,
+            deepThink,
+            at: new Date().toISOString(),
+          },
+        };
       }
-      setWorkStatus('');
+
+      const next = [...optimistic, buildMessage({ from: 'core', text: result.text, meta: result.meta })];
+      setMessages(next);
+      save('messages', next);
+      setLastMeta(result.meta);
+      save('lastAiMeta', result.meta);
+      if (conversationId) saveConversationMessage(conversationId, next[next.length - 1]).catch(() => null);
+      setOperatorStatus(statusLabel(result.meta));
+      pushOperatorLog({ title: result.meta.operatorPolicy?.label || 'Core action', intent: result.meta.operatorPolicy?.intent || 'general', status: result.meta.imageGenerationResult?.ok || result.meta.fileAnalysisSummary || result.text ? 'done' : 'failed', detail: clean });
+      logActivity({ engine: 'Operator Mode', action: result.meta.operatorPolicy?.label || 'Executed command', detail: clean });
     } catch (error) {
-      const coreMessage = buildMessage({ from: 'core', text: `Something failed safely: ${error.message || 'Unknown error.'}` });
-      saveMessages([...messages, coreMessage]);
-      setWorkStatus('Failed safely.');
+      const failMeta = { operatorPolicy, error: error.message, at: new Date().toISOString() };
+      const failMessage = buildMessage({ from: 'core', text: `Core failed safely. ${error.message || 'Unknown error.'}`, meta: failMeta });
+      const next = [...optimistic, failMessage];
+      setMessages(next);
+      save('messages', next);
+      setLastMeta(failMeta);
+      setOperatorStatus('Failed safely.');
+      pushOperatorLog({ title: operatorPolicy.label, intent: operatorPolicy.intent, status: 'failed', detail: error.message || clean });
     } finally {
       setIsSending(false);
     }
   }
 
-  function approveSuggestion(suggestion) {
-    const result = acceptSuggestion(suggestion);
-    if (!result.ok) return;
-    const next = suggestions.map((item) => item.id === suggestion.id ? { ...item, status: 'Accepted' } : item);
-    setSuggestions(next);
-    save('memorySuggestions', next);
-    logActivity({ engine: 'Memory Vault', action: 'Accepted memory suggestion', detail: suggestion.title });
-  }
-
-  function rejectSuggestion(suggestion) {
-    const next = suggestions.map((item) => item.id === suggestion.id ? { ...item, status: 'Rejected' } : item);
-    setSuggestions(next);
-    save('memorySuggestions', next);
-    logActivity({ engine: 'Memory Vault', action: 'Rejected memory suggestion', detail: suggestion.title });
-  }
-
-  function savePreparedAction(action) {
-    const prepared = { ...action, id: action.id || crypto.randomUUID(), savedAt: new Date().toISOString(), status: 'Queued' };
-    const nextQueue = [prepared, ...actionQueue].slice(0, 50);
-    setActionQueue(nextQueue);
-    save('actionQueue', nextQueue);
-    logActivity({ engine: 'Action Queue', action: 'Queued prepared action', detail: prepared.title });
-  }
-
   return (
-    <section className="screen talkScreen dylanCoreExperience commandSystem">
-      <div className="talkHeader compactTalkHeader">
-        <div>
-          <p className="eyebrow">DYLAN CORE</p>
-          <h2>Talk</h2>
-          <small className="readyLine">{cloudState}. Ready.</small>
+    <section className="screen talkScreen operatorTalkScreen">
+      <div className="operatorShell">
+        <header className="operatorHeader">
+          <div>
+            <p className="eyebrow">DYLAN CORE</p>
+            <h2>Operator Mode</h2>
+            <small>{operatorStatus}</small>
+          </div>
+          <div className="talkHeaderActions">
+            <button className={`deepToggle ${deepThink ? 'active' : ''}`} type="button" onClick={() => setDeepThink((value) => !value)}>{deepThink ? 'Deep On' : 'Deep'}</button>
+            <button className={`devToggle ${developerMode ? 'active' : ''}`} type="button" onClick={() => { const next = !developerMode; setDeveloperMode(next); save('developerMode', next); }}>Dev</button>
+          </div>
+        </header>
+
+        <div className="operatorCommandBar">
+          <span className={`policyPill ${commandPolicy.mode}`}>{commandPolicy.mode === 'confirm' ? 'Needs approval' : commandPolicy.mode === 'execute' ? 'Will act' : 'Will answer'}</span>
+          <span>{input.trim() || attachments.length ? commandPolicy.label : 'Tell Dylan Core what to do'}</span>
         </div>
-        <div className="talkHeaderActions">
-          <button className={`deepToggle ${deepThink ? 'active' : ''}`} type="button" onClick={() => setDeepThink((value) => !value)}>{deepThink ? 'Deep On' : 'Deep'}</button>
-          <button className={`devToggle ${developerMode ? 'active' : ''}`} type="button" onClick={() => { const next = !developerMode; setDeveloperMode(next); save('developerMode', next); }}>Dev</button>
+
+        <div className="chat cleanChat operatorChat">
+          {messages.map((m, i) => (
+            <div key={i} className={'bubble ' + m.from}>
+              <span>{m.text}</span>
+              {developerMode && m.meta && (
+                <small>
+                  {statusLabel(m.meta)} • {m.meta.operatorPolicy?.mode || 'answer'} • {m.meta.operatorPolicy?.intent || 'conversation'}
+                  {m.meta.routeProfile ? ` • ${m.meta.routeProfile}` : ''}
+                  {m.meta.source ? ` • ${m.meta.source}` : ''}
+                </small>
+              )}
+              {m.meta?.sources?.length > 0 && (
+                <div className="sourceCards">
+                  {m.meta.sources.slice(0, 4).map((source, sourceIndex) => (
+                    <a key={source.url || source.title || sourceIndex} href={source.url} target="_blank" rel="noreferrer" className="sourceCard">
+                      <strong>{sourceIndex + 1}. {source.title || 'Source'}</strong>
+                      <span>{source.url}</span>
+                    </a>
+                  ))}
+                </div>
+              )}
+              {m.attachments?.length > 0 && (
+                <div className="attachmentCards">
+                  {m.attachments.map((file) => (
+                    <div className="attachmentCard" key={file.id || file.name}>
+                      <strong>{file.name}</strong>
+                      <span>{file.kind || 'file'} • {file.sizeLabel || 'attached'}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {m.meta?.imageGenerationResult?.ok && (
+                <div className="generatedImageCard">
+                  <img src={m.meta.imageGenerationResult.image} alt="Generated Core Self visual" />
+                </div>
+              )}
+            </div>
+          ))}
+          {isSending && <div className="bubble core thinking">Working...</div>}
+          <div ref={chatEndRef} />
+        </div>
+
+        {attachments.length > 0 && (
+          <div className="attachmentTray compactAttachmentTray operatorAttachmentTray">
+            {attachments.map((file) => (
+              <div className="attachmentCard staged" key={file.id}>
+                {file.previewUrl && <img src={file.previewUrl} alt={file.name} />}
+                <strong>{file.name}</strong>
+                <span>{file.kind} • {file.sizeLabel}</span>
+                <button type="button" onClick={() => removeAttachment(file.id)}>Remove</button>
+              </div>
+            ))}
+          </div>
+        )}
+        {attachmentError && <div className="attachmentError">{attachmentError}</div>}
+
+        <div className="inputRow fileInputRow cleanComposer operatorComposer">
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            className="hiddenFileInput"
+            accept="image/*,audio/*,video/*,.zip,.rar,.7z,.tar,.gz,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.md,.js,.jsx,.ts,.tsx,.json,.css,.html,.csv,.xml,.yml,.yaml,.log"
+            onChange={handleFilesSelected}
+          />
+          <button type="button" className="attachButton" onClick={() => fileInputRef.current?.click()} disabled={isSending} title="Attach photo, image, PDF, ZIP, document, audio, video or code">📎</button>
+          <textarea
+            value={input}
+            disabled={isSending}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+            placeholder="Tell Dylan Core what to do..."
+            rows={1}
+          />
+          <button onClick={() => send()} disabled={isSending || (!input.trim() && !attachments.length)}>{isSending ? '...' : 'Send'}</button>
         </div>
       </div>
 
       {developerMode && (
-        <div className={`aiStatusPanel ${lastMeta?.source === 'dylan-core-engine' || lastMeta?.source === 'real-ai-brain' || lastMeta?.source === 'direct-image-command' ? 'connected' : 'fallback'}`}>
-          <span>{statusLabel(lastMeta)}</span>
-          <small>{contextLine(lastMeta)}</small>
-          {seedState && <small>Seed: {seedState.memories} memories • {seedState.projects} projects • {seedState.goals} goals • {seedState.plans} plans.</small>}
-          {workStatus && <small>{workStatus}</small>}
-          {lastMeta?.internetUsed && <small>Internet Scan used{lastMeta?.sources?.length ? ` • ${lastMeta.sources.length} source(s)` : ''}</small>}
-          {lastMeta?.routeProfile && <small>Route: {lastMeta.routeProfile}</small>}
-          {lastMeta?.orchestratorPlan && <small>Orchestrator: {lastMeta.orchestratorPlan.label} • {lastMeta.orchestratorPlan.answerStyle}</small>}
-          {lastMeta?.toolRuntime && <small>Runtime: {lastMeta.toolRuntime.runnable} runnable • {lastMeta.toolRuntime.blocked} gated</small>}
-          {lastMeta?.fileAnalysisSummary && <small>Analyzer: {lastMeta.fileAnalysisSummary.split('\n')[0]}</small>}
-          {latestPreparedActions.length > 0 && <small>Approval actions prepared: {latestPreparedActions.length}</small>}
-        </div>
-      )}
-
-      <div className="quickChips cleanChips" aria-label="Quick actions">
-        <button type="button" onClick={() => send('What is the next best step for Core Self right now?')}>Next</button>
-        <button type="button" onClick={() => send('Create an action plan for the next Core Self build.')}>Plan</button>
-        <button type="button" onClick={() => send('Search the internet for the latest useful AI tools for building Core Self cheaply, compare them against our actual stack, tell me what to use now, what to skip, and cite sources.')}>Web</button>
-        <button type="button" onClick={() => { const seeded = seedCoreSelfData(); setSeedState(seeded); save('coreSeedState', seeded); }}>Reseed</button>
-      </div>
-
-      <div className="chat cleanChat commandChat">
-        {messages.map((m, i) => (
-          <div key={i} className={'bubble ' + m.from}>
-            <span>{stripApprovalNoise(m.text) || m.text}</span>
-            {developerMode && m.meta && <small>{statusLabel(m.meta)} • {contextLine(m.meta)}{m.meta.deepThink ? ' • Deep Think' : ''}</small>}
-            {m.meta?.sources?.length > 0 && (
-              <div className="sourceCards">
-                {m.meta.sources.slice(0, 4).map((source, sourceIndex) => (
-                  <a key={source.url || source.title || sourceIndex} href={source.url} target="_blank" rel="noreferrer" className="sourceCard">
-                    <strong>{sourceIndex + 1}. {source.title || 'Source'}</strong>
-                    <span>{source.url}</span>
-                  </a>
-                ))}
-              </div>
-            )}
-            {m.attachments?.length > 0 && (
-              <div className="attachmentCards">
-                {m.attachments.map((file) => (
-                  <div className="attachmentCard" key={file.id || file.name}>
-                    <strong>{file.name}</strong>
-                    <span>{file.kind || 'file'} • {file.sizeLabel || 'attached'}</span>
-                    {m.fileAnalysisSummary && <small>{m.fileAnalysisSummary.split('\n')[0]}</small>}
-                  </div>
-                ))}
-              </div>
-            )}
-            {m.meta?.imageGenerationResult?.ok && (
-              <div className="generatedImageCard">
-                <img src={m.meta.imageGenerationResult.image} alt="Generated Core Self visual" />
-                {developerMode && <small>{m.meta.imageGenerationResult.size || '1024x1024'} • {m.meta.imageGenerationResult.quality || 'auto'}</small>}
-              </div>
-            )}
-          </div>
-        ))}
-        {isSending && <div className="bubble core thinking">{workStatus || 'Working...'}</div>}
-        <div ref={chatEndRef} />
-      </div>
-
-      <div className="inputRow fileInputRow cleanComposer commandComposer">
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          className="hiddenFileInput"
-          accept="image/*,audio/*,video/*,.zip,.rar,.7z,.tar,.gz,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.md,.js,.jsx,.ts,.tsx,.json,.css,.html,.csv,.xml,.yml,.yaml,.log"
-          onChange={handleFilesSelected}
-        />
-        <button type="button" className="attachButton" onClick={() => fileInputRef.current?.click()} disabled={isSending} title="Attach photo, image, PDF, ZIP, document, audio, video or code">📎</button>
-        <textarea
-          value={input}
-          disabled={isSending}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
-          placeholder="Tell Dylan Core what to do..."
-          rows={1}
-        />
-        <button onClick={() => send()} disabled={isSending || (!input.trim() && !attachments.length)}>{isSending ? '...' : 'Send'}</button>
-      </div>
-
-      {attachmentError && <div className="attachmentError">{attachmentError}</div>}
-      {attachments.length > 0 && (
-        <div className="attachmentTray compactAttachmentTray">
-          {attachments.map((file) => (
-            <div className="attachmentCard staged" key={file.id}>
-              {file.previewUrl && <img src={file.previewUrl} alt={file.name} />}
-              <strong>{file.name}</strong>
-              <span>{file.kind} • {file.sizeLabel}</span>
-              <button type="button" onClick={() => removeAttachment(file.id)}>Remove</button>
+        <div className="briefing operatorDevPanel">
+          <h3>Developer Mode</h3>
+          <p><strong>Last:</strong> {lastMeta ? statusLabel(lastMeta) : 'No action yet.'}</p>
+          <p><strong>Policy:</strong> act without approval for {policy.executeWithoutApproval.join(', ')}.</p>
+          <p><strong>Approval:</strong> {policy.requireApproval.join(', ')}.</p>
+          <h4>Work Log</h4>
+          {operatorLog.length ? operatorLog.slice(0, 8).map((item) => (
+            <div className="miniActionCard" key={item.id}>
+              <strong>{item.title}</strong>
+              <p>{item.detail}</p>
+              <small>{item.intent} • {item.status}</small>
             </div>
-          ))}
-        </div>
-      )}
-
-      {developerMode && actionQueue.length > 0 && (
-        <div className="briefing actionNotice">
-          <h3>Action Queue</h3>
-          {actionQueue.slice(0, 5).map((action) => (
-            <div className="miniActionCard" key={action.id}>
-              <strong>{action.title}</strong>
-              <p>{action.nextStep || action.detail}</p>
-              <small>{action.type} • {action.status}</small>
-            </div>
-          ))}
-        </div>
-      )}
-      {developerMode && latestPreparedActions.length > 0 && (
-        <div className="briefing actionNotice">
-          <h3>Needs Approval</h3>
-          {latestPreparedActions.map((action) => (
-            <div className="miniActionCard" key={action.id}>
-              <strong>{action.title}</strong>
-              <p>{action.nextStep}</p>
-              <button type="button" onClick={() => savePreparedAction(action)}>Save to Action Queue</button>
-            </div>
-          ))}
-        </div>
-      )}
-      {developerMode && !!pendingSuggestions && (
-        <div className="briefing suggestionNotice">
-          <h3>Memory Suggestions</h3>
-          <p>{pendingSuggestions} memory suggestion(s) are waiting.</p>
-          {suggestions.filter((item) => item.status === 'Pending').slice(0, 3).map((suggestion) => (
-            <div className="miniActionCard" key={suggestion.id}>
-              <strong>{suggestion.title}</strong>
-              <p>{suggestion.content}</p>
-              <div className="miniActionButtons">
-                <button type="button" onClick={() => approveSuggestion(suggestion)}>Save Memory</button>
-                <button type="button" onClick={() => rejectSuggestion(suggestion)}>Reject</button>
-              </div>
-            </div>
-          ))}
+          )) : <small>No work logged yet.</small>}
         </div>
       )}
     </section>

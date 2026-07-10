@@ -1762,120 +1762,152 @@ button:disabled, input:disabled {
   }
 }
 
-/* Genesis 0.9 — Core Self Command System */
-.commandSystem {
-  min-height: calc(100vh - 120px);
+/* Genesis 1.0 Operator Mode */
+.operatorTalkScreen {
+  min-height: calc(100vh - 90px);
+  padding-bottom: 96px;
+}
+
+.operatorShell {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  min-height: calc(100vh - 130px);
+  gap: 12px;
 }
 
-.commandSystem .compactTalkHeader {
-  margin-bottom: 0;
-  padding-bottom: 0;
+.operatorHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 18px;
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(16px);
 }
 
-.commandSystem .readyLine {
-  display: inline-block;
-  margin-top: 4px;
-  color: #3cf58f;
+.operatorHeader h2 {
+  margin: 2px 0 4px;
+}
+
+.operatorHeader small {
+  color: var(--muted);
+}
+
+.operatorCommandBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  background: rgba(0,0,0,0.18);
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.policyPill {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 0.74rem;
   font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border: 1px solid rgba(255,255,255,0.12);
 }
 
-.commandSystem .cleanChips {
-  margin: 0;
-  padding: 0 0 4px;
-  overflow-x: auto;
-  flex-wrap: nowrap;
+.policyPill.execute {
+  background: rgba(65, 255, 179, 0.12);
+  color: #8fffd3;
 }
 
-.commandChat {
+.policyPill.answer {
+  background: rgba(113, 167, 255, 0.12);
+  color: #a9c8ff;
+}
+
+.policyPill.confirm {
+  background: rgba(255, 203, 99, 0.12);
+  color: #ffd47c;
+}
+
+.operatorChat {
   flex: 1;
   min-height: 46vh;
   max-height: none;
-  padding: 16px;
-  scroll-padding-bottom: 140px;
+  overflow-y: auto;
+  padding-bottom: 8px;
 }
 
-.commandChat .bubble {
-  max-width: 88%;
-  line-height: 1.45;
-}
-
-.commandComposer {
+.operatorComposer {
   position: sticky;
-  bottom: calc(84px + env(safe-area-inset-bottom));
+  bottom: 10px;
   z-index: 20;
-  display: grid;
-  grid-template-columns: 54px minmax(0, 1fr) 86px;
-  align-items: end;
-  gap: 10px;
   margin-top: auto;
-  padding: 10px;
-  border-radius: 24px;
-  background: rgba(2, 8, 20, 0.94);
-  border: 1px solid rgba(100, 170, 255, 0.35);
-  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,0.12);
+  box-shadow: 0 18px 40px rgba(0,0,0,0.32);
 }
 
-.commandComposer textarea {
-  min-height: 54px;
-  max-height: 130px;
-  resize: vertical;
-  padding: 16px;
+.operatorComposer textarea {
+  min-height: 44px;
+  max-height: 120px;
+  resize: none;
 }
 
-.commandComposer .attachButton {
-  min-height: 54px;
-  border-radius: 18px;
-  font-size: 1.3rem;
+.operatorAttachmentTray {
+  max-height: 160px;
+  overflow-y: auto;
 }
 
-.commandComposer button:last-child {
-  min-height: 54px;
+.operatorDevPanel {
+  margin-top: 16px;
 }
 
-.commandSystem .aiStatusPanel {
-  margin: 0;
-}
-
-.commandSystem .generatedImageCard img {
+.generatedImageCard img {
   width: 100%;
+  max-width: 520px;
   border-radius: 18px;
   display: block;
 }
 
 @media (max-width: 720px) {
-  .commandSystem {
-    gap: 10px;
+  .operatorTalkScreen {
+    padding: 10px 10px 92px;
   }
 
-  .commandSystem .talkHeaderActions {
-    gap: 8px;
+  .operatorShell {
+    min-height: calc(100vh - 106px);
   }
 
-  .commandSystem .deepToggle,
-  .commandSystem .devToggle {
-    padding: 10px 14px;
-    font-size: 0.85rem;
-  }
-
-  .commandChat {
-    min-height: 52vh;
+  .operatorHeader {
     padding: 12px;
+    border-radius: 16px;
   }
 
-  .commandChat .bubble {
-    max-width: 94%;
-    font-size: 0.98rem;
+  .operatorHeader .talkHeaderActions {
+    flex-direction: column;
+    align-items: stretch;
   }
 
-  .commandComposer {
-    grid-template-columns: 52px minmax(0, 1fr);
-    bottom: calc(76px + env(safe-area-inset-bottom));
+  .operatorCommandBar {
+    font-size: 0.82rem;
+    overflow: hidden;
   }
 
-  .commandComposer button:last-child {
-    grid-column: 1 / -1;
+  .operatorChat {
+    min-height: 50vh;
+  }
+
+  .operatorComposer {
+    bottom: 6px;
+    padding: 8px;
+    gap: 7px;
+  }
+
+  .operatorComposer button {
+    min-width: 44px;
   }
 }
