@@ -1761,3 +1761,121 @@ button:disabled, input:disabled {
     overflow-y: auto;
   }
 }
+
+/* Genesis 0.9 — Core Self Command System */
+.commandSystem {
+  min-height: calc(100vh - 120px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.commandSystem .compactTalkHeader {
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.commandSystem .readyLine {
+  display: inline-block;
+  margin-top: 4px;
+  color: #3cf58f;
+  font-weight: 800;
+}
+
+.commandSystem .cleanChips {
+  margin: 0;
+  padding: 0 0 4px;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+}
+
+.commandChat {
+  flex: 1;
+  min-height: 46vh;
+  max-height: none;
+  padding: 16px;
+  scroll-padding-bottom: 140px;
+}
+
+.commandChat .bubble {
+  max-width: 88%;
+  line-height: 1.45;
+}
+
+.commandComposer {
+  position: sticky;
+  bottom: calc(84px + env(safe-area-inset-bottom));
+  z-index: 20;
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr) 86px;
+  align-items: end;
+  gap: 10px;
+  margin-top: auto;
+  padding: 10px;
+  border-radius: 24px;
+  background: rgba(2, 8, 20, 0.94);
+  border: 1px solid rgba(100, 170, 255, 0.35);
+  backdrop-filter: blur(14px);
+}
+
+.commandComposer textarea {
+  min-height: 54px;
+  max-height: 130px;
+  resize: vertical;
+  padding: 16px;
+}
+
+.commandComposer .attachButton {
+  min-height: 54px;
+  border-radius: 18px;
+  font-size: 1.3rem;
+}
+
+.commandComposer button:last-child {
+  min-height: 54px;
+}
+
+.commandSystem .aiStatusPanel {
+  margin: 0;
+}
+
+.commandSystem .generatedImageCard img {
+  width: 100%;
+  border-radius: 18px;
+  display: block;
+}
+
+@media (max-width: 720px) {
+  .commandSystem {
+    gap: 10px;
+  }
+
+  .commandSystem .talkHeaderActions {
+    gap: 8px;
+  }
+
+  .commandSystem .deepToggle,
+  .commandSystem .devToggle {
+    padding: 10px 14px;
+    font-size: 0.85rem;
+  }
+
+  .commandChat {
+    min-height: 52vh;
+    padding: 12px;
+  }
+
+  .commandChat .bubble {
+    max-width: 94%;
+    font-size: 0.98rem;
+  }
+
+  .commandComposer {
+    grid-template-columns: 52px minmax(0, 1fr);
+    bottom: calc(76px + env(safe-area-inset-bottom));
+  }
+
+  .commandComposer button:last-child {
+    grid-column: 1 / -1;
+  }
+}
