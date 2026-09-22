@@ -23,7 +23,7 @@ export function remove(key) {
 
 export function exportCoreData() {
   return {
-    version: 'Genesis 0.4.1',
+    version: 'Genesis 1.2',
     exportedAt: new Date().toISOString(),
     memories: load('memories', []),
     projects: load('projects', []),
@@ -34,6 +34,8 @@ export function exportCoreData() {
     settings: load('settings', {}),
     messages: load('messages', []),
     auditLog: load('auditLog', []),
+    identityProfile: load('identityProfile', null),
+    identitySuggestions: load('identitySuggestions', []),
   };
 }
 
@@ -48,4 +50,6 @@ export function importCoreData(data) {
   if (data.settings) save('settings', data.settings);
   if (Array.isArray(data.messages)) save('messages', data.messages);
   if (Array.isArray(data.auditLog)) save('auditLog', data.auditLog);
+  if (data.identityProfile && typeof data.identityProfile === 'object') save('identityProfile', data.identityProfile);
+  if (Array.isArray(data.identitySuggestions)) save('identitySuggestions', data.identitySuggestions);
 }
