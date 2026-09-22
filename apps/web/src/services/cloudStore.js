@@ -12,7 +12,14 @@ const CORE_KEYS = [
   'settings',
   'messages',
   'auditLog',
+  'identityProfile',
+  'identitySuggestions',
 ];
+
+function fallbackForKey(key) {
+  if (key === 'settings' || key === 'identityProfile') return {};
+  return [];
+}
 
 export function cloudPath(uid, key) {
   return doc(db, 'users', uid, 'core', key);
@@ -25,7 +32,7 @@ export async function saveKeyToCloud(key, value) {
     key,
     value,
     updatedAt: serverTimestamp(),
-    version: 'Genesis 0.2.0',
+    version: 'Genesis 1.2',
   }, { merge: true });
   return { ok: true };
 }
@@ -41,7 +48,7 @@ export async function loadKeyFromCloud(key, fallback) {
 export async function pushLocalCoreToCloud(localData) {
   const user = currentCoreUser();
   if (!user) return { ok: false, reason: 'Sign in first.' };
-  await Promise.all(CORE_KEYS.map((key) => saveKeyToCloud(key, localData[key] ?? (key === 'settings' ? {} : []))));
+  await Promise.all(CORE_KEYS.map((key) => saveKeyToCloud(key, localData[key] ?? fallbackForKey(key))));
   return { ok: true, keys: CORE_KEYS.length };
 }
 
@@ -50,7 +57,7 @@ export async function pullCloudCoreToLocal(loadKey, saveKey) {
   if (!user) return { ok: false, reason: 'Sign in first.' };
   const loaded = {};
   for (const key of CORE_KEYS) {
-    const fallback = key === 'settings' ? {} : [];
+    const fallback = fallbackForKey(key);
     const result = await loadKeyFromCloud(key, fallback);
     if (result.ok && !result.missing) {
       loaded[key] = result.value;
