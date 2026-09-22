@@ -11,6 +11,7 @@ import { retrieveRelevantMemories } from './memoryRetrieval';
 import { load, save } from './localStore';
 import { coreSeedMemories } from '../data/coreSeeds';
 import { defaultGoals, defaultProjects } from '../data/defaults';
+import { buildIdentityContext, ensureIdentityProfile } from './identityCore';
 
 const SEED_MEMORIES = [
   ...coreSeedMemories,
@@ -135,12 +136,14 @@ export function seedCoreSelfData() {
   save('projects', nextProjects);
   save('goals', nextGoals);
   save('plans', nextPlans);
+  const identityProfile = ensureIdentityProfile();
 
   return {
     memories: nextMemories.length,
     projects: nextProjects.length,
     goals: nextGoals.length,
     plans: nextPlans.length,
+    identityStage: identityProfile.development.stage,
   };
 }
 
@@ -204,6 +207,11 @@ function buildContext({ input, mode, projects, goals, plans, messages, relevantM
   const developerPlan = buildDeveloperPlan({ input, projects, memories: relevantMemories });
   const providerMap = buildClientProviderMap();
   const providerSummary = summarizeProviderStatus(providerMap);
+  const identityProfile = ensureIdentityProfile();
+  const settings = load('settings', {});
+  const identityCore = settings.identityContextMode === 'Local only — do not send'
+    ? null
+    : buildIdentityContext(identityProfile);
   const preparedActions = [
     ...buildPreparedActions(input, routeProfile),
     ...(creatorPlan.isCreatorRequest ? creatorPlan.nextActions.map((action) => ({ ...action, status: 'prepared', type: 'creator_workflow', source: 'Creator Platform' })) : []),
@@ -221,6 +229,7 @@ function buildContext({ input, mode, projects, goals, plans, messages, relevantM
   return {
     input,
     mode,
+    identityCore,
     deepThink: Boolean(deepThink),
     routeProfile,
     orchestratorPlan,
@@ -336,6 +345,7 @@ export async function routeCoreRequest({ input, mode, memories = [], projects = 
       toolRuntime: result.toolRuntime || context.toolReadiness?.runtime || null,
       providerMap: result.providerMap || context.providerMap,
       providerSummary: result.providerSummary || context.providerSummary,
+      identityCore: context.identityCore,
       deepRecommended: Boolean(result.diagnostics?.deepRecommended || wantsDeepReasoning(input) || wantsCodingHelp(input)),
       latencyMs: result.latencyMs || null,
       error: result.internetError || null,
@@ -384,6 +394,7 @@ What to check:
       toolRuntime: context.toolReadiness?.runtime || null,
       providerMap: context.providerMap,
       providerSummary: context.providerSummary,
+      identityCore: context.identityCore,
       deepRecommended: wantsDeepReasoning(input) || wantsCodingHelp(input) || context.developerPlan?.isDeveloperRequest || context.orchestratorPlan?.intent === 'research_compare',
       latencyMs: null,
       error: error.message,
