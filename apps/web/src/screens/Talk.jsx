@@ -9,6 +9,8 @@ import { buildImagePromptFromCreatorPlan, generateImageFromPrompt } from '../ser
 import { classifyCommand, policySummary } from '../services/commandPolicy';
 import { addOperatorLog, loadOperatorLog } from '../services/operatorLog';
 import { cleanCoreReply } from '../services/responseCleaner';
+import { suggestMemoryFromMessage } from '../services/memorySuggestions';
+import { addIdentitySuggestion } from '../services/identityCore';
 
 function statusLabel(meta) {
   if (!meta) return 'Ready';
@@ -158,6 +160,17 @@ export default function Talk({ mode }) {
     setIsSending(true);
     setOperatorStatus(operatorPolicy.userVisible);
     if (conversationId) saveConversationMessage(conversationId, userMessage).catch(() => null);
+
+    const memorySuggestions = load('memorySuggestions', []);
+    const memorySuggestion = suggestMemoryFromMessage(clean, memorySuggestions);
+    if (memorySuggestion) {
+      save('memorySuggestions', [memorySuggestion, ...memorySuggestions].slice(0, 100));
+      logActivity({ engine: 'Memory Suggestions', action: 'Proposed learning from Talk', detail: memorySuggestion.title });
+    }
+    const identitySuggestion = addIdentitySuggestion(clean);
+    if (identitySuggestion) {
+      logActivity({ engine: 'Identity Core', action: 'Proposed identity learning', detail: identitySuggestion.content });
+    }
 
     try {
       if (operatorPolicy.mode === 'confirm') {
