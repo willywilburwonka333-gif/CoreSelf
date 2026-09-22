@@ -1,3 +1,5 @@
+import { publicRoutingSummary } from '../src/services/modelRoutingPolicy.js';
+
 export default async function handler(request, response) {
   if (request.method !== 'GET') return response.status(405).json({ error: 'Method not allowed' });
 
@@ -10,6 +12,7 @@ export default async function handler(request, response) {
   const githubReady = Boolean(process.env.GITHUB_TOKEN);
   const vercelReady = Boolean(process.env.VERCEL_TOKEN);
   const googleReady = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+  const routing = publicRoutingSummary(process.env);
 
   return response.status(200).json({
     ok: true,
@@ -17,10 +20,12 @@ export default async function handler(request, response) {
     provider: hasOpenAIKey ? 'core-provider' : 'local-fallback',
     model: hasOpenAIKey ? 'hidden-standard-core' : 'none',
     deepModel: hasOpenAIKey ? 'hidden-deep-core' : 'none',
-    version: 'Milestone 7 - Image Creator Route',
-    nextAction: hasOpenAIKey
-      ? 'Test /api/create-image from the Talk screen with an image request.'
-      : 'Add OPENAI_API_KEY in Vercel and redeploy production.',
+    version: 'Genesis 1.1 - Capability Router',
+    nextAction: routing.mode === 'multi-provider'
+      ? 'Compare routine prompts across the routed worker and OpenAI fallback; keep the cheaper route only if quality holds.'
+      : hasOpenAIKey
+        ? 'Optional: add GEMINI_API_KEY and GEMINI_MODEL to evaluate a lower-cost routine worker.'
+        : 'Add OPENAI_API_KEY, or both GEMINI_API_KEY and GEMINI_MODEL for standard chat, then redeploy.',
     diagnostics: {
       hasOpenAIKey,
       standardConfigured: Boolean(model),
@@ -33,7 +38,10 @@ export default async function handler(request, response) {
       githubReady,
       vercelReady,
       googleReady,
+      geminiReady: routing.providers.gemini,
+      routingMode: routing.mode,
     },
+    routing,
     routes: {
       chat: '/api/chat',
       aiStatus: '/api/ai-status',
