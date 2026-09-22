@@ -5,6 +5,8 @@ const required = [
   'apps/web/src/services/providerConnectionEngine.js',
   'apps/web/api/chat.js',
   'apps/web/api/ai-status.js',
+  'apps/web/src/services/identityCore.js',
+  'apps/web/src/screens/Core.jsx',
 ];
 
 for (const file of required) {
@@ -17,6 +19,8 @@ for (const file of required) {
 const policy = fs.readFileSync(new URL('../apps/web/src/services/modelRoutingPolicy.js', import.meta.url), 'utf8');
 const chat = fs.readFileSync(new URL('../apps/web/api/chat.js', import.meta.url), 'utf8');
 const status = fs.readFileSync(new URL('../apps/web/api/ai-status.js', import.meta.url), 'utf8');
+const identity = fs.readFileSync(new URL('../apps/web/src/services/identityCore.js', import.meta.url), 'utf8');
+const talk = fs.readFileSync(new URL('../apps/web/src/screens/Talk.jsx', import.meta.url), 'utf8');
 
 const assertions = [
   [policy.includes("profile: 'internet'"), 'internet profile'],
@@ -26,6 +30,10 @@ const assertions = [
   [chat.includes('callGeminiChat'), 'Gemini server adapter'],
   [chat.includes('fallbackProvider'), 'provider fallback'],
   [status.includes('publicRoutingSummary'), 'safe routing diagnostics'],
+  [identity.includes('DEFAULT_IDENTITY_PROFILE'), 'confirmed Dylan identity profile'],
+  [identity.includes("confidence: 'Needs Dylan confirmation'"), 'identity learning confirmation gate'],
+  [talk.includes('addIdentitySuggestion'), 'Talk identity learning loop'],
+  [chat.includes('CONFIRMED DYLAN IDENTITY CORE'), 'identity-aware model context'],
 ];
 
 const failed = assertions.filter(([ok]) => !ok).map(([, label]) => label);
