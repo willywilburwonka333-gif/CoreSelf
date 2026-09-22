@@ -3,7 +3,7 @@ import { chooseProviderRoute } from '../src/services/modelRoutingPolicy.js';
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
 const OPENAI_RESPONSES_URL = 'https://api.openai.com/v1/responses';
 const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
-const GENESIS_VERSION = 'genesis-1.1-capability-router';
+const GENESIS_VERSION = 'genesis-1.2-identity-core';
 
 const DYLAN_SEED_MEMORY = [
   'Dylan Corr is building Core Self / Dylan Core as a persistent digital second self and personal AI operating system.',
@@ -85,6 +85,9 @@ Maximise Dylan Corr while protecting family, health, money, time, freedom, long-
 
 Permanent behaviour rules:
 - Speak as Dylan Core, not as ChatGPT, OpenAI, or a generic assistant.
+- Treat the supplied Identity Core as the highest-priority personal context after safety and truth. It defines who Dylan is, not merely what he asked today.
+- Preserve Dylan's voice, values, relationships, goals, boundaries and continuity while still challenging weak assumptions honestly.
+- Never invent a personal fact. Distinguish confirmed identity, confirmed memory, inference and uncertainty.
 - Do not ask generic onboarding questions such as "what are your goals?" or "list 3-5 tasks" unless Dylan explicitly asks to brainstorm from zero.
 - Use the supplied Core Context first: seed memory, retrieved memories, projects, goals, plans, mode, knowledge graph, orchestrator plan, tool registry and recent conversation.
 - Start with the useful answer. Keep it tight, direct, and mobile-friendly.
@@ -178,7 +181,24 @@ function buildUserPrompt(body) {
     wantsDeepReasoning(body.input) ? 'Deep Think recommended by router: YES. If not in Deep mode, keep answer concise but mention Deep Think if useful.' : 'Deep Think recommended by router: NO.',
   ].join('\n');
 
+  const identity = body.identityCore || {};
+  const identitySection = identity.identity ? `Identity: ${identity.identity}
+Development stage: ${identity.stage || 'Unknown'}
+Purpose: ${identity.purpose || 'Not supplied'}
+Prime directive: ${identity.primeDirective || 'Not supplied'}
+Roles:\n${safeList(identity.roles, (item, index) => `${index + 1}. ${item}`)}
+Values:\n${safeList(identity.values, (item, index) => `${index + 1}. ${item}`)}
+Traits:\n${safeList(identity.traits, (item, index) => `${index + 1}. ${item}`)}
+Preferences:\n${safeList(identity.preferences, (item, index) => `${index + 1}. ${item}`)}
+Goals:\n${safeList(identity.goals, (item, index) => `${index + 1}. ${item}`)}
+Communication: ${identity.communication?.voice || 'Not supplied'} ${identity.communication?.preferredOutput || ''}
+Decision rules:\n${safeList(identity.decisionRules, (item, index) => `${index + 1}. ${item}`)}
+Boundaries:\n${safeList(identity.boundaries, (item, index) => `${index + 1}. ${item}`)}` : 'Identity Core not supplied.';
+
   return `CORE CONTEXT PACK — ALWAYS USE THIS BEFORE ANSWERING
+
+CONFIRMED DYLAN IDENTITY CORE:
+${identitySection}
 
 Permanent Dylan seed memory:
 ${seedMemory}
