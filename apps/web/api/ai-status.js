@@ -20,7 +20,7 @@ export default async function handler(request, response) {
     provider: hasOpenAIKey ? 'core-provider' : 'local-fallback',
     model: hasOpenAIKey ? 'hidden-standard-core' : 'none',
     deepModel: hasOpenAIKey ? 'hidden-deep-core' : 'none',
-    version: 'Genesis 1.1 - Capability Router',
+    version: 'Genesis 1.2 - Dylan Identity Core',
     nextAction: routing.mode === 'multi-provider'
       ? 'Compare routine prompts across the routed worker and OpenAI fallback; keep the cheaper route only if quality holds.'
       : hasOpenAIKey
