@@ -28,6 +28,12 @@ Genesis 1.2 moves Core Self closer to its actual purpose: a private, evolving AI
 - Manual identity edits, accepted/rejected learning and development-stage changes are audited.
 - External actions, money, destructive changes and production changes remain approval-gated.
 
+## Private Dylan Seed Vault
+
+- A full personal seed can be imported through **Settings → Backup / Restore** without committing it to the public repository.
+- Private sections cover relationships, history, health context, heritage, work, finances, creative identity, projects, worldview, working preferences and current priorities.
+- The imported vault appears under **More → Core** and is used in identity-aware replies unless local-only privacy mode is selected.
+
 ## Test path
 
 1. Open **More → Core** and review the confirmed profile.
