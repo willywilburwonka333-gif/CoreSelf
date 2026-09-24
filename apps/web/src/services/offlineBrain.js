@@ -91,7 +91,7 @@ export function buildOfflineReply({
   const codingQuery = /\b(code|build|fix|debug|deploy|github|firebase|vercel|app)\b/.test(lower);
   const creatorQuery = /\b(song|lyrics|music|album|series|story|film|creative)\b/.test(lower);
 
-  if (identityQuery) {
+  if (identityQuery && !creatorQuery) {
     const roles = (identityProfile.roles || []).slice(0, 6).map((item) => `- ${textOf(item)}`);
     const values = (identityProfile.values || []).slice(0, 5).map((item) => `- ${textOf(item)}`);
     return `${intro}\n\nYou are ${identityProfile.human?.name || 'Dylan'}, and I am your private digital second self. My local understanding is grounded in these roles:\n${roles.join('\n') || '- Your identity profile has not been imported yet.'}\n\nWhat I protect:\n${values.join('\n') || `- ${identityProfile.primeDirective || 'Family, identity, health, freedom and long-term control.'}`}\n\n${memoryLines(relevantMemories).join('\n') || 'Import the private Seed Vault to deepen my offline understanding.'}`;
@@ -131,8 +131,19 @@ export function buildOfflineReply({
   }
 
   if (creatorQuery) {
+    const creative = identityProfile.creativeProfile || {};
+    const builtIn = [
+      ...(creative.identity || []),
+      ...(creative.process || []),
+      ...(creative.sound || []),
+      ...(creative.writingRules || []),
+      ...(creative.catalogue || []),
+      ...(creative.personas || []),
+    ];
+    const matchedBuiltIn = matching(builtIn, input);
     const facts = privateFacts(identityProfile, 'creativeIdentity', input);
-    return `${intro}\n\nI can preserve direction and organise the creative job offline; final generative writing/audio/video needs a model or creator tool.\n${facts.map((fact) => `- ${fact}`).join('\n') || '- Keep the work personal, specific and recognisably Dylan—not generic AI output.'}\n\nPrepared next move: ${nextMove(projects, goals, plans, preparedActions)}`;
+    const selected = [...matchedBuiltIn, ...facts].filter((item, index, all) => item && all.indexOf(item) === index).slice(0, 10);
+    return `${intro}\n\nWilbur Wonka is not a generic AI artist profile. This is the music identity I have loaded:\n${selected.map((fact) => `- ${textOf(fact)}`).join('\n') || '- Keep the work personal, specific and recognisably Dylan—not generic AI output.'}\n\nI can preserve direction and organise the creative job offline; final generative writing, audio or video still needs a connected model or creator tool.\n\nPrepared next move: ${nextMove(projects, goals, plans, preparedActions)}`;
   }
 
   const context = memoryLines(relevantMemories);
