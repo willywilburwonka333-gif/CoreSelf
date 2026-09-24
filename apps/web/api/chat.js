@@ -194,11 +194,20 @@ Goals:\n${safeList(identity.goals, (item, index) => `${index + 1}. ${item}`)}
 Communication: ${identity.communication?.voice || 'Not supplied'} ${identity.communication?.preferredOutput || ''}
 Decision rules:\n${safeList(identity.decisionRules, (item, index) => `${index + 1}. ${item}`)}
 Boundaries:\n${safeList(identity.boundaries, (item, index) => `${index + 1}. ${item}`)}` : 'Identity Core not supplied.';
+  const privateIdentitySection = identity.privateContext
+    ? Object.entries(identity.privateContext)
+      .filter(([, items]) => Array.isArray(items) && items.length)
+      .map(([section, items]) => `${section}:\n${items.map((item, index) => `${index + 1}. ${item}`).join('\n')}`)
+      .join('\n\n')
+    : 'No private Seed Vault context loaded.';
 
   return `CORE CONTEXT PACK — ALWAYS USE THIS BEFORE ANSWERING
 
 CONFIRMED DYLAN IDENTITY CORE:
 ${identitySection}
+
+PRIVATE DYLAN SEED VAULT:
+${privateIdentitySection}
 
 Permanent Dylan seed memory:
 ${seedMemory}
