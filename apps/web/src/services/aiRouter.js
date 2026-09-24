@@ -1,4 +1,4 @@
-import { coreReply } from './coreReply';
+import { buildOfflineReply } from './offlineBrain';
 import { loadToolRegistry, buildToolReadiness } from './toolRegistry';
 import { buildCapabilityContext } from './capabilityMatrix';
 import { buildOrchestratorPlan } from './orchestratorEngine';
@@ -292,22 +292,6 @@ async function callCoreApi(payload) {
   return data;
 }
 
-function codingAwareFallback(input, mode, relevantMemories) {
-  if (wantsCodingHelp(input)) {
-    return `Yes. I can help with this build.
-
-What I can do:
-1. identify the exact files/layer,
-2. write replacement code,
-3. give build/deploy/commit commands,
-4. diagnose screenshots and terminal errors,
-5. keep changes small and shippable.
-
-Next step: send the latest ZIP, file, screenshot, or error and I’ll turn it into exact replacements.`;
-  }
-  return coreReply(input, mode, relevantMemories);
-}
-
 export async function routeCoreRequest({ input, mode, memories = [], projects = [], goals = [], plans = [], messages = [], deepThink = false }) {
   const mergedMemories = mergeSeeds(SEED_MEMORIES, memories);
   const mergedProjects = mergeSeeds(SEED_PROJECTS, projects);
@@ -367,22 +351,24 @@ export async function routeCoreRequest({ input, mode, memories = [], projects = 
       relevantMemories,
     };
   } catch (error) {
+    const identityProfile = ensureIdentityProfile();
+    const offlineReply = buildOfflineReply({
+      input,
+      mode,
+      relevantMemories,
+      projects: mergedProjects,
+      goals: mergedGoals,
+      plans: mergedPlans,
+      identityProfile,
+      preparedActions: context.preparedActions,
+      reason: error.message,
+    });
     return {
       mode,
       provider: 'local-fallback',
       model: 'offline-core-reply',
       confidence: 0.48,
-      reply: `${codingAwareFallback(input, mode, relevantMemories)}
-
-Core AI note: real AI failed safely.
-
-Status: ${error.message}
-
-What to check:
-1. Vercel has OPENAI_API_KEY on the current deployment.
-2. The deployment was redeployed after adding/changing the key.
-3. OpenAI API billing/credits are active.
-4. The selected model is available.`,
+      reply: offlineReply,
       source: 'local-fallback',
       routeProfile: routeProfileFor(input, deepThink),
       preparedActions: context.preparedActions || [],
