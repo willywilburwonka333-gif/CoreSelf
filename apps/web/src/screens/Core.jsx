@@ -99,6 +99,17 @@ export default function Core() {
         </article>
       ))}
 
+      <article className="constitution">
+        <h3>Private Dylan Seed Vault</h3>
+        <p className="muted">Imported personal context. This is stored in your Core data, not required in the public source repository.</p>
+        {Object.entries(profile.privateContext || {}).map(([section, items]) => (
+          <details key={section}>
+            <summary>{section.replace(/([A-Z])/g, ' $1').replace(/^./, (letter) => letter.toUpperCase())} ({Array.isArray(items) ? items.length : 0})</summary>
+            {Array.isArray(items) && items.length ? <ul>{items.map((item) => <li key={item}>{item}</li>)}</ul> : <p className="muted">No private context imported for this section.</p>}
+          </details>
+        ))}
+      </article>
+
       <h2>Core Constitution</h2>
       <article className="constitution">
         <h3>{constitution.coreName}</h3>
