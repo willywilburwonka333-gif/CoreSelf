@@ -33,6 +33,9 @@ function matching(items = [], input = '') {
 
 function privateFacts(profile = {}, section, input = '') {
   const items = profile.privateContext?.[section] || [];
+  if (section === 'relationships' && !/\b(jen|kayla|hazel|rubie|macie|wife|daughter)\b/i.test(input)) {
+    return items.slice(0, 4).map(textOf).filter(Boolean);
+  }
   const matches = matching(items, input);
   return (matches.length ? matches : items).slice(0, 4).map(textOf).filter(Boolean);
 }
@@ -82,8 +85,8 @@ export function buildOfflineReply({
   const identityQuery = /\b(who am i|about me|know about me|my identity|what do you know)\b/.test(lower);
   const nextQuery = /\b(what next|what should i do|next step|priority|prioritise|prioritize|today)\b/.test(lower);
   const memoryQuery = /\b(remember|save this|memory|forget)\b/.test(lower);
-  const projectQuery = /\b(project|core self|the system|empath|wilbur|dungeon)\b/.test(lower);
-  const goalQuery = /\b(goal|future|income|freedom|career)\b/.test(lower);
+  const projectQuery = /\b(projects?|core self|the system|empath|wilbur|dungeon)\b/.test(lower);
+  const goalQuery = /\b(goals?|future|income|freedom|career)\b/.test(lower);
   const decisionQuery = /\b(should i|decide|choice|option|why)\b/.test(lower);
   const codingQuery = /\b(code|build|fix|debug|deploy|github|firebase|vercel|app)\b/.test(lower);
   const creatorQuery = /\b(song|lyrics|music|album|series|story|film|creative)\b/.test(lower);
