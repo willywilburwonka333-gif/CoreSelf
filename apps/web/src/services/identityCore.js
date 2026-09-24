@@ -41,6 +41,47 @@ export const DEFAULT_IDENTITY_PROFILE = {
     'Exact files, commands and verification for technical work',
     'Continuity across conversations and projects',
   ],
+  creativeProfile: {
+    identity: [
+      'Wilbur Wonka is Dylan Corr’s original Australian hybrid artist identity and umbrella studio/business, not merely a music channel.',
+      'The name is Wilbur Wonka. Do not rename him Willy Wonka or use borrowed candy-factory, character or crown imagery.',
+      'Stay Staunch Records is the connected label identity; Wilbur Wonka and Stay Staunch are registered business/brand assets connected to Dylan’s ABN and trademark work.',
+      'Core Self is Wilbur Wonka’s private internal operating intelligence, while THE SYSTEM is a separate public flagship product and universe.',
+    ],
+    process: [
+      'Dylan is the songwriter, creative director and vocalist. AI assists production and currently improves his voice; the long-term aim is to record full raw vocals and use AI to enhance rather than replace the performance.',
+      'Dylan experiments across genres until the emotion, story, vocal energy and sound match the exact vision. This is human-led, AI-assisted hybrid artistry.',
+      'Songs should come from Dylan’s life, nearby people’s experiences, empathy for silent suffering and a drive toward hope, understanding or practical change.',
+    ],
+    sound: [
+      'Core lane: Australian hip-hop and alternative music with cinematic, theatrical, electronic, rock and genre-fusion experiments.',
+      'Reference points include Ren, Eminem, Hopsin, Joyner Lucas, Logic, Mac Miller, Hilltop Hoods, Briggs, Busta Rhymes, Tech N9ne, 360, Kerser, Fall Out Boy and Panic! at the Disco.',
+      'The signature target is recognisably Dylan: raw Australian language, personal detail, technical and multisyllabic rhyme, addictive hooks, dark truth, unusual concepts and an earned hopeful or actionable ending.',
+    ],
+    writingRules: [
+      'Never produce generic AI lyrics or flatten Dylan’s unusual, painful and empathetic voice.',
+      'For Suno, lyrics must be paste-ready and normally as close as practical to—but never above—5,000 characters including headings, labels, spaces and line breaks.',
+      'When Dylan requests a shorter limit such as 1,000 characters, count it and stay below that exact limit.',
+      'Preserve Dylan’s intended facts, viewpoint and narrative continuity; do not replace requested details with safer-sounding generic filler.',
+    ],
+    catalogue: [
+      'Dylan created roughly eighty songs in about two weeks and built a fifty-song THE SYSTEM training soundtrack.',
+      'Aussie Battler is a twelve-track released project distributed across major music platforms.',
+      'The self-titled WILBUR WONKA project is the first album centred on Dylan’s own voice and the person behind the artist identity.',
+      'The Ill Mind of an Empath is a proposed thirty-track fusion of VERSUS and WILBURVERSE material.',
+      'Music also supports THE SYSTEM, Dungeon Protocol and THE EMPATH as part of Wilbur Wonka’s wider transmedia studio.',
+    ],
+    personas: [
+      'Dylan is the empathetic human core and is explored as Envy; Wilbur is Pride, confidence, backbone and execution.',
+      'The Ringmaster is Greed through mastery, calculation and hunger for knowledge; Beast is controlled, productive Wrath.',
+      'Working personas include Cock for Lust, Wanker for Gluttony/depression/obsession and Arse for Sloth/apathy.',
+    ],
+    publicChannels: [
+      'Spotify artist ID: 4VTvEf3GI9H4bClkrNt2I9.',
+      'Apple Music artist path: /6794524149.',
+      'YouTube channel ID: UCozvPWDloFIm_gvRfBLB3TA.',
+    ],
+  },
   goals: [
     'Become the highest possible version of Dylan without losing who he is',
     'Create sustainable income and more time with family',
@@ -102,6 +143,10 @@ function mergeProfile(base, saved) {
     values: Array.isArray(saved.values) ? saved.values : base.values,
     traits: Array.isArray(saved.traits) ? saved.traits : base.traits,
     preferences: Array.isArray(saved.preferences) ? saved.preferences : base.preferences,
+    creativeProfile: {
+      ...base.creativeProfile,
+      ...(saved.creativeProfile || {}),
+    },
     goals: Array.isArray(saved.goals) ? saved.goals : base.goals,
     privateContext: {
       ...base.privateContext,
@@ -227,6 +272,7 @@ export function buildIdentityContext(profile = ensureIdentityProfile()) {
     values: profile.values,
     traits: profile.traits,
     preferences: profile.preferences,
+    creativeProfile: profile.creativeProfile,
     goals: profile.goals,
     privateContext: profile.privateContext,
     communication: profile.communication,
