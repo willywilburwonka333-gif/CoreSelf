@@ -190,6 +190,12 @@ Roles:\n${safeList(identity.roles, (item, index) => `${index + 1}. ${item}`)}
 Values:\n${safeList(identity.values, (item, index) => `${index + 1}. ${item}`)}
 Traits:\n${safeList(identity.traits, (item, index) => `${index + 1}. ${item}`)}
 Preferences:\n${safeList(identity.preferences, (item, index) => `${index + 1}. ${item}`)}
+Wilbur Wonka creative identity:\n${safeList(identity.creativeProfile?.identity, (item, index) => `${index + 1}. ${item}`)}
+Creative process:\n${safeList(identity.creativeProfile?.process, (item, index) => `${index + 1}. ${item}`)}
+Signature sound:\n${safeList(identity.creativeProfile?.sound, (item, index) => `${index + 1}. ${item}`)}
+Songwriting rules:\n${safeList(identity.creativeProfile?.writingRules, (item, index) => `${index + 1}. ${item}`)}
+Music catalogue:\n${safeList(identity.creativeProfile?.catalogue, (item, index) => `${index + 1}. ${item}`)}
+Seven-persona system:\n${safeList(identity.creativeProfile?.personas, (item, index) => `${index + 1}. ${item}`)}
 Goals:\n${safeList(identity.goals, (item, index) => `${index + 1}. ${item}`)}
 Communication: ${identity.communication?.voice || 'Not supplied'} ${identity.communication?.preferredOutput || ''}
 Decision rules:\n${safeList(identity.decisionRules, (item, index) => `${index + 1}. ${item}`)}
