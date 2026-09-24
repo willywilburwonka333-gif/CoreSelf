@@ -33,6 +33,17 @@ export const coreSeedMemories = [
     relationshipTags: ['THE SYSTEM', 'apps', 'fitness RPG']
   },
   {
+    id: 'seed-wilbur-wonka-music',
+    title: 'Wilbur Wonka music identity',
+    type: 'Creative Identity',
+    level: 'Permanent',
+    importance: 'Critical',
+    content: 'Wilbur Wonka is Dylan Corr’s original Australian hybrid artist, songwriter, vocalist and umbrella studio identity. Dylan writes and directs the work, uses his own voice with AI-assisted enhancement, and intends to move toward full raw recorded vocals. The music combines personal truth, empathy, Australian hip-hop, alternative, theatrical rock, electronic and cinematic experimentation. Stay Staunch Records is the connected label identity. Never call the artist Willy Wonka or default to borrowed character, candy-factory or crown imagery.',
+    lesson: 'Treat Wilbur Wonka as a serious human-led, AI-assisted artist and studio—not generic AI music. Preserve Dylan’s lived details, unusual concepts, technical rhyme, addictive hooks and hopeful or practical resolution.',
+    futureAction: 'For Suno lyrics, provide paste-ready text as close as practical to but never above 5,000 characters including labels and line breaks, or below any smaller limit Dylan specifies.',
+    relationshipTags: ['Wilbur Wonka', 'Stay Staunch Records', 'music', 'hybrid artist', 'songwriting']
+  },
+  {
     id: 'seed-reality-project',
     title: 'Reality Project / HSET',
     type: 'Research',
