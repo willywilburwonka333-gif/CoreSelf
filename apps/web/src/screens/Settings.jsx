@@ -7,7 +7,7 @@ import { currentCoreUser } from '../services/authService';
 import { productionFirestoreRules, requireApproval } from '../services/securityCore';
 
 export default function Settings() {
-  const [settings, setSettings] = useState(load('settings', defaultSettings));
+  const [settings, setSettings] = useState({ ...defaultSettings, ...load('settings', {}) });
   const [syncStatus, setSyncStatus] = useState('Cloud sync ready.');
   const fileInput = useRef(null);
   const user = currentCoreUser();
@@ -25,7 +25,7 @@ export default function Settings() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'core-self-backup-genesis-0.2.0.json';
+    a.download = 'core-self-backup-genesis-1.2.json';
     a.click();
     URL.revokeObjectURL(url);
     logActivity({ engine: 'Backup', action: 'Exported Core data', detail: 'Local JSON backup created.' });
@@ -63,7 +63,7 @@ export default function Settings() {
   return (
     <section className="screen">
       <h2>Settings</h2>
-      <p className="muted">Genesis 0.2.0 adds Production AI Backend: user-scoped cloud paths, approval gates, blocked dangerous actions, audit logging, and production Firestore rules.</p>
+      <p className="muted">Genesis 1.2 adds the confirmed Dylan Identity Core, learning proposals, identity-aware replies and protected cloud backup.</p>
 
       <div className="list">
         <article>
@@ -119,6 +119,15 @@ export default function Settings() {
             <option>Local only</option>
             <option>Encrypted Cloud — Future</option>
           </select>
+        </article>
+
+        <article>
+          <h3>Identity Context Privacy</h3>
+          <select value={settings.identityContextMode} onChange={(e) => update('identityContextMode', e.target.value)}>
+            <option>Send confirmed identity to AI provider</option>
+            <option>Local only — do not send</option>
+          </select>
+          <p className="muted">Identity-aware replies require sending the confirmed Identity Core with the request. Local-only mode keeps it on this device but makes replies less personalised.</p>
         </article>
 
         <article>

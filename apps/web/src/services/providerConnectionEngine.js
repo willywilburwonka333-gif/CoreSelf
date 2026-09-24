@@ -33,6 +33,40 @@ const PROVIDERS = [
     risk: 'Medium',
   },
   {
+    id: 'gemini-worker',
+    name: 'Gemini Routine Worker',
+    category: 'Brain',
+    env: ['GEMINI_API_KEY', 'GEMINI_MODEL'],
+    optionalEnv: [],
+    statusWhenReady: 'Connected',
+    purpose: 'Optional economical worker for routine chat and structured work, with OpenAI retained for coding, deep reasoning and live web research.',
+    setup: [
+      'Create a paid Google AI API key and keep it server-side.',
+      'Add GEMINI_API_KEY as a Sensitive Vercel environment variable.',
+      'Add GEMINI_MODEL using the exact model ID available to your account.',
+      'Redeploy, then verify the standard route in /api/ai-status.',
+    ],
+    nextAction: 'Run the same routine prompts through Gemini and OpenAI; keep Gemini enabled only if quality and cost improve.',
+    risk: 'Medium',
+  },
+  {
+    id: 'realtime-voice',
+    name: 'Realtime Voice Layer',
+    category: 'Voice',
+    env: ['REALTIME_VOICE_PROVIDER'],
+    optionalEnv: ['OPENAI_REALTIME_MODEL', 'GEMINI_LIVE_MODEL'],
+    statusWhenReady: 'Provider selected; secure session route still required',
+    purpose: 'Future interruptible voice for memory capture, action creation and reading the daily queue while backend agents work.',
+    setup: [
+      'Choose the provider only after a measured GPT Live versus Gemini Live test.',
+      'Create short-lived browser session credentials on a server route; never expose provider API keys.',
+      'Start with capture memory, create action and read queue.',
+      'Require confirmation before any external side effect.',
+    ],
+    nextAction: 'Keep voice disabled until the secure ephemeral-session route and interruption tests exist.',
+    risk: 'High',
+  },
+  {
     id: 'openai-image',
     name: 'Image Generation Provider',
     category: 'Creator',
@@ -206,6 +240,6 @@ export function summarizeProviderStatus(providers = []) {
     creatorMissing: creatorMissing.length,
     mode: connected.length >= 2 ? 'Provider layer mapped' : 'Provider layer pending',
     nextProvider: providers.find((item) => !item.ready)?.name || 'No missing provider detected',
-    recommendation: 'Keep OpenAI + web stable. Image generation route is the first direct creator execution layer. Delay Gmail/Calendar/GitHub write access until approval gates are proven.',
+    recommendation: 'Keep OpenAI for web, coding and deep work. Optionally test Gemini as the routine worker. Do not enable realtime voice or external writes until secure session routes and approval gates are proven.',
   };
 }

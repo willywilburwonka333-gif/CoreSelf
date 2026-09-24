@@ -95,6 +95,16 @@ body::before {
   font-size: 12px;
 }
 
+.offline {
+  color: #ffd166;
+  border: 1px solid rgba(255, 209, 102, 0.32);
+  border-radius: 999px;
+  padding: 8px 11px;
+  background: rgba(255, 209, 102, 0.1);
+  font-weight: 900;
+  font-size: 12px;
+}
+
 .modeBar {
   display: flex;
   gap: 8px;
