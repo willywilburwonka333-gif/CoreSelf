@@ -46,6 +46,19 @@ export const DEFAULT_IDENTITY_PROFILE = {
     'Create sustainable income and more time with family',
     'Turn creative and technical ideas into lasting assets',
   ],
+  privateContext: {
+    relationships: [],
+    personalHistory: [],
+    healthAndNeurodivergence: [],
+    heritageAndIdentity: [],
+    workAndCareer: [],
+    financialReality: [],
+    creativeIdentity: [],
+    projectsAndBusinesses: [],
+    worldview: [],
+    workingPreferences: [],
+    currentPriorities: [],
+  },
   communication: {
     voice: 'Direct, human, practical, warm when needed, never corporate or generic.',
     preferredOutput: 'Lead with the useful answer, then exact next steps. Preserve continuity and do not restart finished work.',
@@ -90,6 +103,10 @@ function mergeProfile(base, saved) {
     traits: Array.isArray(saved.traits) ? saved.traits : base.traits,
     preferences: Array.isArray(saved.preferences) ? saved.preferences : base.preferences,
     goals: Array.isArray(saved.goals) ? saved.goals : base.goals,
+    privateContext: {
+      ...base.privateContext,
+      ...(saved.privateContext || {}),
+    },
     decisionRules: Array.isArray(saved.decisionRules) ? saved.decisionRules : base.decisionRules,
     projects: Array.isArray(saved.projects) ? saved.projects : base.projects,
     boundaries: Array.isArray(saved.boundaries) ? saved.boundaries : base.boundaries,
@@ -211,6 +228,7 @@ export function buildIdentityContext(profile = ensureIdentityProfile()) {
     traits: profile.traits,
     preferences: profile.preferences,
     goals: profile.goals,
+    privateContext: profile.privateContext,
     communication: profile.communication,
     decisionRules: profile.decisionRules,
     boundaries: profile.boundaries,
@@ -220,8 +238,9 @@ export function buildIdentityContext(profile = ensureIdentityProfile()) {
 
 export function identityProgress(profile = ensureIdentityProfile(), memoryCount = 0) {
   const confirmed = Number(profile.development.confirmedLearnings || 0);
+  const privateDepth = Object.values(profile.privateContext || {}).reduce((total, items) => total + (Array.isArray(items) ? items.length : 0), 0);
   const foundations = [profile.roles, profile.values, profile.traits, profile.preferences, profile.goals, profile.decisionRules, profile.boundaries].filter((items) => items?.length).length;
-  const score = Math.min(100, 12 + foundations * 6 + Math.min(24, confirmed * 3) + Math.min(18, memoryCount));
+  const score = Math.min(100, 12 + foundations * 6 + Math.min(18, confirmed * 3) + Math.min(14, memoryCount) + Math.min(14, Math.floor(privateDepth / 3)));
   const stages = profile.development.stages || DEFAULT_IDENTITY_PROFILE.development.stages;
   const currentIndex = Math.max(0, stages.indexOf(profile.development.stage));
   const eligibleToAdvance = score >= Math.min(90, 35 + currentIndex * 12) && currentIndex < stages.length - 1;
