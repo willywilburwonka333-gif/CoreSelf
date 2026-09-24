@@ -62,6 +62,7 @@ function mergeSeedIdentity(existing = {}, incoming = {}) {
     human: { ...(incoming.human || {}), ...(existing.human || {}) },
     communication: { ...(incoming.communication || {}), ...(existing.communication || {}) },
     development: { ...(incoming.development || {}), ...(existing.development || {}) },
+    creativeProfile: { ...(incoming.creativeProfile || {}), ...(existing.creativeProfile || {}) },
     privateContext,
     roles: mergeCollection(existing.roles || [], incoming.roles || []),
     values: mergeCollection(existing.values || [], incoming.values || []),
