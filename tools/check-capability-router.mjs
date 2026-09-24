@@ -38,6 +38,8 @@ const assertions = [
   [identity.includes('DEFAULT_IDENTITY_PROFILE'), 'confirmed Dylan identity profile'],
   [identity.includes("confidence: 'Needs Dylan confirmation'"), 'identity learning confirmation gate'],
   [identity.includes('privateContext'), 'private Dylan Seed Vault support'],
+  [identity.includes('creativeProfile'), 'built-in Wilbur Wonka music profile'],
+  [identity.includes('seed-wilbur-wonka-music') || fs.readFileSync(new URL('../apps/web/src/data/coreSeeds.js', import.meta.url), 'utf8').includes('seed-wilbur-wonka-music'), 'permanent Wilbur Wonka music memory'],
   [talk.includes('addIdentitySuggestion'), 'Talk identity learning loop'],
   [chat.includes('CONFIRMED DYLAN IDENTITY CORE'), 'identity-aware model context'],
   [router.includes('buildOfflineReply'), 'offline rule-engine route'],
