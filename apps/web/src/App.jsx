@@ -46,11 +46,23 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   useEffect(() => observeCoreUser((nextUser) => {
     setUser(nextUser);
     setAuthReady(true);
   }), []);
+
+  useEffect(() => {
+    const online = () => setIsOnline(true);
+    const offline = () => setIsOnline(false);
+    window.addEventListener('online', online);
+    window.addEventListener('offline', offline);
+    return () => {
+      window.removeEventListener('online', online);
+      window.removeEventListener('offline', offline);
+    };
+  }, []);
 
   if (!authReady) {
     return <main className="app"><section className="briefing"><h2>Starting Cloud Brain...</h2><p className="muted">Checking Firebase Auth.</p></section></main>;
@@ -90,7 +102,7 @@ export default function App() {
             <span>Dylan Core Genesis 1.2 • Identity Core</span>
           </div>
         </div>
-        <div className="statusCluster"><span className="online">Core Online</span><button className="iconButton" onClick={() => signOutCore()} title="Sign out"><LogOut size={16} /></button></div>
+        <div className="statusCluster"><span className={isOnline ? 'online' : 'offline'}>{isOnline ? 'Core Online' : 'Offline Core'}</span><button className="iconButton" onClick={() => signOutCore()} title="Sign out"><LogOut size={16} /></button></div>
       </header>
 
       <ModeBar mode={mode} setMode={setMode} />
