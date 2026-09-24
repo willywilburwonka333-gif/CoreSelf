@@ -9,6 +9,8 @@ Genesis 1.3 makes Core Self degrade into a useful local second-self instead of a
 - A service-worker app shell so a previously opened production build can start without the network.
 - Remembered-device offline access after a successful Firebase login.
 - Visible `Offline Core` status and automatic recovery when connectivity returns.
+- A permanent Wilbur Wonka Music Core covering artist/studio identity, human-led AI-assisted process, signature sound, songwriting constraints, catalogue, seven-persona system and public channels.
+- Music/Wilbur questions now route to creative identity online and offline even when the separate private Seed Vault has not been imported.
 
 ## Safety
 
