@@ -7,6 +7,8 @@ const required = [
   'apps/web/api/ai-status.js',
   'apps/web/src/services/identityCore.js',
   'apps/web/src/screens/Core.jsx',
+  'apps/web/src/services/offlineBrain.js',
+  'apps/web/public/sw.js',
 ];
 
 for (const file of required) {
@@ -21,6 +23,9 @@ const chat = fs.readFileSync(new URL('../apps/web/api/chat.js', import.meta.url)
 const status = fs.readFileSync(new URL('../apps/web/api/ai-status.js', import.meta.url), 'utf8');
 const identity = fs.readFileSync(new URL('../apps/web/src/services/identityCore.js', import.meta.url), 'utf8');
 const talk = fs.readFileSync(new URL('../apps/web/src/screens/Talk.jsx', import.meta.url), 'utf8');
+const router = fs.readFileSync(new URL('../apps/web/src/services/aiRouter.js', import.meta.url), 'utf8');
+const offline = fs.readFileSync(new URL('../apps/web/src/services/offlineBrain.js', import.meta.url), 'utf8');
+const serviceWorker = fs.readFileSync(new URL('../apps/web/public/sw.js', import.meta.url), 'utf8');
 
 const assertions = [
   [policy.includes("profile: 'internet'"), 'internet profile'],
@@ -35,6 +40,9 @@ const assertions = [
   [identity.includes('privateContext'), 'private Dylan Seed Vault support'],
   [talk.includes('addIdentitySuggestion'), 'Talk identity learning loop'],
   [chat.includes('CONFIRMED DYLAN IDENTITY CORE'), 'identity-aware model context'],
+  [router.includes('buildOfflineReply'), 'offline rule-engine route'],
+  [offline.includes('privateContext'), 'offline private identity grounding'],
+  [serviceWorker.includes("caches.match('/')"), 'offline app shell'],
 ];
 
 const failed = assertions.filter(([ok]) => !ok).map(([, label]) => label);
