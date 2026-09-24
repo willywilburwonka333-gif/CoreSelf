@@ -32,6 +32,7 @@ const assertions = [
   [status.includes('publicRoutingSummary'), 'safe routing diagnostics'],
   [identity.includes('DEFAULT_IDENTITY_PROFILE'), 'confirmed Dylan identity profile'],
   [identity.includes("confidence: 'Needs Dylan confirmation'"), 'identity learning confirmation gate'],
+  [identity.includes('privateContext'), 'private Dylan Seed Vault support'],
   [talk.includes('addIdentitySuggestion'), 'Talk identity learning loop'],
   [chat.includes('CONFIRMED DYLAN IDENTITY CORE'), 'identity-aware model context'],
 ];
