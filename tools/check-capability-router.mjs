@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { buildOfflineReply } from '../apps/web/src/services/offlineBrain.js';
 
 const required = [
   'apps/web/src/services/modelRoutingPolicy.js',
@@ -26,6 +27,19 @@ const talk = fs.readFileSync(new URL('../apps/web/src/screens/Talk.jsx', import.
 const router = fs.readFileSync(new URL('../apps/web/src/services/aiRouter.js', import.meta.url), 'utf8');
 const offline = fs.readFileSync(new URL('../apps/web/src/services/offlineBrain.js', import.meta.url), 'utf8');
 const serviceWorker = fs.readFileSync(new URL('../apps/web/public/sw.js', import.meta.url), 'utf8');
+const offlineMusicReply = buildOfflineReply({
+  input: 'What do you know about my music and Wilbur Wonka?',
+  identityProfile: {
+    creativeProfile: {
+      identity: ['Wilbur Wonka is Dylan Corr’s original Australian hybrid artist identity.'],
+    },
+  },
+  projects: [{ name: 'Wilbur Wonka', nextAction: 'Review the release plan.' }],
+});
+const offlineProjectReply = buildOfflineReply({
+  input: 'What is next for Core Self?',
+  projects: [{ name: 'Core Self', nextAction: 'Review the release plan.' }],
+});
 
 const assertions = [
   [policy.includes("profile: 'internet'"), 'internet profile'],
@@ -44,6 +58,8 @@ const assertions = [
   [chat.includes('CONFIRMED DYLAN IDENTITY CORE'), 'identity-aware model context'],
   [router.includes('buildOfflineReply'), 'offline rule-engine route'],
   [offline.includes('privateContext'), 'offline private identity grounding'],
+  [offlineMusicReply.includes('original Australian hybrid artist identity'), 'music question uses built-in identity offline'],
+  [offlineProjectReply.includes('Relevant active work'), 'project question still uses project path offline'],
   [serviceWorker.includes("caches.match('/')"), 'offline app shell'],
 ];
 

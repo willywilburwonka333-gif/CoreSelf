@@ -110,6 +110,22 @@ export function buildOfflineReply({
     return `${intro}\n\nI kept your message locally and prepared it for the Memory/Identity review flow. Permanent identity changes still need your confirmation so I do not quietly rewrite who you are.\n\nClosest saved context:\n${memoryLines(relevantMemories).join('\n') || '- No closely matching memory was found yet.'}`;
   }
 
+  if (creatorQuery) {
+    const creative = identityProfile.creativeProfile || {};
+    const builtIn = [
+      ...(creative.identity || []),
+      ...(creative.process || []),
+      ...(creative.sound || []),
+      ...(creative.writingRules || []),
+      ...(creative.catalogue || []),
+      ...(creative.personas || []),
+    ];
+    const matchedBuiltIn = matching(builtIn, input);
+    const facts = privateFacts(identityProfile, 'creativeIdentity', input);
+    const selected = [...matchedBuiltIn, ...facts].filter((item, index, all) => item && all.indexOf(item) === index).slice(0, 10);
+    return `${intro}\n\nWilbur Wonka is not a generic AI artist profile. This is the music identity I have loaded:\n${selected.map((fact) => `- ${textOf(fact)}`).join('\n') || '- Keep the work personal, specific and recognisably Dylan—not generic AI output.'}\n\nI can preserve direction and organise the creative job offline; final generative writing, audio or video still needs a connected model or creator tool.\n\nPrepared next move: ${nextMove(projects, goals, plans, preparedActions)}`;
+  }
+
   if (projectQuery) {
     const matches = matching(projects, input);
     const selected = matches.length ? matches : projects;
@@ -128,22 +144,6 @@ export function buildOfflineReply({
 
   if (codingQuery) {
     return `${intro}\n\nI can still organise the build locally, but I cannot inspect live GitHub, deploy or generate reliable replacement code without a connected model/tool runtime.\n\nSafe offline workflow:\n1. Preserve the latest source of truth.\n2. Record the exact bug or feature and affected screen.\n3. Add the prepared work to Actions.\n4. When connection returns, inspect files, patch, build, check, then deploy only with approval.\n\nPrepared next move: ${nextMove(projects, goals, plans, preparedActions)}`;
-  }
-
-  if (creatorQuery) {
-    const creative = identityProfile.creativeProfile || {};
-    const builtIn = [
-      ...(creative.identity || []),
-      ...(creative.process || []),
-      ...(creative.sound || []),
-      ...(creative.writingRules || []),
-      ...(creative.catalogue || []),
-      ...(creative.personas || []),
-    ];
-    const matchedBuiltIn = matching(builtIn, input);
-    const facts = privateFacts(identityProfile, 'creativeIdentity', input);
-    const selected = [...matchedBuiltIn, ...facts].filter((item, index, all) => item && all.indexOf(item) === index).slice(0, 10);
-    return `${intro}\n\nWilbur Wonka is not a generic AI artist profile. This is the music identity I have loaded:\n${selected.map((fact) => `- ${textOf(fact)}`).join('\n') || '- Keep the work personal, specific and recognisably Dylan—not generic AI output.'}\n\nI can preserve direction and organise the creative job offline; final generative writing, audio or video still needs a connected model or creator tool.\n\nPrepared next move: ${nextMove(projects, goals, plans, preparedActions)}`;
   }
 
   const context = memoryLines(relevantMemories);
