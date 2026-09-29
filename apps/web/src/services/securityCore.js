@@ -2,7 +2,7 @@ import { load, save } from './localStore';
 import { saveKeyToCloud } from './cloudStore';
 import { currentCoreUser } from './authService';
 
-export const SECURITY_VERSION = 'Genesis 0.2.0';
+export const SECURITY_VERSION = 'Genesis 1.2';
 
 export const permissionCatalog = [
   {
@@ -11,6 +11,13 @@ export const permissionCatalog = [
     status: 'Enabled',
     risk: 'Low',
     description: 'Core Self can save memories you create or approve.',
+  },
+  {
+    id: 'identity.write',
+    name: 'Confirmed Identity Write',
+    status: 'Dylan Confirmation Required',
+    risk: 'Medium',
+    description: 'Core Self may propose identity learning, but only Dylan can accept or manually edit confirmed identity.',
   },
   {
     id: 'cloud.sync',

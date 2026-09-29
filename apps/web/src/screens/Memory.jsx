@@ -6,7 +6,7 @@ import { buildRelationshipLinks, detectRelationshipTags } from '../services/rela
 import { defaultProjects, defaultGoals, defaultLifeGraphNodes } from '../data/defaults';
 import { buildMemoryTimeline, classifyLivingMemory, enrichLivingMemory, recallLivingMemory } from '../services/livingMemoryEngine';
 
-const types = ['All', 'Dylan Memory', 'Project', 'Skill', 'Decision', 'Lesson', 'Preference', 'Goal', 'Warning'];
+const types = ['All', 'Dylan Memory', 'Identity', 'Relationship', 'Project', 'Skill', 'Decision', 'Lesson', 'Preference', 'Goal', 'Warning'];
 const levels = ['All', 'Permanent', 'Long-term', 'Active', 'Short-term', 'Archive'];
 const importanceOptions = ['Low', 'Medium', 'High', 'Critical'];
 

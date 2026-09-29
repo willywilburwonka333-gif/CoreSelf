@@ -1,4 +1,4 @@
-import { coreReply } from './coreReply';
+import { buildOfflineReply } from './offlineBrain';
 import { loadToolRegistry, buildToolReadiness } from './toolRegistry';
 import { buildCapabilityContext } from './capabilityMatrix';
 import { buildOrchestratorPlan } from './orchestratorEngine';
@@ -11,6 +11,7 @@ import { retrieveRelevantMemories } from './memoryRetrieval';
 import { load, save } from './localStore';
 import { coreSeedMemories } from '../data/coreSeeds';
 import { defaultGoals, defaultProjects } from '../data/defaults';
+import { buildIdentityContext, ensureIdentityProfile } from './identityCore';
 
 const SEED_MEMORIES = [
   ...coreSeedMemories,
@@ -135,12 +136,14 @@ export function seedCoreSelfData() {
   save('projects', nextProjects);
   save('goals', nextGoals);
   save('plans', nextPlans);
+  const identityProfile = ensureIdentityProfile();
 
   return {
     memories: nextMemories.length,
     projects: nextProjects.length,
     goals: nextGoals.length,
     plans: nextPlans.length,
+    identityStage: identityProfile.development.stage,
   };
 }
 
@@ -204,6 +207,11 @@ function buildContext({ input, mode, projects, goals, plans, messages, relevantM
   const developerPlan = buildDeveloperPlan({ input, projects, memories: relevantMemories });
   const providerMap = buildClientProviderMap();
   const providerSummary = summarizeProviderStatus(providerMap);
+  const identityProfile = ensureIdentityProfile();
+  const settings = load('settings', {});
+  const identityCore = settings.identityContextMode === 'Local only — do not send'
+    ? null
+    : buildIdentityContext(identityProfile);
   const preparedActions = [
     ...buildPreparedActions(input, routeProfile),
     ...(creatorPlan.isCreatorRequest ? creatorPlan.nextActions.map((action) => ({ ...action, status: 'prepared', type: 'creator_workflow', source: 'Creator Platform' })) : []),
@@ -221,6 +229,7 @@ function buildContext({ input, mode, projects, goals, plans, messages, relevantM
   return {
     input,
     mode,
+    identityCore,
     deepThink: Boolean(deepThink),
     routeProfile,
     orchestratorPlan,
@@ -283,22 +292,6 @@ async function callCoreApi(payload) {
   return data;
 }
 
-function codingAwareFallback(input, mode, relevantMemories) {
-  if (wantsCodingHelp(input)) {
-    return `Yes. I can help with this build.
-
-What I can do:
-1. identify the exact files/layer,
-2. write replacement code,
-3. give build/deploy/commit commands,
-4. diagnose screenshots and terminal errors,
-5. keep changes small and shippable.
-
-Next step: send the latest ZIP, file, screenshot, or error and I’ll turn it into exact replacements.`;
-  }
-  return coreReply(input, mode, relevantMemories);
-}
-
 export async function routeCoreRequest({ input, mode, memories = [], projects = [], goals = [], plans = [], messages = [], deepThink = false }) {
   const mergedMemories = mergeSeeds(SEED_MEMORIES, memories);
   const mergedProjects = mergeSeeds(SEED_PROJECTS, projects);
@@ -336,6 +329,7 @@ export async function routeCoreRequest({ input, mode, memories = [], projects = 
       toolRuntime: result.toolRuntime || context.toolReadiness?.runtime || null,
       providerMap: result.providerMap || context.providerMap,
       providerSummary: result.providerSummary || context.providerSummary,
+      identityCore: context.identityCore,
       deepRecommended: Boolean(result.diagnostics?.deepRecommended || wantsDeepReasoning(input) || wantsCodingHelp(input)),
       latencyMs: result.latencyMs || null,
       error: result.internetError || null,
@@ -357,22 +351,24 @@ export async function routeCoreRequest({ input, mode, memories = [], projects = 
       relevantMemories,
     };
   } catch (error) {
+    const identityProfile = ensureIdentityProfile();
+    const offlineReply = buildOfflineReply({
+      input,
+      mode,
+      relevantMemories,
+      projects: mergedProjects,
+      goals: mergedGoals,
+      plans: mergedPlans,
+      identityProfile,
+      preparedActions: context.preparedActions,
+      reason: error.message,
+    });
     return {
       mode,
       provider: 'local-fallback',
       model: 'offline-core-reply',
       confidence: 0.48,
-      reply: `${codingAwareFallback(input, mode, relevantMemories)}
-
-Core AI note: real AI failed safely.
-
-Status: ${error.message}
-
-What to check:
-1. Vercel has OPENAI_API_KEY on the current deployment.
-2. The deployment was redeployed after adding/changing the key.
-3. OpenAI API billing/credits are active.
-4. The selected model is available.`,
+      reply: offlineReply,
       source: 'local-fallback',
       routeProfile: routeProfileFor(input, deepThink),
       preparedActions: context.preparedActions || [],
@@ -384,6 +380,7 @@ What to check:
       toolRuntime: context.toolReadiness?.runtime || null,
       providerMap: context.providerMap,
       providerSummary: context.providerSummary,
+      identityCore: context.identityCore,
       deepRecommended: wantsDeepReasoning(input) || wantsCodingHelp(input) || context.developerPlan?.isDeveloperRequest || context.orchestratorPlan?.intent === 'research_compare',
       latencyMs: null,
       error: error.message,

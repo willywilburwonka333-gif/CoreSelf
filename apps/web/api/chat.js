@@ -1,7 +1,9 @@
 import { buildProviderStatusFromEnv, summarizeProviderStatus } from '../src/services/providerConnectionEngine.js';
+import { chooseProviderRoute } from '../src/services/modelRoutingPolicy.js';
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
 const OPENAI_RESPONSES_URL = 'https://api.openai.com/v1/responses';
-const GENESIS_VERSION = 'milestone-7-image-creator-route';
+const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
+const GENESIS_VERSION = 'genesis-1.2-identity-core';
 
 const DYLAN_SEED_MEMORY = [
   'Dylan Corr is building Core Self / Dylan Core as a persistent digital second self and personal AI operating system.',
@@ -49,6 +51,7 @@ function wantsDeepReasoning(input = '') {
 }
 
 function chooseModel(body = {}) {
+  const routed = chooseProviderRoute({ input: body.input, deepThink: body.deepThink, env: process.env });
   const standardModel = process.env.OPENAI_MODEL || 'gpt-4o-mini';
   const deepModel = process.env.OPENAI_DEEP_MODEL || process.env.OPENAI_REASONING_MODEL || standardModel;
   const webModel = process.env.OPENAI_WEB_MODEL || process.env.OPENAI_MODEL || 'gpt-4o-mini';
@@ -56,9 +59,10 @@ function chooseModel(body = {}) {
   const coding = wantsCodingHelp(body.input);
   const deepRequested = Boolean(body.deepThink);
   const deepRecommended = wantsDeepReasoning(body.input) || coding;
-  const selected = internet ? webModel : (deepRequested ? deepModel : standardModel);
+  const selected = routed.model || (internet ? webModel : (deepRequested ? deepModel : standardModel));
 
   return {
+    ...routed,
     selected,
     standardModel,
     deepModel,
@@ -81,6 +85,9 @@ Maximise Dylan Corr while protecting family, health, money, time, freedom, long-
 
 Permanent behaviour rules:
 - Speak as Dylan Core, not as ChatGPT, OpenAI, or a generic assistant.
+- Treat the supplied Identity Core as the highest-priority personal context after safety and truth. It defines who Dylan is, not merely what he asked today.
+- Preserve Dylan's voice, values, relationships, goals, boundaries and continuity while still challenging weak assumptions honestly.
+- Never invent a personal fact. Distinguish confirmed identity, confirmed memory, inference and uncertainty.
 - Do not ask generic onboarding questions such as "what are your goals?" or "list 3-5 tasks" unless Dylan explicitly asks to brainstorm from zero.
 - Use the supplied Core Context first: seed memory, retrieved memories, projects, goals, plans, mode, knowledge graph, orchestrator plan, tool registry and recent conversation.
 - Start with the useful answer. Keep it tight, direct, and mobile-friendly.
@@ -174,7 +181,39 @@ function buildUserPrompt(body) {
     wantsDeepReasoning(body.input) ? 'Deep Think recommended by router: YES. If not in Deep mode, keep answer concise but mention Deep Think if useful.' : 'Deep Think recommended by router: NO.',
   ].join('\n');
 
+  const identity = body.identityCore || {};
+  const identitySection = identity.identity ? `Identity: ${identity.identity}
+Development stage: ${identity.stage || 'Unknown'}
+Purpose: ${identity.purpose || 'Not supplied'}
+Prime directive: ${identity.primeDirective || 'Not supplied'}
+Roles:\n${safeList(identity.roles, (item, index) => `${index + 1}. ${item}`)}
+Values:\n${safeList(identity.values, (item, index) => `${index + 1}. ${item}`)}
+Traits:\n${safeList(identity.traits, (item, index) => `${index + 1}. ${item}`)}
+Preferences:\n${safeList(identity.preferences, (item, index) => `${index + 1}. ${item}`)}
+Wilbur Wonka creative identity:\n${safeList(identity.creativeProfile?.identity, (item, index) => `${index + 1}. ${item}`)}
+Creative process:\n${safeList(identity.creativeProfile?.process, (item, index) => `${index + 1}. ${item}`)}
+Signature sound:\n${safeList(identity.creativeProfile?.sound, (item, index) => `${index + 1}. ${item}`)}
+Songwriting rules:\n${safeList(identity.creativeProfile?.writingRules, (item, index) => `${index + 1}. ${item}`)}
+Music catalogue:\n${safeList(identity.creativeProfile?.catalogue, (item, index) => `${index + 1}. ${item}`)}
+Seven-persona system:\n${safeList(identity.creativeProfile?.personas, (item, index) => `${index + 1}. ${item}`)}
+Goals:\n${safeList(identity.goals, (item, index) => `${index + 1}. ${item}`)}
+Communication: ${identity.communication?.voice || 'Not supplied'} ${identity.communication?.preferredOutput || ''}
+Decision rules:\n${safeList(identity.decisionRules, (item, index) => `${index + 1}. ${item}`)}
+Boundaries:\n${safeList(identity.boundaries, (item, index) => `${index + 1}. ${item}`)}` : 'Identity Core not supplied.';
+  const privateIdentitySection = identity.privateContext
+    ? Object.entries(identity.privateContext)
+      .filter(([, items]) => Array.isArray(items) && items.length)
+      .map(([section, items]) => `${section}:\n${items.map((item, index) => `${index + 1}. ${item}`).join('\n')}`)
+      .join('\n\n')
+    : 'No private Seed Vault context loaded.';
+
   return `CORE CONTEXT PACK — ALWAYS USE THIS BEFORE ANSWERING
+
+CONFIRMED DYLAN IDENTITY CORE:
+${identitySection}
+
+PRIVATE DYLAN SEED VAULT:
+${privateIdentitySection}
 
 Permanent Dylan seed memory:
 ${seedMemory}
@@ -394,6 +433,55 @@ async function callOpenAiChat({ model, body }) {
   };
 }
 
+async function callGeminiChat({ model, body }) {
+  if (!process.env.GEMINI_API_KEY || !model) {
+    const error = new Error('Gemini is not fully configured. GEMINI_API_KEY and GEMINI_MODEL are both required.');
+    error.status = 501;
+    throw error;
+  }
+
+  const geminiResponse = await fetch(`${GEMINI_URL}/${encodeURIComponent(model)}:generateContent`, {
+    method: 'POST',
+    headers: {
+      'x-goog-api-key': process.env.GEMINI_API_KEY,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: buildSystemPrompt() }] },
+      contents: [{ role: 'user', parts: [{ text: buildUserPrompt(body) }] }],
+      generationConfig: {
+        temperature: body.deepThink ? 0.25 : 0.32,
+        maxOutputTokens: body.deepThink ? 1100 : 750,
+      },
+    }),
+  });
+
+  const data = await geminiResponse.json().catch(() => ({}));
+  if (!geminiResponse.ok) {
+    const message = data?.error?.message || `Gemini request failed with status ${geminiResponse.status}.`;
+    const error = new Error(message);
+    error.status = geminiResponse.status;
+    error.data = data;
+    throw error;
+  }
+
+  const reply = (data.candidates?.[0]?.content?.parts || [])
+    .map((part) => part.text)
+    .filter(Boolean)
+    .join('\n')
+    .trim();
+
+  return {
+    data,
+    reply,
+    usage: data.usageMetadata || null,
+    internetUsed: false,
+    sources: [],
+    provider: 'gemini',
+    model,
+  };
+}
+
 async function callOpenAiWeb({ body }) {
   const webModel = process.env.OPENAI_WEB_MODEL || process.env.OPENAI_MODEL || 'gpt-4o-mini';
   const webPrompt = `${buildSystemPrompt()}\n\nInternet Scan rules:\n- Use live/current web evidence for the answer.\n- Keep the answer direct and useful for Dylan.\n- Include a short Sources section when sources are available. Use the supplied source titles/URLs; do not invent citations.\n- Do not turn this into generic onboarding.`;
@@ -443,23 +531,25 @@ export default async function handler(request, response) {
 
   const startedAt = Date.now();
   const hasKey = Boolean(process.env.OPENAI_API_KEY);
+  const body = request.body || {};
+  const route = chooseModel(body);
 
-  if (!hasKey) {
+  if (!route.ready) {
     return response.status(501).json({
       provider: 'local-fallback',
       model: 'none',
       source: 'diagnostic',
       reply: null,
-      code: 'MISSING_OPENAI_API_KEY',
-      error: 'OPENAI_API_KEY is missing from this server deployment.',
-      nextAction: 'Add OPENAI_API_KEY in Vercel Project Settings → Environment Variables, then redeploy the latest production deployment.',
-      diagnostics: { hasOpenAIKey: false, deployment: process.env.VERCEL ? 'vercel' : 'local-node', version: GENESIS_VERSION },
+      code: 'MISSING_MODEL_PROVIDER',
+      error: `No configured provider can handle the ${route.profile} route.`,
+      nextAction: route.profile === 'standard'
+        ? 'Add OPENAI_API_KEY, or add both GEMINI_API_KEY and GEMINI_MODEL, then redeploy.'
+        : 'Add OPENAI_API_KEY for web, coding and deep routes, then redeploy.',
+      diagnostics: { hasOpenAIKey: hasKey, routeProfile: route.profile, deployment: process.env.VERCEL ? 'vercel' : 'local-node', version: GENESIS_VERSION },
     });
   }
 
   try {
-    const body = request.body || {};
-    const route = chooseModel(body);
     const providerMap = buildProviderStatusFromEnv(process.env);
     const providerSummary = summarizeProviderStatus(providerMap);
     body.providerMap = body.providerMap || providerMap.map((provider) => ({ id: provider.id, name: provider.name, category: provider.category, status: provider.status, ready: provider.ready, risk: provider.risk, purpose: provider.purpose, nextAction: provider.nextAction }));
@@ -481,7 +571,16 @@ export default async function handler(request, response) {
         selectedModel = route.deepRequested ? route.deepModel : route.standardModel;
       }
     } else {
-      aiResult = await callOpenAiChat({ model, body });
+      try {
+        aiResult = route.provider === 'gemini'
+          ? await callGeminiChat({ model, body })
+          : await callOpenAiChat({ model, body });
+      } catch (primaryError) {
+        if (route.fallbackProvider !== 'openai') throw primaryError;
+        aiResult = await callOpenAiChat({ model: route.standardModel, body });
+        selectedModel = route.standardModel;
+        aiResult.fallbackFrom = route.provider;
+      }
     }
 
     const rawReply = aiResult.reply;
@@ -512,7 +611,7 @@ export default async function handler(request, response) {
       providerMap: body.providerMap || [],
       providerSummary: body.providerSummary || null,
       codingRequest: wantsCodingHelp(body.input),
-      diagnostics: { hasOpenAIKey: true, version: GENESIS_VERSION, providerLayer: providerSummary.mode, selectedModel, routeProfile: body.orchestratorPlan?.intent || route.profile, deepRecommended: route.deepRecommended, codingRequest: route.coding || Boolean(body.developerPlan?.isDeveloperRequest), orchestrator: body.orchestratorPlan?.label || null, developer: body.developerPlan?.requestType || null, runtimeRunnable: body.toolReadiness?.runtime?.runnable || 0 },
+      diagnostics: { hasOpenAIKey: hasKey, version: GENESIS_VERSION, providerLayer: providerSummary.mode, modelProvider: aiResult.provider || route.provider || 'openai', fallbackFrom: aiResult.fallbackFrom || null, selectedModel, routeProfile: body.orchestratorPlan?.intent || route.profile, deepRecommended: route.deepRecommended, codingRequest: route.coding || Boolean(body.developerPlan?.isDeveloperRequest), orchestrator: body.orchestratorPlan?.label || null, developer: body.developerPlan?.requestType || null, runtimeRunnable: body.toolReadiness?.runtime?.runnable || 0 },
     });
   } catch (error) {
     const status = error.status || 500;

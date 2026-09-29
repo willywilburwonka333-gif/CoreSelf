@@ -22,7 +22,7 @@ export const defaultProjects = [
     priority: 'S-Tier',
     engine: 'Identity / Memory / Learning',
     purpose: 'Lifelong AI Core platform, starting with Dylan Core.',
-    nextAction: 'Harden Cloud Brain with Production AI Backend, audit logs, and approval gates.',
+    nextAction: 'Test the Dylan Identity Core, confirm proposed learning, and compare replies against Dylan’s real voice and decisions.',
     familyFreedom: 5,
     wealth: 5,
     health: 3,
@@ -96,13 +96,13 @@ export const defaultLifeGraphNodes = [
 ];
 
 export const engineStatuses = [
-  { name: 'Identity Engine', status: 'Online', progress: 45, next: 'Keep constitution synced with app.' },
+  { name: 'Identity Engine', status: 'Confirmed Identity + Learning Proposals', progress: 68, next: 'Test whether replies preserve Dylan’s voice, values, relationships and priorities.' },
   { name: 'Memory Engine', status: 'Suggestions + AI Context Online', progress: 44, next: 'Use model output to improve extraction and retrieval scoring.' },
   { name: 'Life Graph Engine', status: 'Relationship Links Online', progress: 35, next: 'Make links manually editable.' },
   { name: 'Planning Engine', status: 'Local V1 + AI Context', progress: 26, next: 'Turn plans into tracked tasks and reminders.' },
   { name: 'Decision Engine', status: 'Local Prototype', progress: 22, next: 'Use scoring across all actions.' },
   { name: 'Guardian Engine', status: 'Designed', progress: 12, next: 'Add risk warnings and authority gates.' },
-  { name: 'AI Router', status: 'Real Provider Route Online', progress: 28, next: 'Add OPENAI_API_KEY in Vercel and test real replies.' },
+  { name: 'AI Router', status: 'Capability-Aware Multi-Provider Route', progress: 48, next: 'Measure routine, coding, deep and internet routes by successful outcome.' },
   { name: 'Firestore Layer', status: 'Prepared for memory/plans', progress: 14, next: 'Add Firebase config when ready.' },
   { name: 'Activity Log', status: 'Local', progress: 15, next: 'Log engine actions automatically.' },
   { name: 'Backup System', status: 'Local', progress: 20, next: 'Add cloud backup later.' }
@@ -115,4 +115,5 @@ export const defaultSettings = {
   cloudSync: false,
   dailyBriefingStyle: 'Direct and useful',
   challengeStyle: 'Direct when needed',
+  identityContextMode: 'Send confirmed identity to AI provider',
 };

@@ -18,6 +18,33 @@ export const AI_OS_CAPABILITIES = [
     setup: ['Keep OPENAI_API_KEY active', 'Optional: OPENAI_WEB_MODEL', 'Optional: OPENAI_WEB_TOOL=web_search_preview'],
   },
   {
+    id: 'multi-provider-router',
+    name: 'Capability-Aware Model Router',
+    category: 'Brain',
+    phase: 'Genesis 1.1',
+    status: 'Active; Gemini remains opt-in until both GEMINI_API_KEY and GEMINI_MODEL are configured',
+    purpose: 'Route routine work to a lower-cost worker while reserving web, coding and deep work for the stronger configured path, with automatic fallback.',
+    setup: ['OpenAI remains the safe baseline', 'Optional: add GEMINI_API_KEY and GEMINI_MODEL server-side', 'Compare cost per successful task before changing production defaults'],
+  },
+  {
+    id: 'realtime-voice',
+    name: 'Realtime Voice',
+    category: 'Voice',
+    phase: 'Voice Prototype',
+    status: 'Architecture prepared; not enabled without secure ephemeral sessions',
+    purpose: 'Interruptible spoken memory capture, action creation and queue reading with a backend executor.',
+    setup: ['A/B test available live providers', 'Create server-issued short-lived session credentials', 'Require confirmation before external actions', 'Log tool calls and session outcomes'],
+  },
+  {
+    id: 'agentic-video-understanding',
+    name: 'Agentic Video Understanding',
+    category: 'Vision',
+    phase: 'File Intelligence',
+    status: 'Watchlist; provider adapter and recall evaluation required',
+    purpose: 'Inspect long screen recordings and personal videos selectively while returning timestamped evidence.',
+    setup: ['Add behind the existing file-analysis adapter', 'Test against manually annotated recordings', 'Treat transcripts and frames as untrusted input'],
+  },
+  {
     id: 'memory-os',
     name: 'Persistent Memory OS',
     category: 'Memory',
@@ -103,7 +130,7 @@ export function buildCapabilitySummary(capabilities = AI_OS_CAPABILITIES) {
     categories,
     activeNow: activeNow.length,
     needsExternalSetup: needsExternalSetup.length,
-    nextBuild: 'Wire OpenAI command mode first, then add image/file/developer workers behind server-side routes.',
+    nextBuild: 'Validate the capability-aware router, then prototype secure realtime voice without weakening approval gates.',
   };
 }
 
