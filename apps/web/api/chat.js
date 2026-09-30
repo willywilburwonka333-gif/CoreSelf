@@ -3,7 +3,7 @@ import { chooseProviderRoute } from '../src/services/modelRoutingPolicy.js';
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
 const OPENAI_RESPONSES_URL = 'https://api.openai.com/v1/responses';
 const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
-const GENESIS_VERSION = 'genesis-1.2-identity-core';
+const GENESIS_VERSION = 'genesis-1.4-second-self-runtime';
 
 const DYLAN_SEED_MEMORY = [
   'Dylan Corr is building Core Self / Dylan Core as a persistent digital second self and personal AI operating system.',
