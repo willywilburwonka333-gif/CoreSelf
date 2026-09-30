@@ -90,6 +90,10 @@ export function buildOfflineReply({
   const decisionQuery = /\b(should i|decide|choice|option|why)\b/.test(lower);
   const codingQuery = /\b(code|build|fix|debug|deploy|github|firebase|vercel|app)\b/.test(lower);
   const creatorQuery = /\b(song|lyrics|music|album|series|story|film|creative)\b/.test(lower);
+  const workQuery = /\b(work|job|career|freedom pools|dogman|crane|business development|bdm)\b/.test(lower);
+  const financeQuery = /\b(money|rent|credit|income|finance|financial|wealth|budget)\b/.test(lower);
+  const businessQuery = /\b(business|business lifeline|corrwealth|customer|sales|revenue|company)\b/.test(lower);
+  const worldviewQuery = /\b(believe|values|worldview|principles|empathy|discrimination|animals|ai future)\b/.test(lower);
 
   if (identityQuery && !creatorQuery) {
     const roles = (identityProfile.roles || []).slice(0, 6).map((item) => `- ${textOf(item)}`);
@@ -108,6 +112,29 @@ export function buildOfflineReply({
 
   if (memoryQuery) {
     return `${intro}\n\nI kept your message locally and prepared it for the Memory/Identity review flow. Permanent identity changes still need your confirmation so I do not quietly rewrite who you are.\n\nClosest saved context:\n${memoryLines(relevantMemories).join('\n') || '- No closely matching memory was found yet.'}`;
+  }
+
+  if (workQuery) {
+    const facts = privateFacts(identityProfile, 'workAndCareer', input);
+    const goalsHere = matching(goals, input);
+    return `${intro}\n\nCareer context I still have locally:\n${facts.map((fact) => `- ${fact}`).join('\n') || '- Your private work/career seed has not been imported on this device.'}\n\nConnected goals:\n${goalLines(goalsHere.length ? goalsHere : goals).slice(0, 3).join('\n') || '- Build income, reusable skill and freedom without sacrificing family stability.'}\n\nBest next move: ${nextMove(projects, goalsHere.length ? goalsHere : goals, plans, preparedActions)}`;
+  }
+
+  if (financeQuery) {
+    const facts = privateFacts(identityProfile, 'financialReality', input);
+    return `${intro}\n\nFinancial context available offline:\n${facts.map((fact) => `- ${fact}`).join('\n') || '- Your private financial seed has not been imported on this device.'}\n\nI can use saved context and planning rules offline, but I cannot verify balances, prices, credit files or live financial data without a connection.\n\nBest next move: ${nextMove(projects, goals, plans, preparedActions)}`;
+  }
+
+  if (businessQuery) {
+    const facts = privateFacts(identityProfile, 'projectsAndBusinesses', input);
+    const matches = matching(projects, input);
+    return `${intro}\n\nBusiness/project context available locally:\n${facts.map((fact) => `- ${fact}`).join('\n') || '- Your private business seed has not been imported on this device.'}\n\nActive work:\n${projectLines(matches.length ? matches : projects).slice(0, 4).join('\n') || '- No matching stored project.'}\n\nBest next move: ${nextMove(matches.length ? matches : projects, goals, plans, preparedActions)}`;
+  }
+
+  if (worldviewQuery) {
+    const facts = privateFacts(identityProfile, 'worldview', input);
+    const values = (identityProfile.values || []).slice(0, 6).map((item) => `- ${textOf(item)}`);
+    return `${intro}\n\nYour confirmed values and worldview I can use offline:\n${values.join('\n')}\n${facts.map((fact) => `- ${fact}`).join('\n')}\n\nI will separate confirmed identity from inference and keep you as the final authority.`;
   }
 
   if (creatorQuery) {

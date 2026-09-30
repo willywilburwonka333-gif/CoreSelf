@@ -1,5 +1,6 @@
 import { buildPlanningBriefing } from './planningEngine';
 import { buildMemoryTimeline } from './livingMemoryEngine';
+import { buildExecutionLearning, buildDecisionEvidence } from './executionLearningEngine';
 
 function textOf(value = '') {
   return String(value || '').trim();
@@ -63,22 +64,33 @@ function buildProjectReason(project, goals = [], memories = []) {
   return reasons.join(' • ');
 }
 
-export function buildReasoningSnapshot({ memories = [], projects = [], goals = [], plans = [], suggestions = [], activityLog = [], messages = [], queue = [], lifeGraphNodes = [] } = {}) {
+export function buildReasoningSnapshot({ memories = [], projects = [], goals = [], plans = [], suggestions = [], activityLog = [], messages = [], queue = [], lifeGraphNodes = [], outcomes = [] } = {}) {
   const planning = buildPlanningBriefing({ memories, projects, goals, lifeGraphNodes });
   const timeline = buildMemoryTimeline({ memories, messages, activityLog, suggestions }, 10);
   const activeQueue = queue.filter((item) => item.status !== 'Done');
   const themes = inferStrategicThemes({ memories, projects, goals });
+  const executionLearning = buildExecutionLearning(outcomes);
 
   const rankedProjects = projects
     .filter((project) => normalise(project.status) !== 'archived')
     .map((project) => {
-      const score = priorityScore(project.priority || project.tier) + statusPenalty(project.status) + (project.nextAction ? 12 : 0);
+      const evidence = buildDecisionEvidence({
+        title: project.name || project.title,
+        detail: project.purpose,
+        nextStep: project.nextAction,
+        type: 'Project',
+      }, outcomes);
+      const evidenceBonus = evidence.samples >= 4 && evidence.successRate !== null
+        ? Math.round((evidence.successRate - 50) / 5)
+        : 0;
+      const score = priorityScore(project.priority || project.tier) + statusPenalty(project.status) + (project.nextAction ? 12 : 0) + evidenceBonus;
       return {
         id: project.id || project.name,
         title: project.name || project.title || 'Untitled project',
         score,
         nextStep: project.nextAction || 'Define the next concrete action.',
         why: buildProjectReason(project, goals, memories),
+        evidence,
       };
     })
     .sort((a, b) => b.score - a.score)
@@ -107,6 +119,7 @@ export function buildReasoningSnapshot({ memories = [], projects = [], goals = [
   if (activeQueue.length > 6) risks.push('Too many open actions can create noise. Clear or complete low-value items.');
   if (!rankedProjects.length) risks.push('No active project is clearly ranked. Dylan Core needs a stronger target.');
   if (!goals.length) risks.push('No goals are saved. Planning will stay shallow until goals are defined.');
+  if (executionLearning.total > 0 && executionLearning.total < 5) risks.push('Execution learning has a very small sample. Treat behavioural patterns as tentative.');
   if (!risks.length) risks.push('Main risk is execution drift: keep logging decisions so the system can learn.');
 
   return {
@@ -119,6 +132,7 @@ export function buildReasoningSnapshot({ memories = [], projects = [], goals = [
     activeQueueCount: activeQueue.length,
     memoryDepth: memories.length,
     strongestMove: rankedProjects[0]?.nextStep || planning.topPlan?.todayAction || 'Choose and complete one high-value action.',
+    executionLearning,
   };
 }
 

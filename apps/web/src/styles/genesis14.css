@@ -1,0 +1,910 @@
+/* Genesis 1.4 — Second-Self Interface
+   Deliberately layered after main.css so legacy screens inherit the new visual system. */
+
+:root {
+  --void: #02040a;
+  --void-2: #050915;
+  --glass: rgba(8, 15, 30, 0.72);
+  --glass-strong: rgba(6, 12, 26, 0.9);
+  --edge: rgba(133, 213, 255, 0.18);
+  --edge-hot: rgba(122, 225, 255, 0.48);
+  --core-cyan: #7ae1ff;
+  --core-blue: #6f8cff;
+  --core-violet: #b794ff;
+  --core-mint: #72f5c6;
+  --core-gold: #ffd88b;
+  --text: #f4f8ff;
+  --muted: #8da3c7;
+  --panel: var(--glass);
+  --line: var(--edge);
+  --blue: var(--core-cyan);
+  --green: var(--core-mint);
+  --gold: var(--core-gold);
+  --mode: var(--core-cyan);
+}
+
+html { background: var(--void); }
+
+body {
+  min-width: 320px;
+  background:
+    radial-gradient(900px 520px at 10% -10%, rgba(74, 116, 255, .20), transparent 62%),
+    radial-gradient(740px 520px at 92% 6%, rgba(139, 91, 255, .13), transparent 60%),
+    radial-gradient(620px 440px at 56% 46%, rgba(57, 220, 255, .055), transparent 64%),
+    linear-gradient(180deg, #030611 0%, #02040a 65%, #010207 100%);
+  overflow-x: hidden;
+}
+
+body::before {
+  opacity: .62;
+  background-image:
+    linear-gradient(rgba(122, 225, 255, .028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(122, 225, 255, .028) 1px, transparent 1px);
+  background-size: 54px 54px;
+  mask-image: linear-gradient(to bottom, black 0%, rgba(0,0,0,.6) 58%, transparent 100%);
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  z-index: 0;
+  pointer-events: none;
+  width: 46vw;
+  aspect-ratio: 1;
+  left: 50%;
+  top: 20vh;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  border: 1px solid rgba(122, 225, 255, .035);
+  box-shadow:
+    0 0 0 9vw rgba(122, 225, 255, .012),
+    0 0 0 18vw rgba(183, 148, 255, .009);
+}
+
+.app {
+  max-width: 1320px;
+  padding: 18px 22px 130px;
+}
+
+.topbar {
+  position: sticky;
+  top: 12px;
+  z-index: 30;
+  border-radius: 20px;
+  padding: 11px 14px;
+  background: linear-gradient(135deg, rgba(7,14,28,.92), rgba(7,13,27,.72));
+  border: 1px solid rgba(132, 213, 255, .18);
+  box-shadow:
+    0 14px 50px rgba(0,0,0,.38),
+    inset 0 1px 0 rgba(255,255,255,.035);
+  backdrop-filter: blur(28px) saturate(140%);
+}
+
+.topbar::before {
+  content: '';
+  position: absolute;
+  inset: 0 17%;
+  top: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(122,225,255,.8), transparent);
+  opacity: .6;
+}
+
+.brandMark {
+  width: 36px;
+  height: 36px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  color: var(--core-cyan);
+  background: radial-gradient(circle, rgba(122,225,255,.16), rgba(111,140,255,.06));
+  border: 1px solid rgba(122,225,255,.24);
+  box-shadow: 0 0 25px rgba(122,225,255,.09);
+}
+
+.brandMark::after {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border: 1px dashed rgba(122,225,255,.34);
+  border-radius: 8px;
+  animation: microspin 18s linear infinite;
+}
+
+.brand strong {
+  font-size: 12px;
+  letter-spacing: .23em;
+  color: #f3fbff;
+}
+
+.brand span {
+  font-size: 10px;
+  letter-spacing: .045em;
+}
+
+.genesisTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.genesisTag i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--core-cyan);
+  box-shadow: 0 0 12px var(--core-cyan);
+}
+
+.modeBar {
+  position: relative;
+  z-index: 5;
+  padding: 12px 2px 14px;
+  gap: 7px;
+  scrollbar-width: none;
+}
+
+.modeBar::-webkit-scrollbar { display: none; }
+
+.modeBar button {
+  padding: 9px 13px;
+  border-color: rgba(133,213,255,.13);
+  background: rgba(5,11,24,.6);
+  font-size: 11px;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+  transition: 180ms ease;
+}
+
+.modeBar button:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--mode), transparent 58%);
+  color: var(--text);
+}
+
+.modeBar button.active {
+  color: #020714;
+  background: linear-gradient(135deg, var(--mode), color-mix(in srgb, var(--mode), white 30%));
+  box-shadow: 0 0 28px color-mix(in srgb, var(--mode), transparent 76%);
+}
+
+.commandDeck { padding-top: 2px; }
+
+.commandHero {
+  min-height: 420px;
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(330px, .75fr);
+  gap: 22px;
+  overflow: hidden;
+  border: 1px solid rgba(133,213,255,.18);
+  border-radius: 32px;
+  background:
+    linear-gradient(112deg, rgba(10,18,36,.88), rgba(5,9,20,.74) 52%, rgba(8,13,30,.88)),
+    radial-gradient(circle at 75% 40%, rgba(111,140,255,.12), transparent 38%);
+  box-shadow: 0 38px 110px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.025);
+}
+
+.commandHero::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(122,225,255,.72), rgba(183,148,255,.5), transparent);
+  opacity: .46;
+}
+
+.heroSignal {
+  padding: clamp(28px, 5vw, 66px);
+  align-self: center;
+  position: relative;
+  z-index: 3;
+}
+
+.signalLine {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.signalLine > span {
+  width: 38px;
+  height: 1px;
+  background: var(--core-cyan);
+  box-shadow: 0 0 10px rgba(122,225,255,.8);
+}
+
+.signalLine p {
+  margin: 0;
+  color: var(--core-cyan);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .24em;
+}
+
+.commandHero h1 {
+  margin: 18px 0 14px;
+  max-width: 650px;
+  font-size: clamp(54px, 8vw, 100px);
+  font-weight: 760;
+  letter-spacing: -.075em;
+  line-height: .82;
+  text-shadow: 0 10px 50px rgba(0,0,0,.5);
+}
+
+.commandHero h1 em {
+  font-style: normal;
+  font-weight: 300;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(180,231,255,.76);
+  text-shadow: 0 0 38px rgba(122,225,255,.12);
+}
+
+.heroStatement {
+  max-width: 670px;
+  margin: 0;
+  color: #a9bad3;
+  font-size: clamp(14px, 1.5vw, 18px);
+  line-height: 1.65;
+}
+
+.heroStatusRail {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
+
+.heroStatusRail > div {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+  border: 1px solid rgba(126,215,255,.13);
+  border-radius: 10px;
+  background: rgba(3,8,17,.38);
+  color: #b5c5db;
+  font-size: 10px;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+
+.heroStatusRail svg { color: var(--core-cyan); }
+
+.missionStrip {
+  max-width: 680px;
+  margin-top: 28px;
+  padding: 15px 17px;
+  border-left: 2px solid var(--core-cyan);
+  background: linear-gradient(90deg, rgba(122,225,255,.065), transparent);
+}
+
+.missionStrip span {
+  display: block;
+  color: var(--core-cyan);
+  font-size: 9px;
+  letter-spacing: .2em;
+  font-weight: 900;
+}
+
+.missionStrip strong {
+  display: block;
+  margin-top: 5px;
+  font-size: 18px;
+}
+
+.missionStrip p {
+  margin: 5px 0 0;
+  font-size: 12px;
+}
+
+.coreReactor {
+  min-height: 420px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.reactorGrid {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at center, rgba(122,225,255,.08), transparent 45%),
+    repeating-radial-gradient(circle at center, rgba(122,225,255,.045) 0 1px, transparent 1px 38px);
+  mask-image: radial-gradient(circle, black 25%, transparent 72%);
+}
+
+.reactorGlow {
+  width: 230px;
+  aspect-ratio: 1;
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(122,225,255,.17), rgba(111,140,255,.09) 35%, transparent 70%);
+  filter: blur(12px);
+  animation: corebreathe 4.8s ease-in-out infinite;
+}
+
+.reactorOrbit {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(122,225,255,.18);
+  pointer-events: none;
+}
+
+.reactorOrbit i {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  top: 50%;
+  right: -4px;
+  border-radius: 50%;
+  background: var(--core-cyan);
+  box-shadow: 0 0 16px var(--core-cyan);
+}
+
+.orbitA { width: 290px; height: 290px; animation: spin 16s linear infinite; }
+.orbitB { width: 350px; height: 200px; transform: rotate(58deg); animation: orbitTilt 23s linear infinite; }
+.orbitC { width: 390px; height: 390px; border-style: dashed; opacity: .46; animation: spinreverse 34s linear infinite; }
+
+.coreScoreRing {
+  --core-score: 0deg;
+  width: 210px;
+  height: 210px;
+  z-index: 4;
+  position: relative;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: conic-gradient(var(--core-cyan) var(--core-score), rgba(122,225,255,.075) 0);
+  filter: drop-shadow(0 0 26px rgba(122,225,255,.12));
+}
+
+.coreScoreRing::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: #050a16;
+  border: 1px solid rgba(122,225,255,.2);
+}
+
+.coreScoreInner {
+  width: 164px;
+  height: 164px;
+  z-index: 2;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  border: 1px solid rgba(122,225,255,.12);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(122,225,255,.10), transparent 62%),
+    rgba(3,7,15,.94);
+  box-shadow: inset 0 0 45px rgba(122,225,255,.04);
+}
+
+.coreScoreInner span {
+  color: var(--core-cyan);
+  font-size: 8px;
+  letter-spacing: .22em;
+  font-weight: 900;
+}
+
+.coreScoreInner strong {
+  margin: 6px 0 1px;
+  font-size: 44px;
+  line-height: 1;
+  letter-spacing: -.06em;
+}
+
+.coreScoreInner small {
+  color: var(--muted);
+  font-size: 9px;
+  letter-spacing: .08em;
+}
+
+.reactorLabel {
+  position: absolute;
+  bottom: 40px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #9eb1cc;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .16em;
+}
+
+.reactorLabel svg { color: var(--core-cyan); }
+
+.telemetryGrid {
+  margin: 14px 0;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+}
+
+.telemetryMetric {
+  position: relative;
+  min-height: 88px;
+  overflow: hidden;
+  padding: 13px 14px;
+  border: 1px solid rgba(133,213,255,.13);
+  border-radius: 16px;
+  background: rgba(6,12,25,.64);
+}
+
+.telemetryMetric::after {
+  content: '';
+  width: 70%;
+  height: 1px;
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, var(--core-cyan), transparent);
+  opacity: .4;
+}
+
+.telemetryMetric > span {
+  display: block;
+  color: #7186aa;
+  font-size: 8px;
+  letter-spacing: .16em;
+  font-weight: 900;
+}
+
+.telemetryMetric > strong {
+  display: block;
+  margin: 4px 0 1px;
+  font-size: 25px;
+  letter-spacing: -.04em;
+}
+
+.telemetryMetric > small {
+  color: #788cab;
+  font-size: 9px;
+}
+
+.deckGrid {
+  display: grid;
+  grid-template-columns: 1.12fr .88fr;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.lowerDeck { grid-template-columns: 1fr 1fr; }
+
+.neuralPanel {
+  position: relative;
+  overflow: hidden;
+  padding: 20px;
+  border: 1px solid rgba(133,213,255,.14);
+  border-radius: 22px;
+  background:
+    linear-gradient(145deg, rgba(9,16,32,.82), rgba(5,10,21,.69)),
+    rgba(7,12,26,.72);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.022), 0 18px 54px rgba(0,0,0,.17);
+}
+
+.neuralPanel::before {
+  content: '';
+  width: 180px;
+  height: 180px;
+  position: absolute;
+  right: -80px;
+  top: -100px;
+  border: 1px solid rgba(122,225,255,.055);
+  border-radius: 50%;
+  box-shadow: 0 0 0 28px rgba(122,225,255,.012);
+  pointer-events: none;
+}
+
+.panelHeading {
+  min-height: 31px;
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: start;
+  margin-bottom: 17px;
+}
+
+.panelHeading > div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--core-cyan);
+}
+
+.panelHeading span {
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: .18em;
+}
+
+.panelHeading > strong {
+  max-width: 55%;
+  color: #748aaa;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-align: right;
+}
+
+.capabilityRows { display: grid; gap: 11px; }
+
+.capabilityRow > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #9eb0ca;
+  font-size: 10px;
+}
+
+.capabilityRow > div:first-child strong {
+  color: #dcecff;
+  font-size: 10px;
+}
+
+.neuralBar {
+  height: 5px;
+  margin-top: 5px;
+  overflow: hidden;
+  border: 1px solid rgba(133,213,255,.09);
+  border-radius: 999px;
+  background: rgba(255,255,255,.025);
+}
+
+.neuralBar i {
+  display: block;
+  height: 100%;
+  position: relative;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--core-blue), var(--core-cyan), var(--core-mint));
+  box-shadow: 0 0 12px rgba(122,225,255,.24);
+}
+
+.neuralBar i::after {
+  content: '';
+  width: 25px;
+  height: 100%;
+  position: absolute;
+  right: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.5));
+}
+
+.runtimeLoop {
+  position: relative;
+  display: grid;
+  gap: 8px;
+}
+
+.runtimeLoop::before {
+  content: '';
+  position: absolute;
+  left: 14px;
+  top: 23px;
+  bottom: 23px;
+  width: 1px;
+  background: linear-gradient(var(--core-cyan), rgba(111,140,255,.12));
+}
+
+.loopNode {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 29px 1fr;
+  gap: 11px;
+  align-items: start;
+  padding: 8px 0;
+}
+
+.loopNode > b {
+  width: 29px;
+  height: 29px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #061020;
+  border: 1px solid rgba(122,225,255,.28);
+  color: var(--core-cyan);
+  font-size: 8px;
+  box-shadow: 0 0 16px rgba(122,225,255,.06);
+}
+
+.loopNode span { color: #ecf6ff; font-size: 12px; font-weight: 900; }
+.loopNode small { margin-left: 7px; color: var(--core-mint); font-size: 8px; text-transform: uppercase; letter-spacing: .12em; }
+.loopNode p { margin: 3px 0 0; font-size: 10px; line-height: 1.4; }
+
+.priorityStack { display: grid; gap: 8px; }
+
+.priorityNode {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 11px;
+  padding: 12px;
+  border: 1px solid rgba(133,213,255,.09);
+  border-radius: 13px;
+  background: rgba(3,8,18,.35);
+}
+
+.priorityNode > b {
+  color: rgba(122,225,255,.42);
+  font-size: 20px;
+  letter-spacing: -.05em;
+}
+
+.priorityNode strong { font-size: 12px; }
+.priorityNode p { margin: 4px 0; font-size: 10px; }
+.priorityNode small { color: var(--core-cyan); font-size: 8px; text-transform: uppercase; letter-spacing: .1em; }
+
+.bottleneckCore {
+  padding: 17px;
+  border: 1px solid rgba(183,148,255,.14);
+  border-radius: 15px;
+  background: linear-gradient(135deg, rgba(183,148,255,.055), rgba(122,225,255,.025));
+}
+
+.bottleneckCore > span { color: var(--core-violet); font-size: 8px; letter-spacing: .17em; font-weight: 900; }
+.bottleneckCore h3 { margin: 7px 0 5px; font-size: 23px; letter-spacing: -.04em; }
+.bottleneckCore p { margin: 0; font-size: 11px; }
+
+.systemFacts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.systemFacts > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 10px;
+  border-bottom: 1px solid rgba(133,213,255,.08);
+  color: #8095b5;
+  font-size: 9px;
+}
+
+.systemFacts strong { color: #d7e8ff; }
+
+.cortexPanel { margin-top: 14px; }
+
+.cortexGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.cortexProject {
+  min-height: 148px;
+  padding: 13px;
+  border: 1px solid rgba(133,213,255,.09);
+  border-radius: 14px;
+  background: rgba(3,8,18,.32);
+}
+
+.cortexProject > span { color: rgba(122,225,255,.42); font-size: 18px; font-weight: 900; }
+.cortexProject > strong { display: block; margin-top: 8px; font-size: 12px; }
+.cortexProject p { margin: 6px 0; font-size: 10px; line-height: 1.4; }
+.cortexProject small { color: #7185a5; font-size: 8px; line-height: 1.35; }
+
+/* Make legacy screens feel native to the command deck. */
+.screen > h2,
+.talkHeader h2 {
+  font-weight: 650;
+  letter-spacing: -.045em;
+}
+
+.briefing,
+.constitution,
+.cards article,
+.graph article,
+.list article,
+.progressPanel,
+.presenceBanner,
+.securityCard {
+  border-color: rgba(133,213,255,.12);
+  background: linear-gradient(145deg, rgba(9,16,31,.78), rgba(5,10,22,.7));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.018), 0 16px 48px rgba(0,0,0,.15);
+}
+
+.presenceBanner {
+  position: relative;
+  overflow: hidden;
+}
+
+.presenceBanner::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 2px;
+  background: var(--mode);
+  box-shadow: 0 0 12px var(--mode);
+}
+
+input, textarea, select {
+  border-color: rgba(133,213,255,.13);
+  background: rgba(2,7,16,.72);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.015);
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: color-mix(in srgb, var(--mode), transparent 38%);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--mode), transparent 90%);
+}
+
+.nav {
+  width: min(760px, calc(100% - 22px));
+  grid-template-columns: repeat(5, 1fr);
+  bottom: 12px;
+  padding: 7px;
+  border-radius: 19px;
+  border-color: rgba(133,213,255,.18);
+  background: rgba(4,9,20,.88);
+  box-shadow: 0 18px 55px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.03);
+  backdrop-filter: blur(28px) saturate(130%);
+}
+
+.nav button {
+  position: relative;
+  padding: 9px 5px;
+  border-radius: 12px;
+  transition: 160ms ease;
+}
+
+.nav button svg { transition: 160ms ease; }
+
+.nav button.active {
+  color: #e8faff;
+  background: linear-gradient(180deg, rgba(122,225,255,.13), rgba(111,140,255,.07));
+  box-shadow: inset 0 0 0 1px rgba(122,225,255,.16);
+}
+
+.nav button.active::after {
+  content: '';
+  position: absolute;
+  bottom: 3px;
+  width: 18px;
+  height: 1px;
+  border-radius: 99px;
+  background: var(--core-cyan);
+  box-shadow: 0 0 8px var(--core-cyan);
+}
+
+.nav button.active svg {
+  color: var(--core-cyan);
+  filter: drop-shadow(0 0 7px rgba(122,225,255,.4));
+}
+
+.nav button span {
+  font-size: 9px;
+  letter-spacing: .045em;
+}
+
+.moreNavPanel {
+  position: fixed;
+  z-index: 38;
+  left: 50%;
+  bottom: 82px;
+  transform: translateX(-50%);
+  width: min(760px, calc(100% - 22px));
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  padding: 9px;
+  border: 1px solid rgba(133,213,255,.18);
+  border-radius: 18px;
+  background: rgba(4,9,20,.94);
+  box-shadow: 0 22px 70px rgba(0,0,0,.55);
+  backdrop-filter: blur(28px);
+}
+
+.moreNavPanel button {
+  min-height: 58px;
+  display: grid;
+  place-items: center;
+  gap: 4px;
+  border-radius: 10px;
+  color: #8194b4;
+  background: rgba(255,255,255,.018);
+  font-size: 9px;
+}
+
+.moreNavPanel button.active,
+.moreNavPanel button:hover {
+  color: #e9f9ff;
+  background: rgba(122,225,255,.075);
+}
+
+.moreNavPanel button svg { color: var(--core-cyan); }
+
+.online, .offline {
+  font-size: 9px;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  padding: 7px 9px;
+}
+
+.iconButton {
+  padding: 8px;
+  border-color: rgba(133,213,255,.14);
+  background: rgba(255,255,255,.02);
+}
+
+@keyframes microspin { to { transform: rotate(360deg); } }
+@keyframes spinreverse { to { transform: rotate(-360deg); } }
+@keyframes corebreathe {
+  0%,100% { transform: scale(.92); opacity: .65; }
+  50% { transform: scale(1.08); opacity: 1; }
+}
+@keyframes orbitTilt {
+  from { transform: rotate(58deg) rotateZ(0deg); }
+  to { transform: rotate(58deg) rotateZ(360deg); }
+}
+
+@media (max-width: 1000px) {
+  .telemetryGrid { grid-template-columns: repeat(3, 1fr); }
+  .cortexGrid { grid-template-columns: repeat(2, 1fr); }
+  .moreNavPanel { grid-template-columns: repeat(4, 1fr); }
+}
+
+@media (max-width: 760px) {
+  .app { padding: 10px 10px 115px; }
+  .topbar { top: 7px; border-radius: 15px; }
+  .brand span { display: none; }
+  .brandMark { width: 32px; height: 32px; }
+
+  .commandHero {
+    min-height: auto;
+    grid-template-columns: 1fr;
+    border-radius: 22px;
+  }
+
+  .heroSignal { padding: 30px 22px 4px; }
+  .commandHero h1 { font-size: clamp(53px, 17vw, 77px); }
+  .heroStatement { font-size: 13px; }
+  .heroStatusRail { gap: 5px; }
+  .heroStatusRail > div { font-size: 8px; padding: 7px 8px; }
+  .missionStrip { margin-top: 20px; }
+
+  .coreReactor { min-height: 330px; }
+  .coreScoreRing { width: 176px; height: 176px; }
+  .coreScoreInner { width: 138px; height: 138px; }
+  .coreScoreInner strong { font-size: 37px; }
+  .orbitA { width: 242px; height: 242px; }
+  .orbitB { width: 292px; height: 168px; }
+  .orbitC { width: 310px; height: 310px; }
+
+  .telemetryGrid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .telemetryMetric { min-height: 78px; padding: 11px; }
+  .telemetryMetric > strong { font-size: 21px; }
+
+  .deckGrid, .lowerDeck { grid-template-columns: 1fr; }
+  .neuralPanel { padding: 16px; border-radius: 18px; }
+  .cortexGrid { grid-template-columns: 1fr 1fr; }
+
+  .nav { bottom: 8px; border-radius: 16px; }
+  .nav button { padding: 8px 3px; }
+  .moreNavPanel { bottom: 73px; grid-template-columns: repeat(3, 1fr); border-radius: 15px; }
+
+  .systemFacts { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 440px) {
+  .telemetryGrid { grid-template-columns: repeat(2, 1fr); }
+  .cortexGrid { grid-template-columns: 1fr; }
+  .panelHeading { align-items: center; }
+  .panelHeading > strong { max-width: 44%; }
+  .moreNavPanel { grid-template-columns: repeat(3, 1fr); }
+}

@@ -25,7 +25,7 @@ export default function Settings() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'core-self-backup-genesis-1.2.json';
+    a.download = 'core-self-backup-genesis-1.4.json';
     a.click();
     URL.revokeObjectURL(url);
     logActivity({ engine: 'Backup', action: 'Exported Core data', detail: 'Local JSON backup created.' });
@@ -42,7 +42,7 @@ export default function Settings() {
   }
 
   async function pushCloud() {
-    const approval = await requireApproval({ action: 'Push local Core data to Firebase', detail: 'This writes this device memory, projects, goals, messages, settings, and audit log into your signed-in cloud account.', policy: 'cloudWrite' });
+    const approval = await requireApproval({ action: 'Push local Core data to Firebase', detail: 'This writes this device identity, memory, projects, goals, plans, action/runtime state, messages, settings, outcomes and audit history into your signed-in cloud account.', policy: 'cloudWrite' });
     if (!approval.ok) { setSyncStatus(approval.reason); return; }
     setSyncStatus('Pushing local Core data to Firebase...');
     const result = await pushLocalCoreToCloud(exportCoreData());
@@ -63,7 +63,7 @@ export default function Settings() {
   return (
     <section className="screen">
       <h2>Settings</h2>
-      <p className="muted">Genesis 1.2 adds the confirmed Dylan Identity Core, learning proposals, identity-aware replies and protected cloud backup.</p>
+      <p className="muted">Genesis 1.4 integrates the Dylan Identity Core, Memory Brain, Digital Twin, execution learning, Second-Self Runtime, offline Core and protected Cloud Brain state.</p>
 
       <div className="list">
         <article>

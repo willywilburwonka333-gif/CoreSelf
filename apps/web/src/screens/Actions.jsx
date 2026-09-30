@@ -6,10 +6,12 @@ import { buildProactiveSuggestions, buildMorningPriorityStack } from '../service
 import { buildAssistantBehaviourProfile } from '../services/assistantBehaviourEngine';
 import { buildCompressedMemoryIndex, buildMemoryCompressionActions } from '../services/memoryCompressionEngine';
 import { loadToolRegistry, buildToolActions, buildToolReadiness } from '../services/toolRegistry';
+import { buildExecutionLearning, loadExecutionOutcomes, recordExecutionOutcome } from '../services/executionLearningEngine';
 
 export default function Actions() {
   const [queue, setQueue] = useState(load('actionQueue', []));
   const [filter, setFilter] = useState('Open');
+  const [outcomeVersion, setOutcomeVersion] = useState(0);
 
   const memories = load('memories', []);
   const projects = load('projects', defaultProjects);
@@ -27,6 +29,7 @@ export default function Actions() {
   const compressionActions = useMemo(() => buildMemoryCompressionActions(compression), [compression]);
   const toolActions = useMemo(() => buildToolActions(tools), [tools]);
   const toolReadiness = useMemo(() => buildToolReadiness(tools), [tools]);
+  const executionLearning = useMemo(() => buildExecutionLearning(loadExecutionOutcomes()), [outcomeVersion]);
 
   function updateQueue(next) {
     setQueue(next);
@@ -53,8 +56,11 @@ export default function Actions() {
   }
 
   function markDone(action) {
-    const next = queue.map((item) => item.id === action.id ? { ...item, status: 'Done', completedAt: new Date().toISOString() } : item);
+    const completedAt = new Date().toISOString();
+    const next = queue.map((item) => item.id === action.id ? { ...item, status: 'Done', completedAt } : item);
     updateQueue(next);
+    recordExecutionOutcome(action, { success: true, result: 'Completed', completedAt });
+    setOutcomeVersion((value) => value + 1);
     logActivity({ engine: 'Action Engine', action: 'Completed action', detail: action.title });
   }
 
@@ -83,21 +89,40 @@ export default function Actions() {
     <section className="screen">
       <div className="talkHeader">
         <div>
-          <p className="eyebrow">ACTION ENGINE / GENESIS 0.9.2</p>
-          <h2>Proactive Action Queue</h2>
+          <p className="eyebrow">ACTION ENGINE / GENESIS 1.4</p>
+          <h2>Autonomous Task Runtime</h2>
         </div>
         <button className="deepToggle" type="button" onClick={clearDone}>Clear Done</button>
       </div>
 
       <div className="briefing">
-        <h3>Dylan is starting to continue threads</h3>
-        <p>The queue now reads memory, projects, goals, activity and pending suggestions to recommend the next practical move. It still waits for your approval before adding actions.</p>
+        <h3>Controlled autonomy</h3>
+        <p>Core Self can rank, queue, start, finish and learn from internal work. External communication, spending, destructive changes and production writes remain approval-gated.</p>
         <p className="muted">Open: {openCount} • Done: {doneCount} • Suggested now: {proactive.length}</p>
       </div>
 
       <div className="briefing">
         <div className="itemTopline">
-          <h3>Morning Priority Stack</h3>
+          <h3>Execution Learning</h3>
+          <small>{executionLearning.maturity}</small>
+        </div>
+        <p><strong>{executionLearning.total}</strong> recorded outcome(s) • <strong>{executionLearning.successRate}%</strong> successful completion history.</p>
+        {executionLearning.patterns.length ? (
+          <div className="miniScores">
+            {executionLearning.patterns.slice(0, 6).map((pattern) => (
+              <div className="scoreBadge" key={pattern.signal}>
+                <strong>{pattern.successRate}%</strong>
+                <span>{pattern.signal}</span>
+                <small>{pattern.total} sample(s)</small>
+              </div>
+            ))}
+          </div>
+        ) : <p className="muted">Complete actions to start building a behavioural evidence model.</p>}
+      </div>
+
+      <div className="briefing">
+        <div className="itemTopline">
+          <h3>Priority Stack</h3>
           <button type="button" onClick={queueAll}>Queue Stack</button>
         </div>
         {morningStack.length ? morningStack.map((item) => (
@@ -108,7 +133,6 @@ export default function Actions() {
           </div>
         )) : <p className="muted">No proactive priority stack yet. Add goals, projects, memories, or pending suggestions.</p>}
       </div>
-
 
       <div className="briefing">
         <h3>Companion Loop Guardrails</h3>
@@ -167,7 +191,7 @@ export default function Actions() {
         {!filteredQueue.length && (
           <article>
             <strong>No queued actions yet.</strong>
-            <p>Use the proactive suggestions above to create your first live action stack.</p>
+            <p>Use the proactive suggestions above to create the first live action stack.</p>
           </article>
         )}
 
@@ -182,7 +206,7 @@ export default function Actions() {
             {action.source && <small>Source: {action.source}</small>}
             <div className="miniActionButtons">
               {action.status !== 'In Progress' && action.status !== 'Done' && <button type="button" onClick={() => markInProgress(action)}>Start</button>}
-              {action.status !== 'Done' && <button type="button" onClick={() => markDone(action)}>Done</button>}
+              {action.status !== 'Done' && <button type="button" onClick={() => markDone(action)}>Done + Learn</button>}
               <button type="button" onClick={() => remove(action)}>Remove</button>
             </div>
           </article>

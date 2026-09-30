@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Activity as ActivityIcon, Brain, Home as HomeIcon, MessageCircle, Database, Network, Sun, Shield, FolderKanban, Target, Cpu, Settings as SettingsIcon, ListChecks, LogOut, ShieldCheck, MoreHorizontal, CheckSquare, Wrench } from 'lucide-react';
+import { Activity as ActivityIcon, BrainCircuit, Home as HomeIcon, MessageCircle, Database, Network, Sun, Shield, FolderKanban, Target, Cpu, Settings as SettingsIcon, ListChecks, LogOut, ShieldCheck, MoreHorizontal, CheckSquare, Wrench } from 'lucide-react';
 import ModeBar from './components/ModeBar';
 import Home from './screens/Home';
 import Talk from './screens/Talk';
@@ -20,7 +20,7 @@ import AuthPanel from './components/AuthPanel';
 import { observeCoreUser, signOutCore } from './services/authService';
 
 const primaryTabs = [
-  ['home', 'Home', HomeIcon],
+  ['home', 'Core', HomeIcon],
   ['talk', 'Talk', MessageCircle],
   ['memory', 'Memory', Database],
   ['actions', 'Actions', CheckSquare],
@@ -37,7 +37,7 @@ const moreTabs = [
   ['briefing', 'Briefing', Sun],
   ['settings', 'Settings', SettingsIcon],
   ['security', 'Security', ShieldCheck],
-  ['core', 'Core', Shield],
+  ['core', 'Identity', Shield],
 ];
 
 export default function App() {
@@ -65,7 +65,15 @@ export default function App() {
   }, []);
 
   if (!authReady) {
-    return <main className="app"><section className="briefing"><h2>Starting Cloud Brain...</h2><p className="muted">Checking Firebase Auth.</p></section></main>;
+    return (
+      <main className="app">
+        <section className="briefing">
+          <p className="eyebrow">CORE SELF / BOOT SEQUENCE</p>
+          <h2>Starting Dylan Core…</h2>
+          <p className="muted">Restoring identity, memory and Cloud Brain session.</p>
+        </section>
+      </main>
+    );
   }
 
   if (!user) return <AuthPanel />;
@@ -96,13 +104,16 @@ export default function App() {
     <main className={`app mode-${mode.toLowerCase()}`}>
       <header className="topbar">
         <div className="brand">
-          <Brain />
+          <div className="brandMark"><BrainCircuit size={19} /></div>
           <div>
             <strong>CORE SELF</strong>
-            <span>Dylan Core Genesis 1.2 • Identity Core</span>
+            <span className="genesisTag"><i /> Dylan Core · Genesis 1.4 · Second-Self Runtime</span>
           </div>
         </div>
-        <div className="statusCluster"><span className={isOnline ? 'online' : 'offline'}>{isOnline ? 'Core Online' : 'Offline Core'}</span><button className="iconButton" onClick={() => signOutCore()} title="Sign out"><LogOut size={16} /></button></div>
+        <div className="statusCluster">
+          <span className={isOnline ? 'online' : 'offline'}>{isOnline ? 'Neural Link Online' : 'Offline Core'}</span>
+          <button className="iconButton" onClick={() => signOutCore()} title="Sign out"><LogOut size={15} /></button>
+        </div>
       </header>
 
       <ModeBar mode={mode} setMode={setMode} />

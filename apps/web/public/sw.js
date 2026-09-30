@@ -1,4 +1,4 @@
-const CACHE_NAME = 'core-self-genesis-1-3';
+const CACHE_NAME = 'core-self-genesis-1-4';
 const CORE_FILES = ['/', '/manifest.webmanifest'];
 
 async function warmAppShell() {
