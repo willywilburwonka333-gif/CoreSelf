@@ -10,8 +10,11 @@ import { buildClientProviderMap, summarizeProviderStatus } from './providerConne
 import { retrieveRelevantMemories } from './memoryRetrieval';
 import { load, save } from './localStore';
 import { coreSeedMemories } from '../data/coreSeeds';
-import { defaultGoals, defaultProjects } from '../data/defaults';
+import { defaultGoals, defaultProjects, defaultLifeGraphNodes } from '../data/defaults';
 import { buildIdentityContext, ensureIdentityProfile } from './identityCore';
+import { buildSecondSelfRuntime } from './selfRuntimeEngine';
+import { buildDigitalTwin } from './digitalTwinEngine';
+import { loadExecutionOutcomes } from './executionLearningEngine';
 
 const SEED_MEMORIES = [
   ...coreSeedMemories,
@@ -209,6 +212,33 @@ function buildContext({ input, mode, projects, goals, plans, messages, relevantM
   const providerSummary = summarizeProviderStatus(providerMap);
   const identityProfile = ensureIdentityProfile();
   const settings = load('settings', {});
+  const lifeGraphNodes = load('lifeGraphNodes', defaultLifeGraphNodes);
+  const queue = load('actionQueue', []);
+  const suggestions = load('memorySuggestions', []);
+  const activityLog = load('activityLog', []);
+  const outcomes = loadExecutionOutcomes();
+  const runtimeMemories = load('memories', []);
+  const secondSelfRuntime = buildSecondSelfRuntime({
+    memories: runtimeMemories,
+    projects,
+    goals,
+    plans,
+    suggestions,
+    activityLog,
+    messages,
+    queue,
+    lifeGraphNodes,
+    identityProfile,
+    tools,
+  });
+  const digitalTwin = buildDigitalTwin({
+    profile: identityProfile,
+    memories: runtimeMemories,
+    projects,
+    goals,
+    lifeGraphNodes,
+    outcomes,
+  });
   const identityCore = settings.identityContextMode === 'Local only — do not send'
     ? null
     : buildIdentityContext(identityProfile);
@@ -243,6 +273,27 @@ function buildContext({ input, mode, projects, goals, plans, messages, relevantM
     capabilityMap: buildCapabilityContext(),
     providerMap,
     providerSummary,
+    secondSelfRuntime: {
+      status: secondSelfRuntime.status,
+      scores: secondSelfRuntime.scores,
+      weakest: secondSelfRuntime.weakest,
+      metrics: secondSelfRuntime.metrics,
+      loop: secondSelfRuntime.loop,
+      currentMission: secondSelfRuntime.currentMission,
+      strongestMove: secondSelfRuntime.strongestMove,
+    },
+    digitalTwin: {
+      coverage: digitalTwin.coverage,
+      weakest: digitalTwin.weakest,
+      domains: digitalTwin.domains.map((domain) => ({ id: domain.id, label: domain.label, score: domain.score, evidence: domain.evidence })),
+      strongestEntities: digitalTwin.relationshipMap.strongestEntities,
+      executionLearning: {
+        total: digitalTwin.execution.total,
+        successRate: digitalTwin.execution.successRate,
+        maturity: digitalTwin.execution.maturity,
+        patterns: digitalTwin.execution.patterns.slice(0, 8),
+      },
+    },
     deepRecommended: wantsDeepReasoning(input) || wantsCodingHelp(input) || developerPlan.isDeveloperRequest || orchestratorPlan.intent === 'research_compare',
     codingRequest: wantsCodingHelp(input),
     internetNeeded: wantsLiveInternet(input) || orchestratorPlan.shouldUseWeb,
