@@ -47,6 +47,7 @@ export default function App() {
   const [authReady, setAuthReady] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const testMode = import.meta.env.VITE_CORE_SELF_TEST_MODE === '1';
 
   useEffect(() => observeCoreUser((nextUser) => {
     setUser(nextUser);
@@ -64,7 +65,7 @@ export default function App() {
     };
   }, []);
 
-  if (!authReady) {
+  if (!authReady && !testMode) {
     return (
       <main className="app">
         <section className="briefing">
@@ -76,7 +77,7 @@ export default function App() {
     );
   }
 
-  if (!user) return <AuthPanel />;
+  if (!user && !testMode) return <AuthPanel />;
 
   const screen =
     tab === 'home' ? <Home mode={mode} /> :
@@ -111,8 +112,8 @@ export default function App() {
           </div>
         </div>
         <div className="statusCluster">
-          <span className={isOnline ? 'online' : 'offline'}>{isOnline ? 'Neural Link Online' : 'Offline Core'}</span>
-          <button className="iconButton" onClick={() => signOutCore()} title="Sign out"><LogOut size={15} /></button>
+          <span className={testMode ? 'offline' : (isOnline ? 'online' : 'offline')}>{testMode ? 'GitHub Test Mode' : (isOnline ? 'Neural Link Online' : 'Offline Core')}</span>
+          {!testMode && <button className="iconButton" onClick={() => signOutCore()} title="Sign out"><LogOut size={15} /></button>}
         </div>
       </header>
 
