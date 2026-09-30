@@ -23,7 +23,7 @@ function privateDepth(profile = {}) {
   return Object.values(profile.privateContext || {}).reduce((sum, items) => sum + (Array.isArray(items) ? items.length : 0), 0);
 }
 
-function buildCapabilityScores({ profile, memories, projects, goals, plans, queue, tools, relationshipMap, reasoning, compression, stability }) {
+function buildCapabilityScores({ profile, memories, projects, goals, plans, queue, tools, relationshipMap, reasoning, compression, stability, outcomes = [] }) {
   const identity = identityProgress(profile, memories.length);
   const privateFacts = privateDepth(profile);
   const openQueue = active(queue);
@@ -62,6 +62,7 @@ function buildCapabilityScores({ profile, memories, projects, goals, plans, queu
       24
       + Math.min(22, queue.length * 3)
       + Math.min(18, finishedQueue * 4)
+      + Math.min(12, outcomes.length * 2)
       + Math.min(14, plans.length * 4)
       + Math.min(12, openQueue ? 8 : 0)
       + (toolReadiness.executable >= 7 ? 10 : 0)
@@ -142,11 +143,12 @@ export function buildSecondSelfRuntime({
   lifeGraphNodes = [],
   identityProfile,
   tools,
+  outcomes = [],
 } = {}) {
   const profile = identityProfile || ensureIdentityProfile();
   const toolRegistry = tools || loadToolRegistry();
   const reasoning = buildReasoningSnapshot({
-    memories, projects, goals, plans, suggestions, activityLog, messages, queue, lifeGraphNodes,
+    memories, projects, goals, plans, suggestions, activityLog, messages, queue, lifeGraphNodes, outcomes,
   });
   const compression = buildCompressedMemoryIndex({ memories, suggestions, messages, activityLog, queue });
   const relationshipMap = summarizeRelationshipMap({ memories, projects, goals, lifeGraphNodes });
@@ -156,7 +158,7 @@ export function buildSecondSelfRuntime({
   const readiness = buildToolReadiness(toolRegistry);
   const scores = buildCapabilityScores({
     profile, memories, projects, goals, plans, queue, tools: toolRegistry,
-    relationshipMap, reasoning, compression, stability,
+    relationshipMap, reasoning, compression, stability, outcomes,
   });
   const weakest = bottleneck(scores, toolRegistry);
 
