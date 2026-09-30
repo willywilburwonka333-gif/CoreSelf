@@ -6,6 +6,7 @@ const CORE_KEYS = [
   'memories',
   'projects',
   'goals',
+  'plans',
   'lifeGraphNodes',
   'memorySuggestions',
   'activityLog',
@@ -14,6 +15,11 @@ const CORE_KEYS = [
   'auditLog',
   'identityProfile',
   'identitySuggestions',
+  'actionQueue',
+  'toolRegistry',
+  'toolExecutionLog',
+  'operatorWorkLog',
+  'executionOutcomes',
 ];
 
 function fallbackForKey(key) {
@@ -32,7 +38,7 @@ export async function saveKeyToCloud(key, value) {
     key,
     value,
     updatedAt: serverTimestamp(),
-    version: 'Genesis 1.2',
+    version: 'Genesis 1.4',
   }, { merge: true });
   return { ok: true };
 }
