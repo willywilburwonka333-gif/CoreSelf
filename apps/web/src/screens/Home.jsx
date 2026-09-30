@@ -46,7 +46,7 @@ export default function Home({ mode }) {
 
   const runtime = buildSecondSelfRuntime({
     memories, projects, goals, plans, suggestions, activityLog, messages, queue,
-    lifeGraphNodes, identityProfile: profile, tools,
+    lifeGraphNodes, identityProfile: profile, tools, outcomes,
   });
   const learning = buildExecutionLearning(outcomes);
   const scores = runtimeScoreRows(runtime);
