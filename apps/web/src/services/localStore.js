@@ -23,11 +23,12 @@ export function remove(key) {
 
 export function exportCoreData() {
   return {
-    version: 'Genesis 1.2',
+    version: 'Genesis 1.4',
     exportedAt: new Date().toISOString(),
     memories: load('memories', []),
     projects: load('projects', []),
     goals: load('goals', []),
+    plans: load('plans', []),
     lifeGraphNodes: load('lifeGraphNodes', []),
     memorySuggestions: load('memorySuggestions', []),
     activityLog: load('activityLog', []),
@@ -36,6 +37,11 @@ export function exportCoreData() {
     auditLog: load('auditLog', []),
     identityProfile: load('identityProfile', null),
     identitySuggestions: load('identitySuggestions', []),
+    actionQueue: load('actionQueue', []),
+    toolRegistry: load('toolRegistry', []),
+    toolExecutionLog: load('toolExecutionLog', []),
+    operatorWorkLog: load('operatorWorkLog', []),
+    executionOutcomes: load('executionOutcomes', []),
   };
 }
 
@@ -86,15 +92,15 @@ export function importCoreData(data) {
     }
     return;
   }
-  if (Array.isArray(data.memories)) save('memories', data.memories);
-  if (Array.isArray(data.projects)) save('projects', data.projects);
-  if (Array.isArray(data.goals)) save('goals', data.goals);
-  if (Array.isArray(data.lifeGraphNodes)) save('lifeGraphNodes', data.lifeGraphNodes);
-  if (Array.isArray(data.memorySuggestions)) save('memorySuggestions', data.memorySuggestions);
-  if (Array.isArray(data.activityLog)) save('activityLog', data.activityLog);
+
+  const collectionKeys = [
+    'memories', 'projects', 'goals', 'plans', 'lifeGraphNodes', 'memorySuggestions',
+    'activityLog', 'messages', 'auditLog', 'identitySuggestions', 'actionQueue',
+    'toolRegistry', 'toolExecutionLog', 'operatorWorkLog', 'executionOutcomes',
+  ];
+  collectionKeys.forEach((key) => {
+    if (Array.isArray(data[key])) save(key, data[key]);
+  });
   if (data.settings) save('settings', data.settings);
-  if (Array.isArray(data.messages)) save('messages', data.messages);
-  if (Array.isArray(data.auditLog)) save('auditLog', data.auditLog);
   if (data.identityProfile && typeof data.identityProfile === 'object') save('identityProfile', data.identityProfile);
-  if (Array.isArray(data.identitySuggestions)) save('identitySuggestions', data.identitySuggestions);
 }
