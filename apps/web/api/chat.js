@@ -151,7 +151,11 @@ Response style:
 - One clear next step whenever possible.
 - No corporate filler.
 - No fake certainty.
-- No generic self-improvement coaching unless Dylan asks for it.`;
+- No generic self-improvement coaching unless Dylan asks for it.
+- Treat the supplied Second-Self runtime and Digital Twin as live system state, not decoration.
+- Use execution outcomes as evidence, but never mistake a small sample for certainty.
+- When deciding what Dylan would likely do, explain the evidence and preserve Dylan's final authority.
+- Prefer closing the loop: perceive → remember → reason → plan → act safely → reflect → update memory.`;
 }
 
 function buildUserPrompt(body) {
@@ -294,6 +298,27 @@ ${body.providerMap ? safeList(body.providerMap, (provider, index) => `${index + 
 
 Provider summary:
 ${body.providerSummary ? `${body.providerSummary.mode}: ${body.providerSummary.connected || 0}/${body.providerSummary.total || 0} connected/mapped. Next provider: ${body.providerSummary.nextProvider}. Recommendation: ${body.providerSummary.recommendation}` : 'No provider summary supplied.'}
+
+Second-Self runtime:
+${body.secondSelfRuntime ? `Status: ${body.secondSelfRuntime.status}
+Overall maturity: ${body.secondSelfRuntime.scores?.secondSelf || 0}%
+Identity: ${body.secondSelfRuntime.scores?.identity || 0}% | Memory: ${body.secondSelfRuntime.scores?.memory || 0}% | Reasoning: ${body.secondSelfRuntime.scores?.reasoning || 0}% | Operator: ${body.secondSelfRuntime.scores?.operator || 0}% | Autonomy: ${body.secondSelfRuntime.scores?.autonomy || 0}% | Life Graph: ${body.secondSelfRuntime.scores?.lifeGraph || 0}% | Offline: ${body.secondSelfRuntime.scores?.offline || 0}% | Project Intelligence: ${body.secondSelfRuntime.scores?.projectIntelligence || 0}% | Life OS: ${body.secondSelfRuntime.scores?.lifeOS || 0}%
+Current mission: ${body.secondSelfRuntime.currentMission || 'Not set'}
+Strongest next move: ${body.secondSelfRuntime.strongestMove || 'Not set'}
+Weakest layer: ${body.secondSelfRuntime.weakest?.label || 'Unknown'} (${body.secondSelfRuntime.weakest?.score || 0}%). Next: ${body.secondSelfRuntime.weakest?.next || 'Keep learning.'}
+Runtime loop:
+${safeList(body.secondSelfRuntime.loop, (stage, index) => `${index + 1}. ${stage.label} — ${stage.state}: ${stage.detail}`)}` : 'No second-self runtime supplied.'}
+
+Digital twin:
+${body.digitalTwin ? `Coverage: ${body.digitalTwin.coverage || 0}%
+Weakest domain: ${body.digitalTwin.weakest?.label || 'Unknown'} (${body.digitalTwin.weakest?.score || 0}%)
+Domains:
+${safeList(body.digitalTwin.domains, (domain, index) => `${index + 1}. ${domain.label}: ${domain.score}% (${domain.evidence} evidence signals)`)}
+Strongest connected entities:
+${safeList(body.digitalTwin.strongestEntities, (entity, index) => `${index + 1}. ${entity.label} — ${entity.count} link(s), ${entity.averageStrength || 0}% average strength`)}
+Execution learning: ${body.digitalTwin.executionLearning?.maturity || 'No outcome model yet'} • ${body.digitalTwin.executionLearning?.total || 0} outcomes • ${body.digitalTwin.executionLearning?.successRate || 0}% successful
+Patterns:
+${safeList(body.digitalTwin.executionLearning?.patterns, (pattern, index) => `${index + 1}. ${pattern.signal}: ${pattern.successRate}% over ${pattern.total} sample(s)`)}` : 'No digital twin supplied.'}
 
 Runtime flags:
 ${flags}
