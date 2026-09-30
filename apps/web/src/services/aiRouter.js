@@ -230,6 +230,7 @@ function buildContext({ input, mode, projects, goals, plans, messages, relevantM
     lifeGraphNodes,
     identityProfile,
     tools,
+    outcomes,
   });
   const digitalTwin = buildDigitalTwin({
     profile: identityProfile,
