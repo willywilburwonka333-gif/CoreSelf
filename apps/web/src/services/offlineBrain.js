@@ -90,6 +90,10 @@ export function buildOfflineReply({
   const decisionQuery = /\b(should i|decide|choice|option|why)\b/.test(lower);
   const codingQuery = /\b(code|build|fix|debug|deploy|github|firebase|vercel|app)\b/.test(lower);
   const creatorQuery = /\b(song|lyrics|music|album|series|story|film|creative)\b/.test(lower);
+  const workQuery = /\b(work|job|career|freedom pools|dogman|crane|business development|bdm)\b/.test(lower);
+  const financeQuery = /\b(money|rent|credit|income|finance|financial|wealth|budget)\b/.test(lower);
+  const businessQuery = /\b(business|business lifeline|corrwealth|customer|sales|revenue|company)\b/.test(lower);
+  const worldviewQuery = /\b(believe|values|worldview|principles|empathy|discrimination|animals|ai future)\b/.test(lower);
 
   if (identityQuery && !creatorQuery) {
     const roles = (identityProfile.roles || []).slice(0, 6).map((item) => `- ${textOf(item)}`);
