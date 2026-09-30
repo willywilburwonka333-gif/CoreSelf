@@ -1,0 +1,63 @@
+name: Genesis 1.4 Phone Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/**'
+      - 'tools/**'
+      - '.github/workflows/genesis-phone-test.yml'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: core-self-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout CoreSelf
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Regression checks
+        working-directory: apps/web
+        run: npm run check
+
+      - name: Build isolated phone test
+        working-directory: apps/web
+        env:
+          CORE_SELF_PAGES: '1'
+          VITE_CORE_SELF_TEST_MODE: '1'
+        run: npm run build
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload test site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/web/dist
+
+      - name: Deploy phone test
+        id: deployment
+        uses: actions/deploy-pages@v4
