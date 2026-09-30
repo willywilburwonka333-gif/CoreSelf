@@ -106,5 +106,6 @@ function coreDevApiPlugin() {
 }
 
 export default defineConfig({
+  base: process.env.CORE_SELF_PAGES === '1' ? '/CoreSelf/' : '/',
   plugins: [react(), coreDevApiPlugin()],
 });
