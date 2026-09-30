@@ -10,6 +10,11 @@ const required = [
   'apps/web/src/screens/Core.jsx',
   'apps/web/src/services/offlineBrain.js',
   'apps/web/public/sw.js',
+  'apps/web/src/services/selfRuntimeEngine.js',
+  'apps/web/src/services/digitalTwinEngine.js',
+  'apps/web/src/services/executionLearningEngine.js',
+  'apps/web/src/services/memoryIntelligenceEngine.js',
+  'apps/web/src/styles/genesis14.css',
 ];
 
 for (const file of required) {
@@ -27,6 +32,11 @@ const talk = fs.readFileSync(new URL('../apps/web/src/screens/Talk.jsx', import.
 const router = fs.readFileSync(new URL('../apps/web/src/services/aiRouter.js', import.meta.url), 'utf8');
 const offline = fs.readFileSync(new URL('../apps/web/src/services/offlineBrain.js', import.meta.url), 'utf8');
 const serviceWorker = fs.readFileSync(new URL('../apps/web/public/sw.js', import.meta.url), 'utf8');
+const selfRuntime = fs.readFileSync(new URL('../apps/web/src/services/selfRuntimeEngine.js', import.meta.url), 'utf8');
+const digitalTwin = fs.readFileSync(new URL('../apps/web/src/services/digitalTwinEngine.js', import.meta.url), 'utf8');
+const executionLearning = fs.readFileSync(new URL('../apps/web/src/services/executionLearningEngine.js', import.meta.url), 'utf8');
+const memoryIntelligence = fs.readFileSync(new URL('../apps/web/src/services/memoryIntelligenceEngine.js', import.meta.url), 'utf8');
+const genesis14Css = fs.readFileSync(new URL('../apps/web/src/styles/genesis14.css', import.meta.url), 'utf8');
 const offlineMusicReply = buildOfflineReply({
   input: 'What do you know about my music and Wilbur Wonka?',
   identityProfile: {
@@ -61,6 +71,16 @@ const assertions = [
   [offlineMusicReply.includes('original Australian hybrid artist identity'), 'music question uses built-in identity offline'],
   [offlineProjectReply.includes('Relevant active work'), 'project question still uses project path offline'],
   [serviceWorker.includes("caches.match('/')"), 'offline app shell'],
+  [serviceWorker.includes('core-self-genesis-1-4'), 'Genesis 1.4 offline cache'],
+  [selfRuntime.includes('buildSecondSelfRuntime'), 'integrated second-self runtime'],
+  [selfRuntime.includes("label: 'Reflect'"), 'perceive-to-reflect runtime loop'],
+  [digitalTwin.includes('buildDigitalTwin'), 'connected digital twin'],
+  [executionLearning.includes('recordExecutionOutcome'), 'execution-learning loop'],
+  [memoryIntelligence.includes('findMemoryDuplicates'), 'memory integrity duplicate review'],
+  [memoryIntelligence.includes('findMemoryContradictions'), 'memory contradiction review'],
+  [chat.includes('Second-Self runtime:'), 'second-self runtime reaches model context'],
+  [chat.includes('Digital twin:'), 'digital twin reaches model context'],
+  [genesis14Css.includes('.coreReactor'), 'Genesis 1.4 futuristic command interface'],
 ];
 
 const failed = assertions.filter(([ok]) => !ok).map(([, label]) => label);
