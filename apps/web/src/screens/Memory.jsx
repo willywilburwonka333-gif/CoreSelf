@@ -5,6 +5,7 @@ import { acceptSuggestion } from '../services/memorySuggestions';
 import { buildRelationshipLinks, detectRelationshipTags } from '../services/relationshipEngine';
 import { defaultProjects, defaultGoals, defaultLifeGraphNodes } from '../data/defaults';
 import { buildMemoryTimeline, classifyLivingMemory, enrichLivingMemory, recallLivingMemory } from '../services/livingMemoryEngine';
+import { buildMemoryIntelligence } from '../services/memoryIntelligenceEngine';
 
 const types = ['All', 'Dylan Memory', 'Identity', 'Relationship', 'Project', 'Skill', 'Decision', 'Lesson', 'Preference', 'Goal', 'Warning'];
 const levels = ['All', 'Permanent', 'Long-term', 'Active', 'Short-term', 'Archive'];
@@ -40,6 +41,7 @@ export default function Memory() {
     goals: load('goals', defaultGoals),
     lifeGraphNodes: load('lifeGraphNodes', defaultLifeGraphNodes),
   }), [items]);
+  const memoryIntelligence = useMemo(() => buildMemoryIntelligence(items, suggestions), [items, suggestions]);
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase();
@@ -154,6 +156,50 @@ export default function Memory() {
     <section className="screen">
       <h2>Memory Vault</h2>
       <p className="muted">Structured memories now connect to projects, goals, Life Graph context, recall, and the Living Memory timeline.</p>
+
+      <div className="deckGrid lowerDeck">
+        <article className="neuralPanel">
+          <div className="panelHeading">
+            <div><span>MEMORY INTEGRITY</span></div>
+            <strong>{memoryIntelligence.quality}%</strong>
+          </div>
+          <div className="bottleneckCore">
+            <span>MEMORY BRAIN STATE</span>
+            <h3>{memoryIntelligence.state}</h3>
+            <p>{memoryIntelligence.total} memories • {memoryIntelligence.permanent} permanent/critical • {memoryIntelligence.confirmed} confirmed by Dylan.</p>
+          </div>
+          <div className="systemFacts">
+            <div><span>Relationship-tagged</span><strong>{memoryIntelligence.tagged}</strong></div>
+            <div><span>Pending review</span><strong>{memoryIntelligence.pending}</strong></div>
+            <div><span>Possible duplicates</span><strong>{memoryIntelligence.duplicates.length}</strong></div>
+            <div><span>Possible conflicts</span><strong>{memoryIntelligence.contradictions.length}</strong></div>
+          </div>
+        </article>
+
+        <article className="neuralPanel">
+          <div className="panelHeading">
+            <div><span>CONSOLIDATION WATCH</span></div>
+            <strong>{memoryIntelligence.reviewCount} review signal(s)</strong>
+          </div>
+          {memoryIntelligence.duplicates.slice(0, 2).map((item) => (
+            <div className="miniActionCard" key={item.id}>
+              <strong>Possible duplicate · {item.confidence}%</strong>
+              <p>{item.left.title} ↔ {item.right.title}</p>
+              <small>{item.reason} Review manually before archiving either memory.</small>
+            </div>
+          ))}
+          {memoryIntelligence.contradictions.slice(0, 2).map((item) => (
+            <div className="miniActionCard" key={item.id}>
+              <strong>Possible contradiction · {item.confidence}%</strong>
+              <p>{item.left.title} ↔ {item.right.title}</p>
+              <small>{item.reason} Dylan remains the authority on which statement is current.</small>
+            </div>
+          ))}
+          {!memoryIntelligence.duplicates.length && !memoryIntelligence.contradictions.length && (
+            <p className="muted">No strong duplicate or contradiction signals detected.</p>
+          )}
+        </article>
+      </div>
 
       <div className="briefing">
         <h3>Living Recall</h3>
